@@ -119,6 +119,15 @@ class LoopToolCompilationSession(CompilationSession):
             ),
         ),
         ObservationSpace(
+            name="flops_loop_nest",
+            space=Space(double_value=DoubleRange()),
+            deterministic=False,
+            platform_dependent=True,
+            default_observation=Event(
+                double_value=0,
+            ),
+        ),
+        ObservationSpace(
             name="loop_tree_ir",
             space=Space(
                 string_value=StringSpace(length_range=Int64Range(min=0)),
@@ -208,6 +217,8 @@ class LoopToolCompilationSession(CompilationSession):
             observation = self.env.get_runtime()
         elif observation_space.name == "flops":
             observation = self.env.get_flops()
+        elif observation_space.name == "flops_loop_nest":
+            observation = self.env.get_flops_loop_nest()
         elif observation_space.name == "loop_tree_ir":
             observation = self.env.get_ir()
         else:

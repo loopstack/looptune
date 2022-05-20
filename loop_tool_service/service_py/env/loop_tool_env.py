@@ -1,3 +1,4 @@
+from statistics import mean
 from tokenize import Double
 import numpy as np
 import pdb
@@ -123,8 +124,16 @@ class Environment:
         return Event(float_value=mean_runtime)
 
     def get_flops(self) -> Event:
-        flops = self.tensor.loop_tree.flops()
-        return Event(float_value=flops)
+        mean_runtime = self.tensor.loop_tree.eval()
+        flos = self.tensor.loop_tree.flops() 
+        return Event(float_value= flos / mean_runtime)
+
+    def get_flops_loop_nest(self) -> Event:
+        with lt.Backend("loop_nest"):
+            mean_runtime = self.tensor.loop_tree.eval()
+            flos = self.tensor.loop_tree.flops()
+        return Event(float_value=flos / mean_runtime)
+
 
     def get_ir(self) -> Event:
         return Event(string_value=self.tensor.ir.serialize())

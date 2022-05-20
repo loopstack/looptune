@@ -13,14 +13,13 @@ import logging
 from pathlib import Path
 from typing import Iterable
 import pdb
+from loop_tool_service.service_py.rewards import flops_loop_nest_reward
 # import gym
 import numpy as np
 import pickle
 import os
 import sys
 import loop_tool as lt
-
-import gym
 
 from compiler_gym.datasets import Benchmark, Dataset
 from compiler_gym.datasets.uri import BenchmarkUri
@@ -57,7 +56,8 @@ def register_env():
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
                 runtime_reward.Reward(),
-                flops_reward.Reward()
+                flops_reward.Reward(),
+                flops_loop_nest_reward.Reward(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
@@ -71,7 +71,7 @@ def main():
     init_logging(level=logging.CRITICAL)
     register_env()
 
-    actions = ["down", "down", "split_64", "down", "split_16",  "swap_down"]
+    actions = ["down", "split_16", "down", "down", "split_16", "down", "split_4",  "down", "vectorize"]
 
     with loop_tool_service.make_env("loop_tool-v0") as env:
         for bench in env.datasets["benchmark://loop_tool_simple-v0"]:
@@ -89,7 +89,7 @@ def main():
                     observation, reward, done, info = env.step(
                         action=env.action_space.from_string(action),
                         observation_spaces=["loop_tree_ir"],
-                        reward_spaces=["flops"],
+                        reward_spaces=["flops", "flops_loop_nest"],
                     )
                 except ServiceError:
                     print("AGENT: Timeout Error Step")

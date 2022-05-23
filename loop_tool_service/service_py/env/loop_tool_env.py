@@ -55,9 +55,12 @@ class Environment:
 
 
     def update_tree(self, new_tree):
-        self.cursor = new_tree.map_ref(self.cursor, self.tensor.loop_tree)
-        self.action_had_effect = True
-        return new_tree
+        try:
+            self.cursor = new_tree.map_ref(self.cursor, self.tensor.loop_tree)
+            self.action_had_effect = True
+            return new_tree
+        except AssertionError:
+            return None
 
     # Apply action
     def apply_action(self, action: str, save_state: bool) -> bool:
@@ -65,12 +68,15 @@ class Environment:
 
         self.action_had_effect = False
         tree_before = self.tensor.loop_tree    
-        tree_after = None
+        tree_after = tree_before
 
         # pdb.set_trace()
 
         # Apply action here
-        if (action == 'up'):
+        if (action == 'dummy'):
+            pass
+
+        elif (action == 'up'):
             p = tree_before.previous_ref(self.cursor)
             if p is not None:
                 self.cursor = p
@@ -89,12 +95,9 @@ class Environment:
 
         elif(action.startswith("split")):
             split_param = int(action.split('_')[-1])
-            try:
-                tree_after = self.update_tree(tree_before.split(self.cursor, split_param))
-            except:
-                pass
+            tree_after = self.update_tree(tree_before.split(self.cursor, split_param))
 
-        elif(action == "merge_up"):
+        elif(action == "merge"):
             tree_after = self.update_tree(tree_before.merge(self.cursor))
 
         elif(action == "vectorize"):
@@ -109,7 +112,8 @@ class Environment:
 
         elif(action == "copy_input_1"):
             tree_after = self.update_tree(tree_before.copy_input(self.cursor, 1))
-
+        else:
+            print(f"Action: '{action}' not defined!!!!!!!!! ")
 
 
         # Check if action made an effect

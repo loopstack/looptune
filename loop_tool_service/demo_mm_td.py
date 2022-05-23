@@ -47,7 +47,7 @@ import loop_tool_service
 from service_py.datasets import loop_tool_dataset
 from service_py.rewards import runtime_reward, flops_reward
 
-
+import loop_tool_service.models.qlearningAgents as q_agents
 
 def register_env():
     register(
@@ -72,54 +72,67 @@ def main():
     init_logging(level=logging.CRITICAL)
     register_env()
 
-    actions = ["down", "split_16", "down", "down", "split_16", "down", "split_4",  "down", "vectorize"]
+    
+    state = lt.Tensor()
+    state_prev = lt.Tensor()
 
-    with open("/Users/dejang/Desktop/work/loop_tool_env/loop_tool_service/benchmarks/loop_tool_dataset/actions.txt", "r") as f:
-        actions = f.readlines()[0].split(',')
-        actions = [a.strip() for a in actions]
-        pdb.set_trace()
+    done = False
+    action = "dummy"
     
     with loop_tool_service.make_env("loop_tool-v0") as env:
-        for bench in env.datasets["benchmark://loop_tool_simple-v0"]:
-            bench = "benchmark://loop_tool_simple-v0/muladd"
-            pdb.set_trace()
+        pdb.set_trace()
+        agent = q_agents.QLearningAgent(
+            actionSpace=env.env.action_space,
+            numTraining=100, 
+            epsilon=0.5, 
+            alpha=0.5, 
+            gamma=1
+        )
 
+        bench = "benchmark://loop_tool_simple-v0/muladd"
+
+        try:
+            env.reset(benchmark=bench)
+            # env.send_param("timeout_sec", "1")
+        except ServiceError:
+            print("AGENT: Timeout Error Reset")
+            return
+
+    
+        observation = env.observation["loop_tree_ir"]
+        state.set(lt.deserialize(observation))
+
+        while not done:
+            # pdb.set_trace()
+            state_prev = state
+            action = agent.getAction(state)
+
+            print(f"**********************************************************")
+            print(f"Action = {env.action_space.to_string(action)}\n")
             try:
-                env.reset(benchmark=bench)
-                # env.send_param("timeout_sec", "1")
+                observation, rewards, done, info = env.step(
+                    action=action,
+                    observation_spaces=["loop_tree_ir"],
+                    reward_spaces=["flops"],
+                )
             except ServiceError:
-                print("AGENT: Timeout Error Reset")
+                print("AGENT: Timeout Error Step")
                 continue
+        
 
-            for action in actions:
-                print(f"**********************************************************")
-                print(f"Action = {action}\n")
-                try:
-                    observation, reward, done, info = env.step(
-                        action=env.action_space.from_string(action),
-                        observation_spaces=["loop_tree_ir"],
-                        reward_spaces=["flops", "flops"],
-                    )
-                except ServiceError:
-                    print("AGENT: Timeout Error Step")
-                    continue
-            
+            state.set(lt.deserialize(observation[0]))
+            print(state.loop_tree)
+            print(f"{rewards}\n")
+            print(f"{info}\n")
 
-                print(f"{reward}\n")
-                print(f"{info}\n")
-
-                try:
-                    tensor = lt.Tensor()
-                    tensor.set(lt.deserialize(observation[0]))
-                    print(tensor.loop_tree)
-                    pdb.set_trace()
-                except:
-                    print(f"{observation}\n")
+            agent.update(state_prev, action, state, rewards[0])
+            print(agent.Q)
 
 
-            pdb.set_trace()
-            
-            break
+
+        pdb.set_trace()
+        
+        
 
 if __name__ == "__main__":
     main()

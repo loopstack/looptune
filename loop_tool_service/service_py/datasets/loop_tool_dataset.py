@@ -52,6 +52,11 @@ class Dataset(Dataset):
                 self.preprocess(BENCHMARKS_PATH /"conv.txt"),
                 benchmark_config
             ),
+            "benchmark://loop_tool_simple-v0/muladd": benchmark_from_file_contents(
+                "benchmark://loop_tool_simple-v0/muladd",
+                self.preprocess(BENCHMARKS_PATH /"muladd.txt"),
+                benchmark_config
+            ),
         }
 
     @property

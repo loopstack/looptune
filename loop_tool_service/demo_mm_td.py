@@ -21,6 +21,7 @@ import os
 import sys
 import loop_tool as lt
 import csv
+import json
 
 from compiler_gym.datasets import Benchmark, Dataset
 from compiler_gym.datasets.uri import BenchmarkUri
@@ -98,14 +99,15 @@ def main():
             print("AGENT: Timeout Error Reset")
             return
 
-    
+        available_actions = json.loads(env.send_param("available_actions", ""))
+        pdb.set_trace()
         observation = env.observation["loop_tree_ir"]
         state.set(lt.deserialize(observation))
 
         while not done:
             # pdb.set_trace()
             state_prev = state
-            action = agent.getAction(state)
+            action = agent.getAction(state, available_actions)
 
             print(f"**********************************************************")
             print(f"Action = {env.action_space.to_string(action)}\n")
@@ -118,8 +120,11 @@ def main():
             except ServiceError:
                 print("AGENT: Timeout Error Step")
                 continue
-        
-
+            except ValueError:
+                pass
+            # available_actions = info[""]
+            available_actions = json.loads(env.send_param("available_actions", ""))
+            print(f"Available_actions = {available_actions}")
             state.set(lt.deserialize(observation[0]))
             print(state.loop_tree)
             print(f"{rewards}\n")
@@ -128,6 +133,7 @@ def main():
             agent.update(state_prev, action, state, rewards[0])
             print(agent.Q)
 
+            pdb.set_trace()
 
 
         pdb.set_trace()

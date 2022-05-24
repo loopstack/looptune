@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from env import loop_tool_env
+import json
 
 import compiler_gym.third_party.llvm as llvm
 from compiler_gym import site_data_path
@@ -69,18 +70,18 @@ class LoopToolCompilationSession(CompilationSession):
                         "split_16", 
                         "split_32", 
                         "split_64", 
-                        # "split_128", 
-                        # "split_256", 
-                        # "split_512", 
-                        # "split_1024", 
-                        # "split_2048", 
-                        # "split_4096", 
-                        # "split_8192", 
+                        "split_128", 
+                        "split_256", 
+                        "split_512", 
+                        "split_1024", 
+                        "split_2048", 
+                        "split_4096", 
+                        "split_8192", 
                         "merge", 
                         "unroll", 
                         "vectorize", 
-                        # "copy_input_0", 
-                        # "copy_input_1"
+                        "copy_input_0", 
+                        "copy_input_1"
                         ],
                 ),
             ),
@@ -161,6 +162,7 @@ class LoopToolCompilationSession(CompilationSession):
         
         self.env = loop_tool_env.Environment(
                             working_directory=working_directory,
+                            action_space=action_space,
                             benchmark=benchmark,
                             timeout_sec=3000
         )
@@ -172,6 +174,8 @@ class LoopToolCompilationSession(CompilationSession):
         if key == "save_state":
             self.save_state = False if value == "0" else True
             return "Succeeded"
+        elif key == "available_actions":
+            return json.dumps(self.env.get_available_actions())
         else:
             logging.critical("handle_session_parameter Unsuported key:", key)
             return ""
@@ -179,10 +183,6 @@ class LoopToolCompilationSession(CompilationSession):
 
     def apply_action(self, action: Event) -> Tuple[bool, Optional[ActionSpace], bool]:
         num_choices = len(self.action_spaces[0].space.named_discrete.name)
-
-        # Vladimir: I guess choosing multiple actions at once is not possible anymore.
-        # if len(action.int64_value) != 1:
-        #     raise ValueError("Invalid choice count")
 
         choice_index = action.int64_value
         if choice_index < 0 or choice_index >= num_choices:
@@ -201,8 +201,17 @@ class LoopToolCompilationSession(CompilationSession):
         if action_had_effect:
             self.prev_observation = {} # Clear cache if action had an effect
 
+        new_action_space = ActionSpace(
+            name="available_actions",
+            space=Space(
+                # potentially define new splits
+                named_discrete=NamedDiscreteSpace(
+                    name=self.env.get_available_actions()
+                ),
+            ),
+        )
+        new_action_space = False
         end_of_session = False
-        new_action_space = None
         return (end_of_session, new_action_space, not action_had_effect)
 
 

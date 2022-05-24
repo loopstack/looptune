@@ -78,7 +78,7 @@ class QLearningAgent(ReinforcementAgent):
         return 0.0
 
 
-    def computeActionFromQValues(self, state):
+    def computeActionFromQValues(self, state, legal_actions):
         """
           Compute the best action to take in a state.  Note that if there
           are no legal actions, which is the case at the terminal state,
@@ -86,13 +86,13 @@ class QLearningAgent(ReinforcementAgent):
         """
         "*** YOUR CODE HERE ***"
             
-        if len(self.getLegalActions(state)) > 0:                       
-            q_dict = { action: self.getQValue(state, action) for action in self.getLegalActions(state) }
+        if len(legal_actions) > 0:                       
+            q_dict = { action: self.getQValue(state, action) for action in legal_actions }
             return max(q_dict, key=q_dict.get)
         else:
             return None
 
-    def getAction(self, state):
+    def getAction(self, state, available_actions):
         """
           Compute the action to take in the current state.  With
           probability self.epsilon, we should take a random action and
@@ -104,11 +104,12 @@ class QLearningAgent(ReinforcementAgent):
           HINT: To pick randomly from a list, use random.choice(list)
         """
         # Pick Action
-
         if random.random() < self.epsilon:
-            return self.actionSpace.sample()        
-        else:    
-            return self.computeActionFromQValues(state)
+            action_str = random.choice(available_actions)
+            return self.actionSpace.from_string(action_str)      
+        else:
+            action_str = self.computeActionFromQValues(state, legal_actions=available_actions)
+            return self.actionSpace.from_string(action_str)
 
 
     def update(self, state, action, nextState, reward):

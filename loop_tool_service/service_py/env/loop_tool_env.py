@@ -41,8 +41,9 @@ from loop_tool_service.service_py.utils import run_command, proto_buff_container
 
 
 class Environment:
-    def __init__(self, working_directory: Path, benchmark: Benchmark, timeout_sec: float):
+    def __init__(self, working_directory: Path, action_space, benchmark: Benchmark, timeout_sec: float):
         self.name = "loop_tool_env"
+        self.action_space = action_space
         self.timeout_sec = timeout_sec        
 
         self.tensor = lt.Tensor()
@@ -59,8 +60,32 @@ class Environment:
             self.cursor = new_tree.map_ref(self.cursor, self.tensor.loop_tree)
             self.action_had_effect = True
             return new_tree
-        except AssertionError:
+        except AssertionError as e:
+            print(f"Apply action assertion error: {e}")
             return None
+
+    def get_available_actions(self):
+        available_actions = []
+        env_actions = self.action_space.space.named_discrete.name
+        available_actions_paterns = self.tensor.loop_tree.get_available_actions(self.cursor)
+        print(self.cursor)
+
+        for action_patern in available_actions_paterns:
+            # pdb.set_trace()
+
+            if "split" in action_patern:
+                split_actions = [ a for a in env_actions if "split" in a ]
+                
+                for env_action in split_actions:
+                    if int(env_action.split('_')[-1]) < int(action_patern.split('_')[-1]):
+                        available_actions.append(env_action)
+            elif "copy_input" in action_patern:
+                available_actions.append("copy_input_0")
+                available_actions.append("copy_input_1")
+            else:
+                available_actions.append(action_patern)
+
+        return available_actions
 
     # Apply action
     def apply_action(self, action: str, save_state: bool) -> bool:
@@ -71,7 +96,6 @@ class Environment:
         tree_after = tree_before
 
         # pdb.set_trace()
-
         # Apply action here
         if (action == 'dummy'):
             pass

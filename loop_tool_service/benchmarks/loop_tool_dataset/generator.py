@@ -40,5 +40,24 @@ C = mm(A, B)
 with open("data/mm.txt", "w") as f:
     f.write(C.ir.serialize())
 
+
+A = lt.Tensor(128,128)
+B = lt.Tensor(128,128)
+m, n, k = lt.symbols("m n k")
+
+
+C = (A.to(m, k) * B.to(k, n)).sum(k)
+
+with open("data/muladd.txt", "w") as f:
+    f.write(C.ir.serialize())
+
+
+
+
+
+
+
+
+
 pdb.set_trace()
 lt.ui(C, "/tmp/woo.c")

@@ -64,24 +64,26 @@ class LoopToolCompilationSession(CompilationSession):
                         "down", 
                         "swap_up", 
                         "swap_down", 
-                        "split_2", 
-                        "split_4", 
+                        # "split_2", 
+                        # "split_4", 
                         "split_8", 
-                        "split_16", 
-                        "split_32", 
-                        "split_64", 
-                        "split_128", 
-                        "split_256", 
-                        "split_512", 
-                        "split_1024", 
-                        "split_2048", 
-                        "split_4096", 
-                        "split_8192", 
+                        # "split_16", 
+                        # "split_32", 
+                        # "split_64", 
+                        # "split_128", 
+                        # "split_256", 
+                        # "split_512", 
+                        # "split_1024", 
+                        # "split_2048", 
+                        # "split_4096", 
+                        # "split_8192", 
                         "merge", 
                         "unroll", 
                         "vectorize", 
-                        "copy_input_0", 
-                        "copy_input_1"
+                        # "copy_input_0", #TODO: Copy input should be parametric action 0,1,...n is id of variable
+                        # "copy_input_1",
+                        # "copy_input_1",
+                        # "copy_input_3",
                         ],
                 ),
             ),
@@ -201,15 +203,15 @@ class LoopToolCompilationSession(CompilationSession):
         if action_had_effect:
             self.prev_observation = {} # Clear cache if action had an effect
 
-        new_action_space = ActionSpace(
-            name="available_actions",
-            space=Space(
-                # potentially define new splits
-                named_discrete=NamedDiscreteSpace(
-                    name=self.env.get_available_actions()
-                ),
-            ),
-        )
+        # new_action_space = ActionSpace(
+        #     name="available_actions",
+        #     space=Space(
+        #         # potentially define new splits
+        #         named_discrete=NamedDiscreteSpace(
+        #             name=self.env.get_available_actions()
+        #         ),
+        #     ),
+        # )
         new_action_space = False
         end_of_session = False
         return (end_of_session, new_action_space, not action_had_effect)

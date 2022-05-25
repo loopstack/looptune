@@ -51,17 +51,17 @@ class ValueEstimationAgent(Agent):
       Q-Values while acting in the environment.
     """
 
-    def __init__(self, alpha=1.0, epsilon=0.05, gamma=0.8, numTraining = 10):
+    def __init__(self, learning_rate=1.0, exploration=0.05, discount=0.8, numTraining = 10):
         """
-        Sets options, which can be passed in via the Pacman command line using -a alpha=0.5,...
-        alpha    - learning rate
-        epsilon  - exploration rate
-        gamma    - discount factor
+        Sets options, which can be passed in via the Pacman command line using -a learning_rate=0.5,...
+        learning_rate    - learning rate
+        exploration  - exploration rate
+        discount    - discount factor
         numTraining - number of training episodes, i.e. no learning after these many episodes
         """
-        self.alpha = float(alpha)
-        self.epsilon = float(epsilon)
-        self.discount = float(gamma)
+        self.learning_rate = float(learning_rate)
+        self.exploration = float(exploration)
+        self.discount = float(discount)
         self.numTraining = int(numTraining)
 
     ####################################
@@ -169,8 +169,8 @@ class ReinforcementAgent(ValueEstimationAgent):
         self.episodesSoFar += 1
         if self.episodesSoFar >= self.numTraining:
             # Take off the training wheels
-            self.epsilon = 0.0    # no exploration
-            self.alpha = 0.0      # no learning
+            self.exploration = 0.0    # no exploration
+            self.learning_rate = 0.0      # no learning
 
     def isInTraining(self):
         return self.episodesSoFar < self.numTraining
@@ -178,11 +178,11 @@ class ReinforcementAgent(ValueEstimationAgent):
     def isInTesting(self):
         return not self.isInTraining()
 
-    def __init__(self, actionSpace, numTraining=100, epsilon=0.5, alpha=0.5, gamma=1):
+    def __init__(self, actionSpace, numTraining=100, exploration=0.5, learning_rate=0.5, discount=1):
         """
-        alpha    - learning rate
-        epsilon  - exploration rate
-        gamma    - discount factor
+        learning_rate    - learning rate
+        exploration  - exploration rate
+        discount    - discount factor
         numTraining - number of training episodes, i.e. no learning after these many episodes
         """
 
@@ -191,18 +191,18 @@ class ReinforcementAgent(ValueEstimationAgent):
         self.accumTrainRewards = 0.0
         self.accumTestRewards = 0.0
         self.numTraining = int(numTraining)
-        self.epsilon = float(epsilon)
-        self.alpha = float(alpha)
-        self.discount = float(gamma)
+        self.exploration = float(exploration)
+        self.learning_rate = float(learning_rate)
+        self.discount = float(discount)
 
     ################################
     # Controls needed for Crawler  #
     ################################
-    def setEpsilon(self, epsilon):
-        self.epsilon = epsilon
+    def setEpsilon(self, exploration):
+        self.exploration = exploration
 
-    def setLearningRate(self, alpha):
-        self.alpha = alpha
+    def setLearningRate(self, learning_rate):
+        self.learning_rate = learning_rate
 
     def setDiscount(self, discount):
         self.discount = discount
@@ -269,5 +269,5 @@ class ReinforcementAgent(ValueEstimationAgent):
             self.episodeStartTime = time.time()
 
         if self.episodesSoFar == self.numTraining:
-            msg = 'Training Done (turning off epsilon and alpha)'
+            msg = 'Training Done (turning off exploration and learning_rate)'
             print(('%s\n%s' % (msg,'-' * len(msg))))

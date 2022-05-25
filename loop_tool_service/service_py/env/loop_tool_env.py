@@ -80,8 +80,9 @@ class Environment:
                     if int(env_action.split('_')[-1]) < int(action_patern.split('_')[-1]):
                         available_actions.append(env_action)
             elif "copy_input" in action_patern:
-                available_actions.append("copy_input_0")
-                available_actions.append("copy_input_1")
+                # available_actions.append("copy_input_0")
+                # available_actions.append("copy_input_1")
+                pass
             else:
                 available_actions.append(action_patern)
 

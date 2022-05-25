@@ -34,8 +34,8 @@ class QLearningAgent(ReinforcementAgent):
         - update
 
       Instance variables you have access to
-        - self.epsilon (exploration prob)
-        - self.alpha (learning rate)
+        - self.exploration (exploration prob)
+        - self.learning_rate (learning rate)
         - self.discount (discount rate)
 
       Functions you should use
@@ -95,7 +95,7 @@ class QLearningAgent(ReinforcementAgent):
     def getAction(self, state, available_actions):
         """
           Compute the action to take in the current state.  With
-          probability self.epsilon, we should take a random action and
+          probability self.exploration, we should take a random action and
           take the best policy action otherwise.  Note that if there are
           no legal actions, which is the case at the terminal state, you
           should choose None as the action.
@@ -104,7 +104,7 @@ class QLearningAgent(ReinforcementAgent):
           HINT: To pick randomly from a list, use random.choice(list)
         """
         # Pick Action
-        if random.random() < self.epsilon:
+        if random.random() < self.exploration:
             action_str = random.choice(available_actions)
             return self.actionSpace.from_string(action_str)      
         else:
@@ -126,7 +126,7 @@ class QLearningAgent(ReinforcementAgent):
             self.Q[state] = Counter()
         
         # pdb.set_trace()
-        self.Q[state][action] += self.alpha * ( reward + self.discount * self.computeValueFromQValues(nextState) - self.getQValue(state, action) )
+        self.Q[state][action] += self.learning_rate * ( reward + self.discount * self.computeValueFromQValues(nextState) - self.getQValue(state, action) )
         
 
     def getPolicy(self, state):
@@ -139,20 +139,20 @@ class QLearningAgent(ReinforcementAgent):
 class PacmanQAgent(QLearningAgent):
     "Exactly the same as QLearningAgent, but with different default parameters"
 
-    def __init__(self, epsilon=0.05,gamma=0.8,alpha=0.2, numTraining=0, **args):
+    def __init__(self, exploration=0.05,discount=0.8,learning_rate=0.2, numTraining=0, **args):
         """
         These default parameters can be changed from the pacman.py command line.
         For example, to change the exploration rate, try:
-            python pacman.py -p PacmanQLearningAgent -a epsilon=0.1
+            python pacman.py -p PacmanQLearningAgent -a exploration=0.1
 
-        alpha    - learning rate
-        epsilon  - exploration rate
-        gamma    - discount factor
+        learning_rate    - learning rate
+        exploration  - exploration rate
+        discount    - discount factor
         numTraining - number of training episodes, i.e. no learning after these many episodes
         """
-        args['epsilon'] = epsilon
-        args['gamma'] = gamma
-        args['alpha'] = alpha
+        args['exploration'] = exploration
+        args['discount'] = discount
+        args['learning_rate'] = learning_rate
         args['numTraining'] = numTraining
         self.index = 0  # This is always Pacman
         QLearningAgent.__init__(self, **args)
@@ -206,7 +206,7 @@ class PacmanQAgent(QLearningAgent):
 #         diff = (reward + self.discount * self.getValue(nextState)) - self.getQValue(state, action)
 #         # pdb.set_trace()
 #         for feature in features.keys():
-#             self.weights[feature] += self.alpha * diff * features[feature]
+#             self.weights[feature] += self.learning_rate * diff * features[feature]
 
 
 #     def final(self, state):

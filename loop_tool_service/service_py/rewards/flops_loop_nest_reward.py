@@ -27,7 +27,7 @@ class Reward(Reward):
         del action
         del observation_view
         new_flops = observations[0]
-        reward = float(self.prev_flops - new_flops) / self.prev_flops
+        reward = float(new_flops - self.prev_flops) / self.prev_flops
         self.prev_flops = new_flops
         return reward
 
@@ -59,7 +59,7 @@ class RewardTensor(Reward):
         del observation_view
         
         new_flops = observations[0]
-        reward = float(self.prev_flops - new_flops) / self.prev_flops
+        reward = float(new_flops - self.prev_flops) / self.prev_flops
         self.prev_flops = new_flops        
         return reward
 

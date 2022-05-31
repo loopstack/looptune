@@ -57,6 +57,16 @@ class Dataset(Dataset):
                 self.preprocess(BENCHMARKS_PATH /"muladd.txt"),
                 benchmark_config
             ),
+            "benchmark://loop_tool_simple-v0/mm256": benchmark_from_file_contents(
+                "benchmark://loop_tool_simple-v0/mm256",
+                self.preprocess(BENCHMARKS_PATH /"mm256.txt"),
+                benchmark_config
+            ),
+            "benchmark://loop_tool_simple-v0/mm512": benchmark_from_file_contents(
+                "benchmark://loop_tool_simple-v0/mm512",
+                self.preprocess(BENCHMARKS_PATH /"mm512.txt"),
+                benchmark_config
+            ),
         }
 
     @property

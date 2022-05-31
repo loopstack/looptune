@@ -86,7 +86,7 @@ def main():
             discount=0.8,
         )
 
-        bench = "benchmark://loop_tool_simple-v0/muladd"
+        bench = "benchmark://loop_tool_simple-v0/mm256"
 
         try:
             env.reset(benchmark=bench)

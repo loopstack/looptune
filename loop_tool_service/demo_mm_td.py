@@ -81,7 +81,7 @@ def main():
         agent = q_agents.QLearningAgent(
             actionSpace=env.env.action_space,
             numTraining=1000, 
-            exploration=0.05, 
+            exploration=0.5, 
             learning_rate=0.2, 
             discount=0.8,
         )

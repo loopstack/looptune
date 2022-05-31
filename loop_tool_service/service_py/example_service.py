@@ -84,6 +84,8 @@ class LoopToolCompilationSession(CompilationSession):
                         # "copy_input_1",
                         # "copy_input_1",
                         # "copy_input_3",
+                        "increase_reuse",
+                        "decrease_reuse"
                         ],
                 ),
             ),

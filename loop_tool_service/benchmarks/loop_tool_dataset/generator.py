@@ -5,6 +5,8 @@ import numpy as np
 import pickle
 import pdb
 
+
+# ********************************** mm.txt ********************************** 
 def mm(A, B):
     s = lt.SymbolGenerator()
     C = A.to(s.m, s.k) * B.to(s.k, s.n)
@@ -16,9 +18,13 @@ A = lt.Tensor(m, k).set(np.random.randn(m, k))
 B = lt.Tensor(k, n).set(np.random.randn(k, n))
 
 s = lt.SymbolGenerator()
-C = mm(A, B).to(s.m, s.n).sum(s.m)  # * A.to(s.m, s.k)
+# C = mm(A, B).to(s.m, s.n).sum(s.m)  # * A.to(s.m, s.k)
+C = mm(A, B)
 
+with open("data/mm.txt", "w") as f:
+    f.write(C.ir.serialize())
 
+# ********************************** conv.txt **********************************
 def conv(X, W):
     s = lt.SymbolGenerator()
     X = X.pad(X.symbolic_shape[1], 1)
@@ -32,15 +38,7 @@ C = conv(X, W)
 with open("data/conv.txt", "w") as f:
     f.write(C.ir.serialize())
 
-
-A = lt.Tensor(m, k).set(np.random.randn(m, k))
-B = lt.Tensor(m, k).set(np.random.randn(m, k))
-C = mm(A, B)
-
-with open("data/mm.txt", "w") as f:
-    f.write(C.ir.serialize())
-
-
+# ********************************** muladd.txt **********************************
 A = lt.Tensor(128,128)
 B = lt.Tensor(128,128)
 m, n, k = lt.symbols("m n k")
@@ -52,10 +50,23 @@ with open("data/muladd.txt", "w") as f:
     f.write(C.ir.serialize())
 
 
+# ********************************** mm512.txt **********************************
+def mm(A, B):
+    s = lt.SymbolGenerator()
+    C = A.to(s.m, s.k) * B.to(s.k, s.n)
+    return C.sum(s.k)
 
 
+m, n, k = 512, 512, 512
+A = lt.Tensor(m, k).set(np.random.randn(m, k))
+B = lt.Tensor(k, n).set(np.random.randn(k, n))
 
+s = lt.SymbolGenerator()
+# C = mm(A, B).to(s.m, s.n).sum(s.m)  # * A.to(s.m, s.k)
+C = mm(A, B)
 
+with open("data/mm512.txt", "w") as f:
+    f.write(C.ir.serialize())
 
 
 

@@ -131,12 +131,18 @@ class Environment:
         elif(action == "unroll"):
             tree_after = self.update_tree(tree_before.annotate(self.cursor, "unroll"))
 
-
         elif(action == "copy_input_0"):
             tree_after = self.update_tree(tree_before.copy_input(self.cursor, 0))
 
         elif(action == "copy_input_1"):
             tree_after = self.update_tree(tree_before.copy_input(self.cursor, 1))
+
+        elif(action == "increase_reuse"):
+            tree_after = self.update_tree(tree_before.increase_reuse(self.cursor))
+
+        elif(action == "decrease_reuse"):
+            tree_after = self.update_tree(tree_before.decrease_reuse(self.cursor))
+
         else:
             print(f"Action: '{action}' not defined!!!!!!!!! ")
 

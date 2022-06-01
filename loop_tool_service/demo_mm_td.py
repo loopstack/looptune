@@ -91,8 +91,8 @@ def main():
         try:
             env.reset(benchmark=bench)
             # env.send_param("timeout_sec", "1")
-        except ServiceError:
-            print("AGENT: Timeout Error Reset")
+        except ServiceError as e:
+            print(f"AGENT: Timeout Error Reset: {e}")
             return
 
         available_actions = json.loads(env.send_param("available_actions", ""))

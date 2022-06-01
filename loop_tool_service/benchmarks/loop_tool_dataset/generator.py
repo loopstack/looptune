@@ -60,6 +60,23 @@ s = lt.SymbolGenerator()
 # C = mm(A, B).to(s.m, s.n).sum(s.m)  # * A.to(s.m, s.k)
 C = mm(A, B)
 
+# TODO: BWasti reproducer
+# loop_tree = C.loop_tree.split(0, 4)\
+#               .swap_loops(1, 2)\
+#               .swap_loops(2, 3)\
+#               .swap_loops(2, 1)\
+#               .split(1, 16)\
+#               .swap_loops(2, 3)\
+#               .swap_loops(3, 4)\
+#               .copy_input(5, 0)\
+#               .try_swap(5, 4)\
+#               .split(5, 4)\
+#               .copy_input(7, 1)\
+#               .decrease_reuse(7)\
+#               .decrease_reuse(7)\
+#               .decrease_reuse(7)\
+#               .split(14, 4)
+
 loop_tree = C.loop_tree.split(0, 4)\
               .swap_loops(1, 2)\
               .swap_loops(2, 3)\
@@ -67,18 +84,15 @@ loop_tree = C.loop_tree.split(0, 4)\
               .split(1, 16)\
               .swap_loops(2, 3)\
               .swap_loops(3, 4)\
-              .copy_input(5, 0)\
-              .try_swap(5, 4)\
-              .split(5, 4)\
-              .copy_input(7, 1)\
-              .decrease_reuse(7)\
-              .decrease_reuse(7)\
-              .decrease_reuse(7)\
-              .split(14, 4)
+              .split(4, 4)\
+              .split(9, 16)
+
 
 C.set(loop_tree)
 with open("data/mm256.txt", "w") as f:
     f.write(C.ir.serialize())
+
+pdb.set_trace()
 
 # # ********************************** mm512.txt **********************************
 

@@ -84,7 +84,8 @@ class Environment:
                 # available_actions.append("copy_input_1")
                 pass
             else:
-                available_actions.append(action_patern)
+                if action_patern in env_actions:
+                    available_actions.append(action_patern)
 
         return available_actions
 
@@ -125,11 +126,11 @@ class Environment:
         elif(action == "merge"):
             tree_after = self.update_tree(tree_before.merge(self.cursor))
 
-        elif(action == "vectorize"):
-            tree_after = self.update_tree(tree_before.annotate(self.cursor, "vectorize"))
-
-        elif(action == "unroll"):
-            tree_after = self.update_tree(tree_before.annotate(self.cursor, "unroll"))
+        elif(action in ["vectorize", "unroll"]):
+            if tree_before.annotation(self.cursor) == action:
+                tree_after = self.update_tree(tree_before.annotate(self.cursor, ""))
+            else:    
+                tree_after = self.update_tree(tree_before.annotate(self.cursor, action))
 
         elif(action == "copy_input_0"):
             tree_after = self.update_tree(tree_before.copy_input(self.cursor, 0))

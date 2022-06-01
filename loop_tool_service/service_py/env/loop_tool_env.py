@@ -133,10 +133,13 @@ class Environment:
                 tree_after = self.update_tree(tree_before.annotate(self.cursor, action))
 
         elif(action == "copy_input_0"):
-            tree_after = self.update_tree(tree_before.copy_input(self.cursor, 0))
+            pdb.set_trace()
+            input_id = tree_before.get_inputs(self.cursor)[0]
+            tree_after = self.update_tree(tree_before.copy_input(self.cursor, input_id))
 
         elif(action == "copy_input_1"):
-            tree_after = self.update_tree(tree_before.copy_input(self.cursor, 1))
+            input_id = tree_before.get_inputs(self.cursor)[1]
+            tree_after = self.update_tree(tree_before.copy_input(self.cursor, input_id))
 
         elif(action == "increase_reuse"):
             tree_after = self.update_tree(tree_before.increase_reuse(self.cursor))

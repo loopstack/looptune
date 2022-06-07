@@ -93,7 +93,7 @@ class Environment:
         return Event(string_value=self.agent.lt.ir.serialize())
 
     def get_ir_networkx(self) -> Event:
-        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dump()))
+        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot()))
         return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
 
     ##############################################################

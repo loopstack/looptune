@@ -95,7 +95,7 @@ with open("data/mm256.txt", "w") as f:
 
 agent = lt.LoopTreeAgent(loop_tree)
 agent.get_available_actions()
-print(agent.dump())
+print(agent)
 pdb.set_trace()
 
 # # ********************************** mm512.txt **********************************

@@ -94,7 +94,7 @@ def main():
             return
 
         available_actions = json.loads(env.send_param("available_actions", ""))
-        observation = env.observation["loop_tree_ir"]
+        observation = env.observation["ir"]
         state.set(lt.deserialize(observation))
         state_start = state
 
@@ -109,7 +109,7 @@ def main():
             try:
                 observation, rewards, done, info = env.step(
                     action=action,
-                    observation_spaces=["loop_tree_ir"],
+                    observation_spaces=["ir"],
                     reward_spaces=["flops_loop_nest"],
                 )
             except ServiceError as e:

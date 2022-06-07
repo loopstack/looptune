@@ -134,20 +134,19 @@ class LoopToolCompilationSession(CompilationSession):
                 double_value=0,
             ),
         ),
-        # ObservationSpace(
-        #     name="loop_tree_ir",
-        #     space=Space(
-        #         string_value=StringSpace(length_range=Int64Range(min=0)),
-        #     ),
-        #     deterministic=True,
-        #     platform_dependent=False,
-        #     default_observation=Event(
-        #         string_value="",
-        #     ),
-        # ),
         ObservationSpace(
-            # name="loop_tree_agent",
-            name="loop_tree_ir",
+            name="ir",
+            space=Space(
+                string_value=StringSpace(length_range=Int64Range(min=0)),
+            ),
+            deterministic=True,
+            platform_dependent=False,
+            default_observation=Event(
+                string_value="",
+            ),
+        ),
+        ObservationSpace(
+            name="ir_networkx",
             space=Space(
                 byte_sequence=ByteSequenceSpace(length_range=Int64Range(min=0)),
             ),
@@ -247,8 +246,10 @@ class LoopToolCompilationSession(CompilationSession):
             observation = self.env.get_flops()
         elif observation_space.name == "flops_loop_nest":
             observation = self.env.get_flops_loop_nest()
-        elif observation_space.name == "loop_tree_ir":
+        elif observation_space.name == "ir":
             observation = self.env.get_ir()
+        elif observation_space.name == "ir_networkx":
+            observation = self.env.get_ir_networkx()            
         else:
             raise KeyError(observation_space.name)
 

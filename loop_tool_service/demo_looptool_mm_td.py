@@ -102,7 +102,7 @@ def main():
             return
 
         available_actions = json.loads(env.send_param("available_actions", ""))
-        observation = env.observation["loop_tree_ir"]
+        observation = env.observation["ir_networkx"]
         state = pickle.loads(observation)
         start_reward = env.reward["flops"]
 
@@ -117,7 +117,7 @@ def main():
             try:
                 observation, rewards, done, info = env.step(
                     action=action,
-                    observation_spaces=["loop_tree_ir"],
+                    observation_spaces=["ir_networkx"],
                     reward_spaces=["flops"],
                 )
             except ServiceError as e:
@@ -144,10 +144,6 @@ def main():
             current_flops = env.observation["flops"]
             print(f"Current speed = {current_flops} GFLOPS")
             pdb.set_trace()
-
-
-
-
 
 
         print(f"====================================================================")

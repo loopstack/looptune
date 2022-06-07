@@ -7,7 +7,7 @@ import re
 import loop_tool as lt
 import networkx as nx
 import pydot
-
+import ast
 
 from compiler_gym.service.proto import (
     Event,
@@ -52,14 +52,16 @@ class Environment:
 
         ir = lt.deserialize(benchmark.program.contents)
         self.agent = lt.LoopTreeAgent(lt.LoopTree(ir))
-        print(self.agent.dump())
+        print(self.agent)
         self.action_had_effect = False
 
 
     def get_available_actions(self):
         return self.agent.get_available_actions()
 
+    ##############################################################
     # Apply action
+    ##############################################################
     def apply_action(self, action: str, save_state: bool) -> bool:
         # opt format "-opt1 -opt2 ..."
 
@@ -71,11 +73,11 @@ class Environment:
         else:
             self.action_had_effect = False
 
-
         return self.action_had_effect
 
-
+    ##############################################################
     # Get observations
+    ##############################################################
     def get_runtime(self) -> Event:
         mean_runtime = self.agent.eval("seconds")
         return Event(float_value=mean_runtime)
@@ -87,18 +89,32 @@ class Environment:
         with lt.Backend("loop_nest"):
             return Event(float_value=self.agent.eval("FLOPS"))
 
-
     def get_ir(self) -> Event:
-        def ir_to_networkx(ir):
-            pg = pydot.graph_from_dot_data(str(ir))
-            gg = nx.nx_pydot.from_pydot(pg[0])
-            remove = [ node for node, lab in dict(gg.nodes.data("label")).items() if lab == None ]
-            gg.remove_nodes_from(remove)
-            return gg
+        return Event(string_value=self.agent.lt.ir.serialize())
 
-        pdb.set_trace()
-        print(self.agent.lt)
-        # TODO: Create suitable data structure for splits
-
-        pickled = pickle.dumps(ir_to_networkx(self.agent.lt.ir))
+    def get_ir_networkx(self) -> Event:
+        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dump()))
         return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
+
+    ##############################################################
+    # Auxilary functions
+    ##############################################################
+    def extract_features(self, label, max_feature_size = 50):
+        feature_vector = []
+        
+        dict = ast.literal_eval(ast.literal_eval(label))
+        for key, val in dict.items():
+            if key.startswith("L"):
+                feature_vector += val.values()
+
+        feature_vector += [0] * (max_feature_size - len(feature_vector))
+
+        return feature_vector
+
+    def ir_to_networkx(self, dot_str):
+        pg = pydot.graph_from_dot_data(str(dot_str))
+        gg = nx.nx_pydot.from_pydot(pg[0])
+        
+        for nid in gg.nodes:
+            gg.nodes[nid]["feature"] = self.extract_features(gg.nodes[nid]["label"])
+        return gg

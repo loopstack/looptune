@@ -5,6 +5,9 @@ import pdb
 from loop_tool_service.service_py.utils import run_command_get_stderr
 import re
 import loop_tool as lt
+import networkx as nx
+import pydot
+
 
 from compiler_gym.service.proto import (
     Event,
@@ -33,6 +36,7 @@ from compiler_gym.service.proto import Benchmark
 
 from compiler_gym.service.proto import (
     Event,
+    ByteTensor,
 )
 
 # from compiler_gym.util.commands import Popen, run_command
@@ -46,134 +50,55 @@ class Environment:
         self.action_space = action_space
         self.timeout_sec = timeout_sec        
 
-        self.tensor = lt.Tensor()
-        self.tensor.set(lt.deserialize(benchmark.program.contents))
-
-        self.cursor = 0
+        ir = lt.deserialize(benchmark.program.contents)
+        self.agent = lt.LoopTreeAgent(lt.LoopTree(ir))
+        print(self.agent.dump())
         self.action_had_effect = False
-        print(self.tensor.loop_tree)
 
-
-
-    def update_tree(self, new_tree):
-        try:
-            self.cursor = new_tree.map_ref(self.cursor, self.tensor.loop_tree)
-            self.action_had_effect = True
-            return new_tree
-        except AssertionError as e:
-            print(f"Apply action assertion error: {e}")
-            return None
 
     def get_available_actions(self):
-        available_actions = []
-        env_actions = self.action_space.space.named_discrete.name
-        available_actions_paterns = self.tensor.loop_tree.get_available_actions(self.cursor)
-        print(self.cursor)
-
-        for action_patern in available_actions_paterns:
-            # pdb.set_trace()
-
-            if "split" in action_patern:
-                split_actions = [ a for a in env_actions if "split" in a ]
-                
-                for env_action in split_actions:
-                    if int(env_action.split('_')[-1]) < int(action_patern.split('_')[-1]):
-                        available_actions.append(env_action)
-            elif "copy_input" in action_patern:
-                # available_actions.append("copy_input_0")
-                # available_actions.append("copy_input_1")
-                pass
-            else:
-                if action_patern in env_actions:
-                    available_actions.append(action_patern)
-
-        return available_actions
+        return self.agent.get_available_actions()
 
     # Apply action
     def apply_action(self, action: str, save_state: bool) -> bool:
         # opt format "-opt1 -opt2 ..."
 
-        self.action_had_effect = False
-        tree_before = self.tensor.loop_tree    
-        tree_after = tree_before
+        agent_copy = lt.LoopTreeAgent(self.agent)
+        self.agent.apply_action(action)
 
-        # pdb.set_trace()
-        # Apply action here
-        if (action == 'dummy'):
-            pass
-
-        elif (action == 'up'):
-            p = tree_before.previous_ref(self.cursor)
-            if p is not None:
-                self.cursor = p
-            
-        elif(action == "down"):
-            n = tree_before.next_ref(self.cursor)
-            if n is not None:
-                self.cursor = n
-        
-        elif(action == "swap_up"):
-            tree_after = self.update_tree(tree_before.try_swap(self.cursor, tree_before.previous_ref(self.cursor)))
-
-        elif(action == "swap_down"):
-            tree_after = self.update_tree(tree_before.try_swap(self.cursor, tree_before.next_ref(self.cursor)))
-
-
-        elif(action.startswith("split")):
-            split_param = int(action.split('_')[-1])
-            tree_after = self.update_tree(tree_before.split(self.cursor, split_param))
-
-        elif(action == "merge"):
-            tree_after = self.update_tree(tree_before.merge(self.cursor))
-
-        elif(action in ["vectorize", "unroll"]):
-            if tree_before.annotation(self.cursor) == action:
-                tree_after = self.update_tree(tree_before.annotate(self.cursor, ""))
-            else:    
-                tree_after = self.update_tree(tree_before.annotate(self.cursor, action))
-
-        elif(action == "copy_input_0"):
-            pdb.set_trace()
-            input_id = tree_before.get_inputs(self.cursor)[0]
-            tree_after = self.update_tree(tree_before.copy_input(self.cursor, input_id))
-
-        elif(action == "copy_input_1"):
-            input_id = tree_before.get_inputs(self.cursor)[1]
-            tree_after = self.update_tree(tree_before.copy_input(self.cursor, input_id))
-
-        elif(action == "increase_reuse"):
-            tree_after = self.update_tree(tree_before.increase_reuse(self.cursor))
-
-        elif(action == "decrease_reuse"):
-            tree_after = self.update_tree(tree_before.decrease_reuse(self.cursor))
-
+        if agent_copy != self.agent:
+            self.action_had_effect = True
         else:
-            print(f"Action: '{action}' not defined!!!!!!!!! ")
+            self.action_had_effect = False
 
-
-        # Check if action made an effect
-        if self.action_had_effect:
-            self.tensor.set(tree_after)
 
         return self.action_had_effect
 
+
     # Get observations
     def get_runtime(self) -> Event:
-        mean_runtime = self.tensor.loop_tree.eval()
+        mean_runtime = self.agent.eval("seconds")
         return Event(float_value=mean_runtime)
 
     def get_flops(self) -> Event:
-        mean_runtime = self.tensor.loop_tree.eval()
-        flos = self.tensor.loop_tree.flops() 
-        return Event(float_value= flos / mean_runtime)
+        return Event(float_value=self.agent.eval("FLOPS"))
 
     def get_flops_loop_nest(self) -> Event:
         with lt.Backend("loop_nest"):
-            mean_runtime = self.tensor.loop_tree.eval()
-            flos = self.tensor.loop_tree.flops()
-        return Event(float_value=flos / mean_runtime)
+            return Event(float_value=self.agent.eval("FLOPS"))
 
 
     def get_ir(self) -> Event:
-        return Event(string_value=self.tensor.ir.serialize())
- 
+        def ir_to_networkx(ir):
+            pg = pydot.graph_from_dot_data(str(ir))
+            gg = nx.nx_pydot.from_pydot(pg[0])
+            remove = [ node for node, lab in dict(gg.nodes.data("label")).items() if lab == None ]
+            gg.remove_nodes_from(remove)
+            return gg
+
+        pdb.set_trace()
+        print(self.agent.lt)
+        # TODO: Create suitable data structure for splits
+
+        pickled = pickle.dumps(ir_to_networkx(self.agent.lt.ir))
+        return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))

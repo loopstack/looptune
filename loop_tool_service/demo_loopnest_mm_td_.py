@@ -57,9 +57,7 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                runtime_reward.Reward(),
-                flops_reward.Reward(),
-                # flops_loop_nest_reward.Reward(),
+                flops_loop_nest_reward.Reward(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
@@ -112,10 +110,10 @@ def main():
                 observation, rewards, done, info = env.step(
                     action=action,
                     observation_spaces=["loop_tree_ir"],
-                    reward_spaces=["flops"],
+                    reward_spaces=["flops_loop_nest"],
                 )
-            except ServiceError:
-                print("AGENT: Timeout Error Step")
+            except ServiceError as e:
+                print(f"AGENT: Timeout Error Step: {e}")
                 continue
             except ValueError:
                 pdb.set_trace()
@@ -133,13 +131,13 @@ def main():
 
 
             # pdb.set_trace()
-            print(f"Current speed = {state.loop_tree.flops() / state.loop_tree.eval() / 1e9} GFLOPS")
+            print(f"Current speed = {state.loop_tree.FLOPS()} GFLOPS")
 
 
 
         print(f"====================================================================")
-        print(f"Start speed = {state_start.loop_tree.flops() / state_start.loop_tree.eval() / 1e9} GFLOPS")
-        print(f"Final speed = {state.loop_tree.flops() / state.loop_tree.eval() / 1e9} GFLOPS")
+        print(f"Start speed = {state_start.loop_tree.FLOPS() } GFLOPS")
+        print(f"Final speed = {state.loop_tree.FLOPS()} GFLOPS")
 
 if __name__ == "__main__":
     main()

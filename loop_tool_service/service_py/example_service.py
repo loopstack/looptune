@@ -64,19 +64,19 @@ class LoopToolCompilationSession(CompilationSession):
                         "down", 
                         # "swap_up", 
                         # "swap_down", 
-                        # "split_2", 
-                        # "split_4", 
-                        # "split_8", 
-                        # "split_16", 
-                        # "split_32", 
-                        # "split_64", 
-                        # "split_128", 
-                        # "split_256", 
-                        # "split_512", 
-                        # "split_1024", 
-                        # "split_2048", 
-                        # "split_4096", 
-                        # "split_8192", 
+                        "split_2", 
+                        "split_4", 
+                        "split_8", 
+                        "split_16", 
+                        "split_32", 
+                        "split_64", 
+                        "split_128", 
+                        "split_256", 
+                        "split_512", 
+                        "split_1024", 
+                        "split_2048", 
+                        "split_4096", 
+                        "split_8192", 
                         # "merge", 
                         "unroll", 
                         "vectorize", 
@@ -134,19 +134,28 @@ class LoopToolCompilationSession(CompilationSession):
                 double_value=0,
             ),
         ),
+        # ObservationSpace(
+        #     name="loop_tree_ir",
+        #     space=Space(
+        #         string_value=StringSpace(length_range=Int64Range(min=0)),
+        #     ),
+        #     deterministic=True,
+        #     platform_dependent=False,
+        #     default_observation=Event(
+        #         string_value="",
+        #     ),
+        # ),
         ObservationSpace(
+            # name="loop_tree_agent",
             name="loop_tree_ir",
             space=Space(
-                string_value=StringSpace(length_range=Int64Range(min=0)),
-            ),
-            deterministic=True,
-            platform_dependent=False,
-            default_observation=Event(
-                string_value="",
+                byte_sequence=ByteSequenceSpace(length_range=Int64Range(min=0)),
             ),
         ),
     ]
     
+
+
 
     def __init__(
         self,
@@ -179,7 +188,11 @@ class LoopToolCompilationSession(CompilationSession):
             self.save_state = False if value == "0" else True
             return "Succeeded"
         elif key == "available_actions":
-            return json.dumps(self.env.get_available_actions())
+            def intersection(l1, l2):
+                return [ x for x in l1 if x in l2 ]
+            available_actions = intersection(self.env.get_available_actions(), 
+                                             self.action_spaces[0].space.named_discrete.name)
+            return json.dumps(available_actions)
         else:
             logging.critical("handle_session_parameter Unsuported key:", key)
             return ""

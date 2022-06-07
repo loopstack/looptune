@@ -92,20 +92,24 @@ C.set(loop_tree)
 with open("data/mm256.txt", "w") as f:
     f.write(C.ir.serialize())
 
+
+agent = lt.LoopTreeAgent(loop_tree)
+agent.get_available_actions()
+print(agent.dump())
 pdb.set_trace()
 
 # # ********************************** mm512.txt **********************************
 
-m, n, k = 512, 512, 512
-A = lt.Tensor(m, k).set(np.random.randn(m, k))
-B = lt.Tensor(k, n).set(np.random.randn(k, n))
+# m, n, k = 512, 512, 512
+# A = lt.Tensor(m, k).set(np.random.randn(m, k))
+# B = lt.Tensor(k, n).set(np.random.randn(k, n))
 
-s = lt.SymbolGenerator()
-# C = mm(A, B).to(s.m, s.n).sum(s.m)  # * A.to(s.m, s.k)
-C = mm(A, B)
+# s = lt.SymbolGenerator()
+# # C = mm(A, B).to(s.m, s.n).sum(s.m)  # * A.to(s.m, s.k)
+# C = mm(A, B)
 
-with open("data/mm512.txt", "w") as f:
-    f.write(C.ir.serialize())
+# with open("data/mm512.txt", "w") as f:
+#     f.write(C.ir.serialize())
 
 
 

@@ -93,28 +93,22 @@ class Environment:
         return Event(string_value=self.agent.lt.ir.serialize())
 
     def get_ir_networkx(self) -> Event:
-        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot()))
+        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot_simple()))
         return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
 
     ##############################################################
     # Auxilary functions
     ##############################################################
-    def extract_features(self, label, max_feature_size = 50):
-        feature_vector = []
-        
-        dict = ast.literal_eval(ast.literal_eval(label))
-        for key, val in dict.items():
-            if key.startswith("L"):
-                feature_vector += val.values()
-
-        feature_vector += [0] * (max_feature_size - len(feature_vector))
-
-        return feature_vector
-
     def ir_to_networkx(self, dot_str):
+
         pg = pydot.graph_from_dot_data(str(dot_str))
         gg = nx.nx_pydot.from_pydot(pg[0])
         
         for nid in gg.nodes:
             gg.nodes[nid]["feature"] = self.extract_features(gg.nodes[nid]["label"])
+    
         return gg
+
+    def extract_features(self, label, max_feature_size = 50):
+        dict = ast.literal_eval(ast.literal_eval(label))
+        return list(dict.values())

@@ -20,7 +20,7 @@ import random, math
 
 import numpy as np
 import pdb
-
+import networkx as nx
 
 class QLearningAgent(ReinforcementAgent):
     """
@@ -58,10 +58,12 @@ class QLearningAgent(ReinforcementAgent):
           or the Q node value otherwise
         """
         "*** YOUR CODE HERE ***"
-        if state not in self.Q.keys() or action not in self.Q[state]:
+        state_hash = nx.weisfeiler_lehman_graph_hash(state, node_attr='feature')
+
+        if state_hash not in self.Q.keys() or action not in self.Q[state_hash]:
             return 0.0
 
-        return self.Q[state][action]
+        return self.Q[state_hash][action]
         
 
     def computeValueFromQValues(self, state):
@@ -122,11 +124,12 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         "*** YOUR CODE HERE ***"
+        state_hash = nx.weisfeiler_lehman_graph_hash(state, node_attr='feature')
+
         if state not in self.Q.keys():
-            self.Q[state] = Counter()
+            self.Q[state_hash] = Counter()
         
-        # pdb.set_trace()
-        self.Q[state][action] += self.learning_rate * ( reward + self.discount * self.computeValueFromQValues(nextState) - self.getQValue(state, action) )
+        self.Q[state_hash][action] += self.learning_rate * ( reward + self.discount * self.computeValueFromQValues(nextState) - self.getQValue(state, action) )
         
 
     def getPolicy(self, state):

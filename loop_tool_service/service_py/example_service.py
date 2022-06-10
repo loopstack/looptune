@@ -64,19 +64,19 @@ class LoopToolCompilationSession(CompilationSession):
                         "down", 
                         # "swap_up", 
                         # "swap_down", 
-                        "split_2", 
-                        "split_4", 
-                        "split_8", 
-                        "split_16", 
-                        "split_32", 
-                        "split_64", 
-                        "split_128", 
-                        "split_256", 
-                        "split_512", 
-                        "split_1024", 
-                        "split_2048", 
-                        "split_4096", 
-                        "split_8192", 
+                        # "split_2", 
+                        # "split_4", 
+                        # "split_8", 
+                        # "split_16", 
+                        # "split_32", 
+                        # "split_64", 
+                        # "split_128", 
+                        # "split_256", 
+                        # "split_512", 
+                        # "split_1024", 
+                        # "split_2048", 
+                        # "split_4096", 
+                        # "split_8192", 
                         # "merge", 
                         "unroll", 
                         "vectorize", 
@@ -192,6 +192,10 @@ class LoopToolCompilationSession(CompilationSession):
             available_actions = intersection(self.env.get_available_actions(), 
                                              self.action_spaces[0].space.named_discrete.name)
             return json.dumps(available_actions)
+        
+        elif key == "print_looptree":
+            print(self.env.agent)
+            return ""
         else:
             logging.critical("handle_session_parameter Unsuported key:", key)
             return ""

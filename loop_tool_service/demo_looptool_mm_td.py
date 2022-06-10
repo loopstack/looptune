@@ -25,6 +25,7 @@ import json
 
 import networkx as nx
 import matplotlib.pyplot as plt
+from networkx.drawing.nx_pydot import to_pydot
 
 
 from compiler_gym.datasets import Benchmark, Dataset
@@ -126,7 +127,9 @@ def main():
             except ValueError:
                 pdb.set_trace()
                 pass
-            # available_actions = info[""]
+
+            env.send_param("print_looptree", "")
+
             available_actions = json.loads(env.send_param("available_actions", ""))
             print(f"Available_actions = {available_actions}")
 
@@ -143,7 +146,12 @@ def main():
 
             current_flops = env.observation["flops"]
             print(f"Current speed = {current_flops} GFLOPS")
-            pdb.set_trace()
+
+
+            print(to_pydot(state).to_string())
+
+
+            # pdb.set_trace()
 
 
         print(f"====================================================================")

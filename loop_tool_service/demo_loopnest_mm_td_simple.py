@@ -71,73 +71,23 @@ def main():
     init_logging(level=logging.CRITICAL)
     register_env()
 
-    
-    state = lt.Tensor()
-    state_prev = lt.Tensor()
+    bench = "benchmark://loop_tool_simple-v0/mm128"
 
     with loop_tool_service.make_env("loop_tool-v0") as env:
         agent = q_agents.QLearningAgent(
-            actionSpace=env.env.action_space,
-            numTraining=1000, 
-            exploration=0.5, 
-            learning_rate=0.2, 
-            discount=0.8,
+            env=env,
+            bench=bench,
+            observation="loop_tree",
+            reward="flops_loop_nest",
+            numTraining=100, 
+            numTest=10,
+            exploration=0.7, 
+            learning_rate=0.8, 
+            discount=0.01,
         )
-
-        bench = "benchmark://loop_tool_simple-v0/mm256"
-
-        try:
-            env.reset(benchmark=bench)
-            # env.send_param("timeout_sec", "1")
-        except ServiceError as e:
-            print(f"AGENT: Timeout Error Reset: {e}")
-            return
-
-        available_actions = json.loads(env.send_param("available_actions", ""))
-        observation = env.observation["ir"]
-        state.set(lt.deserialize(observation))
-        state_start = state
-
+        agent.train()
+        agent.test()
         
-        for i in range(1005):
-            # pdb.set_trace()
-            state_prev = state
-            action = agent.getAction(state, available_actions)
-
-            print(f"**************************** {i} ******************************")
-            print(f"Action = {env.action_space.to_string(action)}\n")
-            try:
-                observation, rewards, done, info = env.step(
-                    action=action,
-                    observation_spaces=["ir"],
-                    reward_spaces=["flops_loop_nest"],
-                )
-            except ServiceError as e:
-                print(f"AGENT: Timeout Error Step: {e}")
-                continue
-            except ValueError:
-                pdb.set_trace()
-                pass
-            # available_actions = info[""]
-            available_actions = json.loads(env.send_param("available_actions", ""))
-            print(f"Available_actions = {available_actions}")
-            state.set(lt.deserialize(observation[0]))
-            print(state.loop_tree)
-            print(f"{rewards}\n")
-            print(f"{info}\n")
-
-            agent.update(state_prev, action, state, rewards[0])
-            print(agent.Q)
-
-
-            # pdb.set_trace()
-            print(f"Current speed = {state.loop_tree.FLOPS()} GFLOPS")
-
-
-
-        print(f"====================================================================")
-        print(f"Start speed = {state_start.loop_tree.FLOPS() } GFLOPS")
-        print(f"Final speed = {state.loop_tree.FLOPS()} GFLOPS")
 
 if __name__ == "__main__":
     main()

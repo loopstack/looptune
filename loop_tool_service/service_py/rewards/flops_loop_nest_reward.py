@@ -18,12 +18,12 @@ class Reward(Reward):
         self.prev_flops = 0
 
     def reset(self, benchmark: str, observation_view):
-        print("Reward Flops: reset")
+        print("Reward flops_loop_nest: reset")
         del benchmark  # unused
         self.prev_flops = observation_view["flops_loop_nest"]
 
     def update(self, action, observations, observation_view):
-        print("Reward Flops: update")
+        print("Reward flops_loop_nest: update")
         del action
         del observation_view
         new_flops = observations[0]
@@ -49,12 +49,12 @@ class RewardTensor(Reward):
         self.prev_flops = 0
 
     def reset(self, benchmark: str, observation_view):
-        print("Reward Flops: reset")
+        print("Reward flops_loop_nest_tensor: reset")
         del benchmark  # unused
         self.prev_flops = observation_view["flops_loop_nest_tensor"]
 
     def update(self, action, observations, observation_view):
-        print("Reward Flops: update")
+        print("Reward flops_loop_nest_tensor: update")
         del action
         del observation_view
         

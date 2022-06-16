@@ -59,11 +59,11 @@ class LoopToolCompilationSession(CompilationSession):
                 # potentially define new splits
                 named_discrete=NamedDiscreteSpace(
                     name=[
-                        "dummy",
+                        # "dummy",
                         "up", 
                         "down", 
-                        # "swap_up", 
-                        # "swap_down", 
+                        "swap_up", 
+                        "swap_down", 
                         # "split_2", 
                         # "split_4", 
                         # "split_8", 
@@ -78,8 +78,8 @@ class LoopToolCompilationSession(CompilationSession):
                         # "split_4096", 
                         # "split_8192", 
                         # "merge", 
-                        "unroll", 
-                        "vectorize", 
+                        # "unroll", 
+                        # "vectorize", 
                         # "copy_input_0", #TODO: Copy input should be parametric action 0,1,...n is id of variable
                         # "copy_input_1",
                         # "copy_input_1",
@@ -146,6 +146,17 @@ class LoopToolCompilationSession(CompilationSession):
             ),
         ),
         ObservationSpace(
+            name="loop_tree",
+            space=Space(
+                string_value=StringSpace(length_range=Int64Range(min=0)),
+            ),
+            deterministic=True,
+            platform_dependent=False,
+            default_observation=Event(
+                string_value="",
+            ),
+        ),        
+        ObservationSpace(
             name="ir_networkx",
             space=Space(
                 byte_sequence=ByteSequenceSpace(length_range=Int64Range(min=0)),
@@ -168,7 +179,7 @@ class LoopToolCompilationSession(CompilationSession):
 
         os.chdir(str(working_directory))
         logging.critical(f"\n\nWorking_dir = {str(working_directory)}\n")
-        pdb.set_trace()
+        # pdb.set_trace()
 
         self.save_state = False
         
@@ -252,8 +263,14 @@ class LoopToolCompilationSession(CompilationSession):
             observation = self.env.get_flops_loop_nest()
         elif observation_space.name == "ir":
             observation = self.env.get_ir()
+            return observation
         elif observation_space.name == "ir_networkx":
-            observation = self.env.get_ir_networkx()            
+            observation = self.env.get_ir_networkx() 
+            return observation
+        elif observation_space.name == "loop_tree":
+            observation = self.env.get_loop_tree()    
+            return observation
+                        
         else:
             raise KeyError(observation_space.name)
 

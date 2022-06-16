@@ -63,12 +63,10 @@ class Environment:
     # Apply action
     ##############################################################
     def apply_action(self, action: str, save_state: bool) -> bool:
-        # opt format "-opt1 -opt2 ..."
-
         agent_copy = lt.LoopTreeAgent(self.agent)
         self.agent.apply_action(action)
 
-        if agent_copy != self.agent:
+        if agent_copy.lt.dump() != self.agent.lt.dump():
             self.action_had_effect = True
         else:
             self.action_had_effect = False
@@ -95,6 +93,9 @@ class Environment:
     def get_ir_networkx(self) -> Event:
         pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot_simple()))
         return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
+
+    def get_loop_tree(self) -> Event:
+        return Event(string_value=self.agent.dump())
 
     ##############################################################
     # Auxilary functions

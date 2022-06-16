@@ -1,59 +1,11 @@
-# learningAgents.py
-# -----------------
-# Licensing Information:  You are free to use or extend these projects for
-# educational purposes provided that (1) you do not distribute or publish
-# solutions, (2) you retain this notice, and (3) you provide clear
-# attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
-# Attribution Information: The Pacman AI projects were developed at UC Berkeley.
-# The core projects and autograders were primarily created by John DeNero
-# (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
-# Student side autograding was added by Brad Miller, Nick Hay, and
-# Pieter Abbeel (pabbeel@cs.berkeley.edu).
-
-
 import random,time
 import pdb
 
-class Agent:
-    """
-    An agent must define a getAction method, but may also define the
-    following methods which will be called if they exist:
 
-    def registerInitialState(self, state): # inspects the starting state
-    """
-    def __init__(self, index=0):
-        self.index = index
+class ValueEstimationAgent():
 
-    def getAction(self, state):
+    def __init__(self, learning_rate=1.0, exploration=0.05, discount=0.8, numTraining = 20, numTest=10):
         """
-        The Agent will receive a GameState (from either {pacman, capture, sonar}.py) and
-        must return an action from Directions.{North, South, East, West, Stop}
-        """
-        raise NotImplementedError
-
-
-
-class ValueEstimationAgent(Agent):
-    """
-      Abstract agent which assigns values to (state,action)
-      Q-Values for an environment. As well as a value to a
-      state and a policy given respectively by,
-
-      V(s) = max_{a in actions} Q(s,a)
-      policy(s) = arg_max_{a in actions} Q(s,a)
-
-      Both ValueIterationAgent and QLearningAgent inherit
-      from this agent. While a ValueIterationAgent has
-      a model of the environment via a MarkovDecisionProcess
-      (see mdp.py) that is used to estimate Q-Values before
-      ever actually acting, the QLearningAgent estimates
-      Q-Values while acting in the environment.
-    """
-
-    def __init__(self, learning_rate=1.0, exploration=0.05, discount=0.8, numTraining = 10):
-        """
-        Sets options, which can be passed in via the Pacman command line using -a learning_rate=0.5,...
         learning_rate    - learning rate
         exploration  - exploration rate
         discount    - discount factor
@@ -63,6 +15,7 @@ class ValueEstimationAgent(Agent):
         self.exploration = float(exploration)
         self.discount = float(discount)
         self.numTraining = int(numTraining)
+        self.numTest = int(numTest)
 
     ####################################
     #    Override These Functions      #
@@ -164,8 +117,11 @@ class ReinforcementAgent(ValueEstimationAgent):
         """
         if self.episodesSoFar < self.numTraining:
             self.accumTrainRewards += self.episodeRewards
+            self.accumTrainRewards_history.append(self.accumTrainRewards)
         else:
             self.accumTestRewards += self.episodeRewards
+            self.accumTestRewards_history.append(self.accumTestRewards)
+
         self.episodesSoFar += 1
         if self.episodesSoFar >= self.numTraining:
             # Take off the training wheels
@@ -178,19 +134,28 @@ class ReinforcementAgent(ValueEstimationAgent):
     def isInTesting(self):
         return not self.isInTraining()
 
-    def __init__(self, actionSpace, numTraining=100, exploration=0.5, learning_rate=0.5, discount=1):
+    def __init__(self, env, bench, observation, reward, numTraining=100, numTest=10, exploration=0.5, learning_rate=0.5, discount=1):
         """
         learning_rate    - learning rate
         exploration  - exploration rate
         discount    - discount factor
         numTraining - number of training episodes, i.e. no learning after these many episodes
         """
-
-        self.actionSpace = actionSpace
+        self.env = env
+        self.bench = bench
+        self.observation = observation
+        self.reward = reward
+        
+        self.actionSpace = env.env.action_space
         self.episodesSoFar = 0
         self.accumTrainRewards = 0.0
         self.accumTestRewards = 0.0
+        self.accumTrainRewards_history = []
+        self.accumTestRewards_history = []
+        
         self.numTraining = int(numTraining)
+        self.numTest = int(numTest)
+        
         self.exploration = float(exploration)
         self.learning_rate = float(learning_rate)
         self.discount = float(discount)

@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 from typing import Iterable
 import pdb
-from loop_tool_service.service_py.rewards import flops_loop_nest_reward
+
 # import gym
 import numpy as np
 import pickle
@@ -26,7 +26,6 @@ import json
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import to_pydot
-
 
 from compiler_gym.datasets import Benchmark, Dataset
 from compiler_gym.datasets.uri import BenchmarkUri
@@ -51,7 +50,7 @@ import loop_tool_service
 
 
 from service_py.datasets import loop_tool_dataset
-from service_py.rewards import runtime_reward, flops_reward
+from service_py.rewards import runtime_reward, flops_reward, flops_loop_nest_reward
 
 import loop_tool_service.models.qlearningAgents as q_agents
 
@@ -62,9 +61,7 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                runtime_reward.Reward(),
-                flops_reward.Reward(),
-                # flops_loop_nest_reward.Reward(),
+                flops_loop_nest_reward.Reward(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
@@ -104,11 +101,15 @@ def main():
 
         available_actions = json.loads(env.send_param("available_actions", ""))
         observation = env.observation["ir_networkx"]
-        state = pickle.loads(observation)
-        start_reward = env.reward["flops"]
+        state_nx = pickle.loads(observation)
+        state = q_agents.State(hash=nx.weisfeiler_lehman_graph_hash(state_nx, node_attr='feature'),
+                               string=to_pydot(state_nx).to_string())
+        
+        start_reward = env.reward["flops_loop_nest"]
+        state_start = state
 
         agent.registerInitialState(state=state)
-        
+
         for i in range(1000):
             # pdb.set_trace()
             state_prev = state
@@ -116,11 +117,13 @@ def main():
 
             print(f"**************************** {i} ******************************")
             print(f"Action = {env.action_space.to_string(action)}\n")
+            # pdb.set_trace()
+
             try:
                 observation, rewards, done, info = env.step(
                     action=action,
                     observation_spaces=["ir_networkx"],
-                    reward_spaces=["flops"],
+                    reward_spaces=["flops_loop_nest"],
                 )
             except ServiceError as e:
                 print(f"AGENT: Timeout Error Step: {e}")
@@ -128,43 +131,40 @@ def main():
             except ValueError:
                 pdb.set_trace()
                 pass
-
+            
             env.send_param("print_looptree", "")
 
+            # available_actions = info[""]
             available_actions = json.loads(env.send_param("available_actions", ""))
             print(f"Available_actions = {available_actions}")
-
-            # state.set(lt.deserialize(observation[0]))
-            state = pickle.loads(observation[0])
-            nx.drawing.nx_pydot.write_dot(state,sys.stdout)
+            state_nx = pickle.loads(observation[0])
+            state = q_agents.State(hash=nx.weisfeiler_lehman_graph_hash(state_nx, node_attr='feature'),
+                                   string=to_pydot(state_nx).to_string())
+        
 
             print(f"{rewards}\n")
             print(f"{info}\n")
 
+
             agent.observeTransition(state_prev, action, state, rewards[0])
             # agent.update(state_prev, action, state, rewards[0])
-
             print(agent.Q)
 
 
-            current_flops = env.observation["flops"]
-            print(f"Current speed = {current_flops} GFLOPS")
-            print(to_pydot(state).to_string())
-            agent.stopEpisode()
-
-
             # pdb.set_trace()
-
-
-        print(f"====================================================================")
-        print(f"Start speed = {start_reward } GFLOPS")
-        print(f"Final speed = {current_flops} GFLOPS")
+            current_flops = env.observation["flops_loop_nest"]
+            print(f"Current speed = {current_flops/1e9} GFLOPS")
+            print(state.string)
+            agent.stopEpisode()
 
         agent.plot_history()
         pdb.set_trace()
+        agent.plot_policy()
+        pdb.set_trace()
+
+        print(f"====================================================================")
+        print(f"Start speed = {start_reward/1e9} GFLOPS")
+        print(f"Final speed = {current_flops/1e9} GFLOPS")
 
 if __name__ == "__main__":
     main()
-
-
-

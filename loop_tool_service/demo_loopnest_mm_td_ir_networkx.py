@@ -31,16 +31,6 @@ from compiler_gym.util.registration import register
 from compiler_gym.util.runfiles_path import runfiles_path, site_data_path
 from compiler_gym.service.connection import ServiceError
 
-from compiler_gym.envs.llvm.datasets import (
-    AnghaBenchDataset,
-    BlasDataset,
-    CBenchDataset,
-    CBenchLegacyDataset,
-    CBenchLegacyDataset2,
-    CHStoneDataset,
-    CsmithDataset,
-    NPBDataset,
-)
 
 import loop_tool_service
 
@@ -48,7 +38,7 @@ import loop_tool_service
 from service_py.datasets import loop_tool_dataset
 from service_py.rewards import runtime_reward, flops_reward
 
-import loop_tool_service.models.qlearningAgents as q_agents
+import loop_tool_service.models.qAgentBase as q_agents
 
 def register_env():
     register(
@@ -61,7 +51,7 @@ def register_env():
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
-                CBenchDataset(site_data_path("llvm-v0"))],
+            ],
         },
     )
 
@@ -74,20 +64,20 @@ def main():
     bench = "benchmark://loop_tool_simple-v0/mm128"
 
     with loop_tool_service.make_env("loop_tool-v0") as env:
-        agent = q_agents.QLearningAgent(
+        agent = q_agents.QAgentNetworkX(
             env=env,
             bench=bench,
-            observation="loop_tree",
+            observation="ir_networkx",
             reward="flops_loop_nest",
             numTraining=100, 
-            numTest=10,
+            numTest=4,
             exploration=0.7, 
             learning_rate=0.8, 
             discount=0.01,
         )
         agent.train()
         agent.test()
-        
+
 
 if __name__ == "__main__":
     main()

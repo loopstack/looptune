@@ -38,7 +38,7 @@ import loop_tool_service
 from service_py.datasets import loop_tool_dataset
 from service_py.rewards import runtime_reward, flops_reward
 
-import loop_tool_service.models.qAgentBase as q_agents
+import loop_tool_service.models.qAgentsDict as q_agents
 
 def register_env():
     register(

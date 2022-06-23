@@ -27,18 +27,14 @@ def gen_mm():
     # C = mm(A, B).to(s.m, s.n).sum(s.m)  # * A.to(s.m, s.k)
     C = mm(A, B)
 
-    with open("data/mm.txt", "w") as f:
-        f.write(C.ir.serialize())
-
+    return C
 # ********************************** conv.txt **********************************
 def gen_conv():
     X = lt.Tensor(256, 128).set(np.random.randn(256, 128))
     W = lt.Tensor(256, 3).set(np.random.randn(256, 3))
 
     C = conv(X, W)
-    with open("data/conv.txt", "w") as f:
-        f.write(C.ir.serialize())
-
+    return C
 # ********************************** muladd.txt **********************************
 def gen_muladd():
     A = lt.Tensor(128,128)
@@ -48,10 +44,7 @@ def gen_muladd():
 
     C = (A.to(m, k) * B.to(k, n)).sum(k)
 
-    with open("data/muladd.txt", "w") as f:
-        f.write(C.ir.serialize())
-
-
+    return C
 # ********************************** simple.txt **********************************
 def gen_simple():
     m, n, k = 128, 128, 128
@@ -61,13 +54,7 @@ def gen_simple():
     s = lt.SymbolGenerator()
     C = mm(A, B)
 
-    with lt.Backend("loop_nest"):
-        C = lt.ui(C, "/tmp/woo.c")
-
-    with open("data/simple.txt", "w") as f:
-        f.write(C.ir.serialize())
-
-
+    return C
 # ********************************** mm128.txt **********************************
 def gen_mm128():
     m, n, k = 128, 128, 128
@@ -83,12 +70,7 @@ def gen_mm128():
 
     C.set(loop_tree)
 
-    with lt.Backend("loop_nest"):
-        C = lt.ui(C, "/tmp/woo.c")
-
-    with open("data/mm128.txt", "w") as f:
-        f.write(C.ir.serialize())
-
+    return C
 # ********************************** mm256.txt **********************************
 def gen_mm256():
     m, n, k = 256, 256, 256
@@ -157,9 +139,8 @@ def gen_mm256():
                 .swap_loops(6, 7)
 
     C.set(loop_tree)
-    with open("data/mm256.txt", "w") as f:
-        f.write(C.ir.serialize())
 
+    return C
 # # ********************************** mm512.txt **********************************
 def gen_mm512():
     m, n, k = 512, 512, 512
@@ -169,11 +150,7 @@ def gen_mm512():
     s = lt.SymbolGenerator()
     C = mm(A, B)
 
-    with lt.Backend("loop_nest"):
-        lt.ui(C, "/tmp/woo.c")
-
-    with open("data/mm512.txt", "w") as f:
-        f.write(C.ir.serialize())
+    return C
 
 
 
@@ -182,32 +159,39 @@ def gen_mm512():
 def main():
     
     print(sys.argv)
-    if len(sys.argv) != 2:
-        print('Format: generator.py file')
+    if len(sys.argv) not in [2, 3]:
+        print('Format: generator.py file [tune=False]')
         return 
 
     path_to_file = sys.argv[1]
     file_name = path_to_file.split('/')[-1]
+    tune = True if len(sys.argv) == 3 else False
 
     if file_name == 'conv.txt':
-        gen_conv()
+        C = gen_conv()
     elif file_name == 'mm.txt':
-        gen_mm()
+        C = gen_mm()
     elif file_name == 'mm128.txt':
-        gen_mm128()
+        C = gen_mm128()
     elif file_name == 'mm256.txt':
-        gen_mm256()
+        C = gen_mm256()
     elif file_name == 'mm512.txt':
-        gen_mm512()
+        C = gen_mm512()
     elif file_name == 'muladd.txt':
-        gen_muladd()        
+        C = gen_muladd()        
     elif file_name == 'simple.txt':
-        gen_simple()
+        C = gen_simple()
     else:
         print('File not found :/')
 
 
-       
+    if tune:
+        with lt.Backend("loop_nest"):
+            C = lt.ui(C, "/tmp/woo.c")
+
+    with open(file_name, "w") as f:
+        f.write(C.ir.serialize())
+   
 
 if __name__ == '__main__':
     main()

@@ -5,7 +5,7 @@ from compiler_gym.util.runfiles_path import runfiles_path, site_data_path
 
 from compiler_gym.envs.compiler_env import CompilerEnv
 from compiler_gym.spaces import Commandline, CommandlineFlag
-from compiler_gym.service.proto import Space, proto_to_action_space, CommandlineSpace
+from compiler_gym.service.proto import Space, CommandlineSpace
 from compiler_gym.wrappers import CompilerEnvWrapper
 from typing import cast, List, Union, Optional
 import os
@@ -21,10 +21,6 @@ import copy
 
 
 class LoopToolCompilerEnv(CompilerEnv):
-    """
-    The below functions are copied from LlvmEnv
-    """
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
@@ -211,6 +207,43 @@ from compiler_gym.envs.llvm.datasets import (
 
 
 from compiler_gym.util.runfiles_path import site_data_path
+
+import loop_tool_service
+from loop_tool_service.service_py.datasets import loop_tool_dataset
+from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward
+
+# def register_env():
+#     register(
+#         id="loop_tool_env-v0",
+#         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
+#         kwargs={
+#             "service": paths.LOOP_TOOL_SERVICE_PY,
+#             "rewards": [
+#                 flops_loop_nest_reward.Reward(),
+#                 ],
+#             "datasets": [
+#                 loop_tool_dataset.Dataset(),
+#             ],
+#         },
+#     )
+
+def register_env():
+    register(
+        id="loop_tool_env-v0",
+        entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
+        kwargs={
+            "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
+            "rewards": [
+                flops_loop_nest_reward.Reward(),
+                # runtime_reward.Reward(),
+                ],
+            "datasets": [
+                loop_tool_dataset.Dataset(),
+            ],
+        },
+    )
+register_env()
+
 
 
 def make(id: str, **kwargs):

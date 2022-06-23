@@ -43,7 +43,7 @@ import loop_tool_service.models.qAgentsDict as q_agents
 def register_env():
     register(
         id="loop_tool-v0",
-        entry_point=loop_tool_service.LoopToolCompilerEnv,
+        entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
@@ -64,13 +64,14 @@ def main():
     bench = "benchmark://loop_tool_simple-v0/mm128"
 
     with loop_tool_service.make_env("loop_tool-v0") as env:
+        pdb.set_trace()
         agent = q_agents.QAgentLoopTree(
             env=env,
             bench=bench,
-            observation="loop_tree",
+            observation = "loop_tree",
             reward="flops_loop_nest",
             numTraining=100, 
-            numTest=4,
+            numTest=10,
             exploration=0.7, 
             learning_rate=0.8, 
             discount=0.01,

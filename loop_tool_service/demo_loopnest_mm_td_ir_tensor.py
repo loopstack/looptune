@@ -38,16 +38,16 @@ import loop_tool_service
 from service_py.datasets import loop_tool_dataset
 from service_py.rewards import runtime_reward, flops_reward
 
-import loop_tool_service.models.qAgentsDict as q_agents
+import loop_tool_service.models.qAgentsNN as q_agents
 
 def register_env():
     register(
         id="loop_tool-v0",
-        entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
+        entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv", #loop_tool_service.LoopToolCompilerEnv,
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_reward.Reward(),
+                flops_loop_nest_reward.Reward(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
@@ -55,6 +55,8 @@ def register_env():
         },
     )
 
+import gym
+import compiler_gym
 
 def main():
     # Use debug verbosity to print out extra logging information.
@@ -62,13 +64,14 @@ def main():
     register_env()
 
     bench = "benchmark://loop_tool_simple-v0/mm128"
-
-    with loop_tool_service.make_env("loop_tool-v0") as env:
-        agent = q_agents.QAgentLoopTree(
+    pdb.set_trace()
+    with compiler_gym.make("loop_tool-v0") as env:
+        breakpoint()
+        agent = q_agents.QAgentTensor(
             env=env,
             bench=bench,
-            observation = "loop_tree",
-            reward="flops",
+            observation = "ir_tensor",
+            reward="flops_loop_nest",
             numTraining=100, 
             numTest=4,
             exploration=0.7, 

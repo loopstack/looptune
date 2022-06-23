@@ -6,6 +6,10 @@ import numpy as np
 
 import loop_tool as lt
 
+class State:
+    def __init__(self, state, state_hash):
+        self.state = state
+        self.hash = state_hash
 
 class QAgentBase():
     """
@@ -23,8 +27,8 @@ class QAgentBase():
     """
     def __init__(self, 
             env, 
-            bench, 
-            observation, 
+            bench,
+            observation,
             reward, 
             numTraining=100, 
             numTest=10, 
@@ -70,17 +74,17 @@ class QAgentBase():
     ####################################
     #    Read These Functions          #
     ####################################
-    def getAvailableActions(self, state) -> list:
-        if state in self.Q_counts:
-            return list(self.Q_counts[state].keys())
+    def getAvailableActions(self, state_hash) -> list:
+        if state_hash in self.Q_counts:
+            return list(self.Q_counts[state_hash].keys())
 
         available_actions = json.loads(self.env.send_param("available_actions", ""))
         print(f"Available_actions = {available_actions}")
         available_actions = [self.env.action_space.from_string(a) for a in available_actions]
 
-        self.Q_counts[state] = {}
+        self.Q_counts[state_hash] = {}
         for a in available_actions:
-            self.Q_counts[state][a] = 0
+            self.Q_counts[state_hash][a] = 0
 
         return available_actions
         
@@ -109,18 +113,18 @@ class QAgentBase():
           no legal actions, which is the case at the terminal state, you
           should choose None as the action.
         """
-        available_actions = self.getAvailableActions(state)
+        available_actions = self.getAvailableActions(state.hash)
 
         if random.random() < exploration:
             print('Explore <<<<<<<<<<<<<<<<<<<<<')
-            chosen_action = min(self.Q_counts[state], key=self.Q_counts[state].get)
+            chosen_action = min(self.Q_counts[state.hash], key=self.Q_counts[state.hash].get)
         else:
             print('Policy <<<<<<<<<<<<<<<<<<<<<')
             chosen_action = self.getBestQAction(state)
         
         print(f"Chosen Action = {self.env.action_space.to_string(chosen_action)}\n")
 
-        self.Q_counts[state][chosen_action] += 1
+        self.Q_counts[state.hash][chosen_action] += 1
         return chosen_action
 
 
@@ -130,8 +134,8 @@ class QAgentBase():
         rewards = []
 
         self.env.reset(benchmark=self.bench) 
-        state = self.hashState(self.env.observation[self.observation])
-
+        obs = self.env.observation[self.observation]
+        state = State(obs, self.hashState(obs))
 
         for i in range(self.numTest):
             action = self.getAction(state=state, exploration=0)
@@ -142,8 +146,7 @@ class QAgentBase():
                 observation_spaces=[self.observation],
                 reward_spaces=[self.reward],
             )
-            state = self.hashState(observation[0])
-
+            state = State(observation[0], self.hashState(observation[0]))
             actions.append(action)
             rewards.append(reward[0])
 
@@ -187,7 +190,8 @@ class QAgentBase():
 
                 print('\n^^^^ New Epoch ^^^^^^\n')
                 self.env.reset(benchmark=self.bench)
-                state = self.hashState(self.env.observation[self.observation])
+                obs = self.env.observation[self.observation]
+                state = State(obs, self.hashState(obs))
 
             action = self.getAction(state=state, exploration=self.exploration)
             state_prev = state
@@ -207,7 +211,7 @@ class QAgentBase():
                 pass
             
             # available_actions = info[""]
-            state = self.hashState(observation[0])
+            state = State(observation[0], self.hashState(observation[0]))
             print(f"Reward = {rewards[0]}\n")
             # print(f"{info}\n")
 
@@ -258,16 +262,13 @@ class QAgentBase():
         print(f"====================================================================")
         self.env.send_param("print_looptree", "")
         print(f"====================================================================")
-        if state not in self.Q:
-            print('No Q table available')
-            return
         print('Action Preference:')
         for a, prob in self.getQValues(state).items():
             print(f'{self.env.action_space.to_string(a)} = {prob}')
-        
+
         print("-------------------------------------------")
-        if state in self.Q_counts:
-            for a, c in self.Q_counts[state].items():
+        if state.hash in self.Q_counts:
+            for a, c in self.Q_counts[state.hash].items():
                 print(f'{self.env.action_space.to_string(a)} = {c}')
                 
         print(f"====================================================================")

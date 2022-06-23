@@ -33,15 +33,20 @@ from compiler_gym.service.proto import (
     CommandlineSpace,
     StringSpace,
     DoubleSequenceSpace,
+    Int64SequenceSpace,
     DoubleBox,
     DoubleTensor,
-    FloatRange
+    FloatRange,
+    BooleanTensor,
+    BooleanBox,
+    BooleanRange,
 )
 from compiler_gym.service.runtime import create_and_run_compiler_gym_service
 
 import utils
 import signal
 import sys
+import numpy as np
 
 import loop_tool as lt
 
@@ -157,9 +162,35 @@ class LoopToolCompilationSession(CompilationSession):
             ),
         ),        
         ObservationSpace(
-            name="ir_networkx",
+            name="ir_tree_networkx",
             space=Space(
                 byte_sequence=ByteSequenceSpace(length_range=Int64Range(min=0)),
+            ),
+        ),
+        ObservationSpace(
+            name="ir_graph_networkx",
+            space=Space(
+                byte_sequence=ByteSequenceSpace(length_range=Int64Range(min=0)),
+            ),
+        ),        
+        # ObservationSpace(
+        #     name="ir_tensor",
+        #     space=Space(
+        #         int64_sequence=Int64SequenceSpace(length_range=Int64Range(min=0))
+        #     ),
+        # ),
+        ObservationSpace( # Note: Be CAREFUL with dimensions, they need to be exactly the same like in perf.py
+            name="ir_tensor",
+            space=Space(
+                boolean_box=BooleanBox(
+                    low = BooleanTensor(shape = [1, 400], value=[0] * 10 * 40),
+                    high = BooleanTensor(shape = [1, 400], value=[1] * 10 * 40),
+                )
+            ),
+            deterministic=False,
+            platform_dependent=True,
+            default_observation=Event(
+                boolean_tensor=BooleanTensor(shape = [1, 400], value=[0] * 10 * 40),
             ),
         ),
     ]
@@ -213,17 +244,25 @@ class LoopToolCompilationSession(CompilationSession):
 
 
     def apply_action(self, action: Event) -> Tuple[bool, Optional[ActionSpace], bool]:
-        num_choices = len(self.action_spaces[0].space.named_discrete.name)
+        new_action_space = False
+        end_of_session = False
+        action_had_effect = False
 
+        num_choices = len(self.action_spaces[0].space.named_discrete.name)
         choice_index = action.int64_value
         if choice_index < 0 or choice_index >= num_choices:
             raise ValueError("Out-of-range")
 
         # Compile benchmark with given optimization
         action = self._action_space.space.named_discrete.name[choice_index]
+        if action not in self.env.get_available_actions():
+            return (end_of_session, new_action_space, not action_had_effect)
+
         logging.info(
             f"Applying action {choice_index}, equivalent command-line arguments: '{action}'"
         )
+        print(f'Action = {action}')
+        print(self.env.agent)
 
         action_had_effect = self.env.apply_action(action=action, save_state=self.save_state)          
 
@@ -241,8 +280,6 @@ class LoopToolCompilationSession(CompilationSession):
         #         ),
         #     ),
         # )
-        new_action_space = False
-        end_of_session = False
         return (end_of_session, new_action_space, not action_had_effect)
 
 
@@ -264,9 +301,15 @@ class LoopToolCompilationSession(CompilationSession):
         elif observation_space.name == "ir":
             observation = self.env.get_ir()
             return observation
-        elif observation_space.name == "ir_networkx":
-            observation = self.env.get_ir_networkx() 
+        elif observation_space.name == "ir_tree_networkx":
+            observation = self.env.get_ir_tree_networkx() 
             return observation
+        elif observation_space.name == "ir_graph_networkx":
+            observation = self.env.get_ir_graph_networkx() 
+            return observation
+        elif observation_space.name == "ir_tensor":
+            observation = self.env.get_ir_tensor() 
+            return observation           
         elif observation_space.name == "loop_tree":
             observation = self.env.get_loop_tree()    
             return observation

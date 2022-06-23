@@ -6,4 +6,4 @@ pandas>=1.1.5
 submitit>=1.2.0
 torch>=1.6.0
 typer[all]>=0.3.2
-#compiler_gym==0.2.3.
+#compiler_gym==0.2.4.

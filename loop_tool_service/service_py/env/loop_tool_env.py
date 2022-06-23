@@ -11,6 +11,10 @@ import ast
 
 from compiler_gym.service.proto import (
     Event,
+    BooleanTensor,
+    BooleanRange,
+    BooleanBox,
+    Int64Tensor,
     DoubleTensor,
     DoubleRange,
     DoubleBox,
@@ -90,9 +94,26 @@ class Environment:
     def get_ir(self) -> Event:
         return Event(string_value=self.agent.lt.ir.serialize())
 
-    def get_ir_networkx(self) -> Event:
-        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot_simple()))
+    def get_ir_tree_networkx(self) -> Event:
+        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot_tree()))
         return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
+
+    def get_ir_graph_networkx(self) -> Event:
+        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot_graph()))
+        return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
+
+
+
+    def get_ir_sequence(self) -> Event:
+        feature_tensor = ast.literal_eval(self.agent.dot_tensor())
+        feature_tensor.extend([0] * (100 - len(feature_tensor)))
+        return Event(int64_tensor=Int64Tensor(shape=[1, len(feature_tensor)], value=feature_tensor))
+    
+    def get_ir_tensor(self) -> Event:
+        feature_tensor = ast.literal_eval(self.agent.dot_tensor())
+        feature_tensor.extend([0]*(400 - len(feature_tensor)))
+        tensor = BooleanTensor(shape = [ 1, 400], value=feature_tensor)
+        return Event(boolean_tensor=tensor)
 
     def get_loop_tree(self) -> Event:
         return Event(string_value=self.agent.dump())
@@ -101,13 +122,15 @@ class Environment:
     # Auxilary functions
     ##############################################################
     def ir_to_networkx(self, dot_str):
-
         pg = pydot.graph_from_dot_data(str(dot_str))
         gg = nx.nx_pydot.from_pydot(pg[0])
-        
-        for nid in gg.nodes:
-            gg.nodes[nid]["feature"] = self.extract_features(gg.nodes[nid]["label"])
-    
+
+
+        for nid in list(gg.nodes):
+            if nid[0] in ['L', 'D']:
+                gg.nodes[nid]["feature_vector"] = self.extract_features(gg.nodes[nid]["feature_dict"])
+            else:
+                gg.remove_node(nid)
         return gg
 
     def extract_features(self, label, max_feature_size = 50):

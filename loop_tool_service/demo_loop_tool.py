@@ -52,7 +52,7 @@ from service_py.rewards import runtime_reward, flops_reward
 def register_env():
     register(
         id="loop_tool-v0",
-        entry_point=loop_tool_service.LoopToolCompilerEnv,
+        entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [

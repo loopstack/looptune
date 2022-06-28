@@ -1,7 +1,7 @@
 from compiler_gym.spaces import Reward
 import pdb
 
-class Reward(Reward):
+class RewardScalar(Reward):
     """An example reward that uses changes in the "flops" observation value
     to compute incremental reward.
     """
@@ -20,15 +20,16 @@ class Reward(Reward):
     def reset(self, benchmark: str, observation_view):
         # print("Reward flops_loop_nest: reset")
         del benchmark  # unused
-        self.prev_flops = observation_view["flops_loop_nest"]
+        self.prev_flops = observation_view["flops_loop_nest"] / 1e9
 
     def update(self, action, observations, observation_view):
         # print("Reward flops_loop_nest: update")
         del action
         del observation_view
-        new_flops = observations[0]
-        reward = float(new_flops - self.prev_flops) / self.prev_flops
+        new_flops = observations[0] / 1e9
+        reward = float(new_flops - self.prev_flops)
         self.prev_flops = new_flops
+        print(f'Reward = {reward}')
         return reward
 
 
@@ -58,8 +59,8 @@ class RewardTensor(Reward):
         del action
         del observation_view
         
-        new_flops = observations[0]
-        reward = float(new_flops - self.prev_flops) / self.prev_flops
+        new_flops = observations[0] / 1e9
+        reward = float(new_flops - self.prev_flops)
         self.prev_flops = new_flops        
         return reward
 

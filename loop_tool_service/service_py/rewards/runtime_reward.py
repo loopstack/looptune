@@ -1,7 +1,7 @@
 from compiler_gym.spaces import Reward
 
 
-class Reward(Reward):
+class RewardScalar(Reward):
     """An example reward that uses changes in the "runtime" observation value
     to compute incremental reward.
     """
@@ -26,8 +26,8 @@ class Reward(Reward):
         # print("Reward Runtime: update")
         del action
         del observation_view
-        new_runtime = observations[0]
-        reward = float(self.prev_runtime - new_runtime) / self.prev_runtime
+        new_runtime = observations[0] / 1e9
+        reward = float(self.prev_runtime - new_runtime)
         self.prev_runtime = new_runtime
         return reward
 
@@ -58,8 +58,8 @@ class RewardTensor(Reward):
         del action
         del observation_view
         
-        new_runtime = observations[0]
-        reward = float(self.prev_runtime - new_runtime) / self.prev_runtime
+        new_runtime = observations[0] / 1e9
+        reward = float(self.prev_runtime - new_runtime)
         self.prev_runtime = new_runtime        
         return reward
 

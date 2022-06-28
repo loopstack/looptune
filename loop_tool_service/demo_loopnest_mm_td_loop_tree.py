@@ -13,7 +13,6 @@ import logging
 from pathlib import Path
 from typing import Iterable
 import pdb
-from loop_tool_service.service_py.rewards import flops_loop_nest_reward
 # import gym
 import numpy as np
 import pickle
@@ -33,10 +32,8 @@ from compiler_gym.service.connection import ServiceError
 
 
 import loop_tool_service
-
-
-from service_py.datasets import loop_tool_dataset
-from service_py.rewards import runtime_reward, flops_reward
+from loop_tool_service.service_py.datasets import loop_tool_dataset
+from loop_tool_service.service_py.rewards import flops_loop_nest_reward
 
 import loop_tool_service.models.qAgentsDict as q_agents
 
@@ -47,7 +44,7 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.Reward(),
+                flops_loop_nest_reward.RewardScalar(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),

@@ -47,7 +47,7 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.Reward(),
+                flops_loop_nest_reward.RewardScalar(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
@@ -63,7 +63,7 @@ def main():
     init_logging(level=logging.CRITICAL)
     register_env()
 
-    bench = "benchmark://loop_tool_simple-v0/mm128"
+    bench = "benchmark://loop_tool_simple-v0/simple"
     pdb.set_trace()
     with compiler_gym.make("loop_tool-v0") as env:
         breakpoint()
@@ -74,9 +74,9 @@ def main():
             reward="flops_loop_nest",
             numTraining=100, 
             numTest=4,
-            exploration=0.7, 
+            exploration=0.2, 
             learning_rate=0.8, 
-            discount=0.01,
+            discount=0.05,
         )
         agent.train()
         agent.test()

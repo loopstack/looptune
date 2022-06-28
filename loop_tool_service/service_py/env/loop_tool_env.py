@@ -15,6 +15,7 @@ from compiler_gym.service.proto import (
     BooleanRange,
     BooleanBox,
     Int64Tensor,
+    FloatTensor,
     DoubleTensor,
     DoubleRange,
     DoubleBox,
@@ -75,6 +76,8 @@ class Environment:
         else:
             self.action_had_effect = False
 
+        if save_state == False:
+            self.agent = lt.LoopTreeAgent(agent_copy)
         return self.action_had_effect
 
     ##############################################################
@@ -90,6 +93,11 @@ class Environment:
     def get_flops_loop_nest(self) -> Event:
         with lt.Backend("loop_nest"):
             return Event(float_value=self.agent.eval("FLOPS"))
+            
+    def get_flops_loop_nest_tensor(self) -> Event:
+        with lt.Backend("loop_nest"):
+            tensor = DoubleTensor(shape = [1], value=[self.agent.eval("FLOPS")])
+        return Event(double_tensor=tensor)
 
     def get_ir(self) -> Event:
         return Event(string_value=self.agent.lt.ir.serialize())
@@ -103,13 +111,12 @@ class Environment:
         return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
 
 
-
-    def get_ir_sequence(self) -> Event:
-        feature_tensor = ast.literal_eval(self.agent.dot_tensor())
-        feature_tensor.extend([0] * (100 - len(feature_tensor)))
-        return Event(int64_tensor=Int64Tensor(shape=[1, len(feature_tensor)], value=feature_tensor))
-    
     def get_ir_tensor(self) -> Event:
+        feature_tensor = ast.literal_eval(self.agent.dot_tensor())
+        feature_tensor.extend([0] * (60 - len(feature_tensor)))
+        return Event(float_tensor=FloatTensor(shape=[1, len(feature_tensor)], value=feature_tensor))
+    
+    def get_ir_tensor_bool(self) -> Event:
         feature_tensor = ast.literal_eval(self.agent.dot_tensor())
         feature_tensor.extend([0]*(400 - len(feature_tensor)))
         tensor = BooleanTensor(shape = [ 1, 400], value=feature_tensor)

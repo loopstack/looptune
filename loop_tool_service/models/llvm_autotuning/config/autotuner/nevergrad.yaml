@@ -1,0 +1,7 @@
+---
+algorithm: nevergrad
+optimization_target: flops_loop_nest
+search_time_seconds: 10
+algorithm_config:
+    episode_length: 6
+    optimizer: DiscreteLenglerOnePlusOne

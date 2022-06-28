@@ -219,7 +219,7 @@ from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_r
 #         kwargs={
 #             "service": paths.LOOP_TOOL_SERVICE_PY,
 #             "rewards": [
-#                 flops_loop_nest_reward.Reward(),
+#                 flops_loop_nest_reward.RewardTensor(),
 #                 ],
 #             "datasets": [
 #                 loop_tool_dataset.Dataset(),
@@ -231,11 +231,12 @@ def register_env():
     register(
         id="loop_tool_env-v0",
         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
+        # entry_point=LoopToolCompilerEnv,
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.Reward(),
-                # runtime_reward.Reward(),
+                flops_loop_nest_reward.RewardTensor(),
+                # runtime_reward.RewardScalar(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),

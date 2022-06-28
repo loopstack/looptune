@@ -47,7 +47,7 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.Reward(),
+                flops_loop_nest_reward.RewardTensor(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
@@ -68,7 +68,7 @@ def main():
             env=env,
             bench=bench,
             observation = "ir_graph_networkx",
-            reward="flops_loop_nest",
+            reward="flops_loop_nest_tensor",
             numTraining=100, 
             numTest=4,
             exploration=0.7, 

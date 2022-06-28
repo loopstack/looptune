@@ -56,9 +56,9 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                runtime_reward.Reward(),
-                flops_reward.Reward(),
-                # flops_loop_nest_reward.Reward(),
+                runtime_reward.RewardScalar(),
+                flops_reward.RewardScalar(),
+                # flops_loop_nest_reward.RewardScalar(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),

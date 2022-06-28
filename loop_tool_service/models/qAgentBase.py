@@ -140,7 +140,7 @@ class QAgentBase():
         for i in range(self.numTest):
             action = self.getAction(state=state, exploration=0)
             self.print_state(state)
-
+            breakpoint()
             observation, reward, done, info = self.env.step(
                 action=action,
                 observation_spaces=[self.observation],
@@ -194,6 +194,7 @@ class QAgentBase():
                 state = State(obs, self.hashState(obs))
 
             action = self.getAction(state=state, exploration=self.exploration)
+            breakpoint()
             state_prev = state
             self.print_state(state)
 

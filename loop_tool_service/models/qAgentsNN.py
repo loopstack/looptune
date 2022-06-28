@@ -17,6 +17,8 @@ import json
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 
 class Q_net(nn.Module):
     def __init__(self, in_size, out_size, hidden_size, dropout):
@@ -53,12 +55,12 @@ class QAgentTensor(QAgentBase):
         QAgentBase.__init__(self, **args)
         self.criterion = nn.SmoothL1Loss()
 
-        self.policy_net = Q_net(in_size=100, 
+        self.policy_net = Q_net(in_size=60, 
                                 out_size=4, 
                                 hidden_size=512, 
                                 dropout=0.5).to(device)
 
-        self.target_net = Q_net(in_size=100, 
+        self.target_net = Q_net(in_size=60, 
                                 out_size=4, 
                                 hidden_size=512, 
                                 dropout=0.5).to(device)
@@ -73,20 +75,22 @@ class QAgentTensor(QAgentBase):
         return state.tostring()
 
 
-    def getQValues(self, state) -> dict:
-        q_dict = {k: 0 for k in self.getAvailableActions(state.hash)}
-        
-        q_values = self.q_net.forward(state.fromstring())
-
+    def getQValues(self, state) -> dict:        
+        # breakpoint()
+        tensor_in = torch.from_numpy(state.state).float()
+        tensor_out = self.policy_net.forward(tensor_in)[0]
+        q_dict = { x:tensor_out[x] for x in self.getAvailableActions(state.hash)} 
         return q_dict
         
 
     def update(self, state, action, nextState, reward):
-        
-        r = torch.sum(torch.mul(self.policy_net(state), action), 1)
-        r_hat = 1 + torch.max(self.target_net(nextState),1).values * self.discount
+        state_tensor = torch.from_numpy(state.state).float()
+        nextState_tensor = torch.from_numpy(nextState.state).float()
 
-        loss = criterion(r,r_hat)
+        r = torch.sum(torch.mul(self.policy_net(state_tensor), action), 1)
+        r_hat = reward + torch.max(self.target_net(nextState_tensor),1).values * self.discount
+
+        loss = self.criterion(r,r_hat)
         
         self.optimizer.zero_grad()
         loss.backward()

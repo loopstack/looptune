@@ -23,7 +23,7 @@ import pdb
 #         kwargs={
 #             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
 #             "rewards": [
-#                 # flops_loop_nest_reward.Reward(),
+#                 # flops_loop_nest_reward.RewardTensor(),
 #                 runtime_reward.RewardTensor(),
 #                 ],
 #             "datasets": [

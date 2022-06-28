@@ -12,6 +12,8 @@ import pdb
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from pkg_resources import working_set
+
 from env import loop_tool_env
 import json
 
@@ -36,6 +38,8 @@ from compiler_gym.service.proto import (
     Int64SequenceSpace,
     DoubleBox,
     DoubleTensor,
+    FloatTensor,
+    FloatBox,
     FloatRange,
     BooleanTensor,
     BooleanBox,
@@ -140,6 +144,20 @@ class LoopToolCompilationSession(CompilationSession):
             ),
         ),
         ObservationSpace(
+            name="flops_loop_nest_tensor",
+            space=Space(
+                double_box=DoubleBox(
+                    low = DoubleTensor(shape = [1], value=[0]),
+                    high = DoubleTensor(shape = [1], value=[float("inf")]),
+                )
+            ),
+            deterministic=False,
+            platform_dependent=True,
+            default_observation=Event(
+                double_value=0,
+            ),
+        ),
+        ObservationSpace(
             name="ir",
             space=Space(
                 string_value=StringSpace(length_range=Int64Range(min=0)),
@@ -182,28 +200,48 @@ class LoopToolCompilationSession(CompilationSession):
         ObservationSpace( # Note: Be CAREFUL with dimensions, they need to be exactly the same like in perf.py
             name="ir_tensor",
             space=Space(
-                boolean_box=BooleanBox(
-                    low = BooleanTensor(shape = [1, 400], value=[0] * 10 * 40),
-                    high = BooleanTensor(shape = [1, 400], value=[1] * 10 * 40),
+                float_box=FloatBox(
+                    low = FloatTensor(shape = [1, 60], value=[0] * 10 * 6),
+                    high = FloatTensor(shape = [1, 60], value=[256] * 10 * 6),
                 )
             ),
             deterministic=False,
             platform_dependent=True,
             default_observation=Event(
-                boolean_tensor=BooleanTensor(shape = [1, 400], value=[0] * 10 * 40),
+                float_tensor=FloatTensor(shape = [1, 60], value=[0] * 10 * 6),
             ),
         ),
+        #         
+        # ObservationSpace( # Note: Be CAREFUL with dimensions, they need to be exactly the same like in perf.py
+        #     name="ir_tensor",
+        #     space=Space(
+        #         boolean_box=BooleanBox(
+        #             low = BooleanTensor(shape = [1, 400], value=[0] * 10 * 40),
+        #             high = BooleanTensor(shape = [1, 400], value=[1] * 10 * 40),
+        #         )
+        #     ),
+        #     deterministic=False,
+        #     platform_dependent=True,
+        #     default_observation=Event(
+        #         boolean_tensor=BooleanTensor(shape = [1, 400], value=[0] * 10 * 40),
+        #     ),
+        # ),
     ]
     
-
-
 
     def __init__(
         self,
         working_directory: Path,
         action_space: ActionSpace,
         benchmark: Benchmark,
+        save_state: bool = True,
+        env: loop_tool_env.Environment = None
     ):
+        self.working_dir = working_directory
+        self.action_space = action_space
+        self.benchmark = benchmark
+        self.timeout_sec = 3000
+
         super().__init__(working_directory, action_space, benchmark)
         logging.info(f"Started a compilation session for {benchmark.uri}")
         self._action_space = action_space
@@ -212,15 +250,19 @@ class LoopToolCompilationSession(CompilationSession):
         logging.critical(f"\n\nWorking_dir = {str(working_directory)}\n")
         # pdb.set_trace()
 
-        self.save_state = False
+        self.save_state = save_state if save_state != None else True
         
-        self.env = loop_tool_env.Environment(
-                            working_directory=working_directory,
-                            action_space=action_space,
-                            benchmark=benchmark,
-                            timeout_sec=3000
-        )
+        if env == None:
+            self.env = loop_tool_env.Environment(
+                                working_directory=working_directory,
+                                action_space=action_space,
+                                benchmark=benchmark,
+                                timeout_sec=self.timeout_sec,
+            )
+        else:
+            self.env = env
 
+        self.cur_iter = 0
         self.prev_observation = {}
 
 
@@ -280,6 +322,9 @@ class LoopToolCompilationSession(CompilationSession):
         #         ),
         #     ),
         # )
+
+        self.cur_iter += 1
+        print(">>> AGENT ITERATION = ", self.cur_iter)
         return (end_of_session, new_action_space, not action_had_effect)
 
 
@@ -298,6 +343,8 @@ class LoopToolCompilationSession(CompilationSession):
             observation = self.env.get_flops()
         elif observation_space.name == "flops_loop_nest":
             observation = self.env.get_flops_loop_nest()
+        elif observation_space.name == "flops_loop_nest_tensor":
+            return self.env.get_flops_loop_nest_tensor()
         elif observation_space.name == "ir":
             observation = self.env.get_ir()
             return observation
@@ -323,12 +370,19 @@ class LoopToolCompilationSession(CompilationSession):
         return self.prev_observation[observation_space.name]
 
 
-    def fork(self):
+    def fork(self) -> CompilationSession:
         # There is a problem with forking.
-        from copy import deepcopy
-        # FIXME vi3: I don't know what is the proper way to fork a session.
-        new_fork = deepcopy(self)
-        return new_fork
+        # from copy import deepcopy
+        # new_fork = deepcopy(self)
+        # new_fork = super().fork()
+        # print(new_fork)
+        return LoopToolCompilationSession(
+            working_directory=self.working_dir,
+            action_space=self.action_space,
+            benchmark=self.benchmark,
+            save_state=self.save_state,
+            env=self.env,
+        )
 
 
 if __name__ == "__main__":

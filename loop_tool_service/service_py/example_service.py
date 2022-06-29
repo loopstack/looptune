@@ -192,13 +192,13 @@ class LoopToolCompilationSession(CompilationSession):
             ),
         ),        
         # ObservationSpace(
-        #     name="ir_tensor",
+        #     name="loops_tensor",
         #     space=Space(
         #         int64_sequence=Int64SequenceSpace(length_range=Int64Range(min=0))
         #     ),
         # ),
         ObservationSpace( # Note: Be CAREFUL with dimensions, they need to be exactly the same like in perf.py
-            name="ir_tensor",
+            name="loops_tensor",
             space=Space(
                 float_box=FloatBox(
                     low = FloatTensor(shape = [1, 60], value=[0] * 10 * 6),
@@ -211,21 +211,20 @@ class LoopToolCompilationSession(CompilationSession):
                 float_tensor=FloatTensor(shape = [1, 60], value=[0] * 10 * 6),
             ),
         ),
-        #         
-        # ObservationSpace( # Note: Be CAREFUL with dimensions, they need to be exactly the same like in perf.py
-        #     name="ir_tensor",
-        #     space=Space(
-        #         boolean_box=BooleanBox(
-        #             low = BooleanTensor(shape = [1, 400], value=[0] * 10 * 40),
-        #             high = BooleanTensor(shape = [1, 400], value=[1] * 10 * 40),
-        #         )
-        #     ),
-        #     deterministic=False,
-        #     platform_dependent=True,
-        #     default_observation=Event(
-        #         boolean_tensor=BooleanTensor(shape = [1, 400], value=[0] * 10 * 40),
-        #     ),
-        # ),
+        ObservationSpace( # Note: Be CAREFUL with dimensions, they need to be exactly the same like in perf.py
+            name="stride_tensor",
+            space=Space(
+                float_box=FloatBox(
+                    low = FloatTensor(shape = [1, 32], value=[0] * 32),
+                    high = FloatTensor(shape = [1, 32], value=[float("inf")] * 32),
+                )
+            ),
+            deterministic=False,
+            platform_dependent=True,
+            default_observation=Event(
+                float_tensor=FloatTensor(shape = [1, 32], value=[0] * 32),
+            ),
+        ),
     ]
     
 
@@ -256,6 +255,7 @@ class LoopToolCompilationSession(CompilationSession):
             self.env = loop_tool_env.Environment(
                                 working_directory=working_directory,
                                 action_space=action_space,
+                                observation_spaces=self.observation_spaces,
                                 benchmark=benchmark,
                                 timeout_sec=self.timeout_sec,
             )
@@ -354,8 +354,11 @@ class LoopToolCompilationSession(CompilationSession):
         elif observation_space.name == "ir_graph_networkx":
             observation = self.env.get_ir_graph_networkx() 
             return observation
-        elif observation_space.name == "ir_tensor":
-            observation = self.env.get_ir_tensor() 
+        elif observation_space.name == "loops_tensor":
+            observation = self.env.get_loops_tensor() 
+            return observation
+        elif observation_space.name == "stride_tensor":
+            observation = self.env.get_stride_tensor() 
             return observation           
         elif observation_space.name == "loop_tree":
             observation = self.env.get_loop_tree()    

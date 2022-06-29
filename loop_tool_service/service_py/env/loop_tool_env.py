@@ -1,3 +1,4 @@
+from lib2to3.refactor import get_all_fix_names
 from statistics import mean
 from tokenize import Double
 import numpy as np
@@ -50,9 +51,16 @@ from loop_tool_service.service_py.utils import run_command, proto_buff_container
 
 
 class Environment:
-    def __init__(self, working_directory: Path, action_space, benchmark: Benchmark, timeout_sec: float):
+    def __init__(self, 
+        working_directory: Path, 
+        action_space, 
+        observation_spaces,
+        benchmark: Benchmark, 
+        timeout_sec: float):
+
         self.name = "loop_tool_env"
         self.action_space = action_space
+        self.observation_spaces = { v.name: v.space for v in observation_spaces }
         self.timeout_sec = timeout_sec        
 
         ir = lt.deserialize(benchmark.program.contents)
@@ -110,18 +118,25 @@ class Environment:
         pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot_graph()))
         return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
 
+    def get_stride_tensor(self) -> Event:
+        dim0, bucket_num = self.observation_spaces['stride_tensor'].float_box.high.shape
+        assert(dim0 == 1)
+        stride_freq_vector = [0] * bucket_num
+        stride_freq_pairs = self.agent.get_stride_frequency()
 
-    def get_ir_tensor(self) -> Event:
-        feature_tensor = ast.literal_eval(self.agent.dot_tensor())
-        feature_tensor.extend([0] * (60 - len(feature_tensor)))
-        return Event(float_tensor=FloatTensor(shape=[1, len(feature_tensor)], value=feature_tensor))
+        for stride, freq in stride_freq_pairs:
+            bucket_id = int(np.log2(stride))
+            stride_freq_vector[bucket_id] += freq
+
+        return Event(float_tensor=FloatTensor(shape=[dim0, bucket_num], value=stride_freq_vector))
     
-    def get_ir_tensor_bool(self) -> Event:
-        feature_tensor = ast.literal_eval(self.agent.dot_tensor())
-        feature_tensor.extend([0]*(400 - len(feature_tensor)))
-        tensor = BooleanTensor(shape = [ 1, 400], value=feature_tensor)
-        return Event(boolean_tensor=tensor)
-
+    def get_loops_tensor(self) -> Event:
+        feature_vector = [x for loop_vector in self.agent.get_loops_tensor() for x in loop_vector]
+        dim0, dim1 = self.observation_spaces['loops_tensor'].float_box.high.shape
+        assert(len(feature_vector) < dim1)
+        feature_vector.extend([0] * (dim1 - len(feature_vector)))
+        return Event(float_tensor=FloatTensor(shape=[dim0, dim1], value=feature_vector))
+    
     def get_loop_tree(self) -> Event:
         return Event(string_value=self.agent.dump())
 

@@ -1,0 +1,3999 @@
+Action space: NamedDiscrete([up, down, swap_up, swap_down])
+Observation space: Box([[0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+  0. 0. 0. 0. 0. 0. 0. 0.]], [[inf inf inf inf inf inf inf inf inf inf inf inf inf inf inf inf inf inf
+  inf inf inf inf inf inf inf inf inf inf inf inf inf inf]], (1, 32), float32)
+Reward space: flops_loop_nest_tensor
+Number of benchmarks for training: 1
+Number of benchmarks for testing: 1
+E0629 14:54:21.600706 139853277578816 example_service.py:249] CRITICAL -
+Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145420-561928-1422
+E0629 14:54:21.708813 139853277578816 example_service.py:249] CRITICAL -
+Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145420-561928-1422
+for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+ for n_5625 in 128 : L1
+  for k_5587 in 128 : L2
+   %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+   %3[m_5586, n_5625] <- add(%2)
+  %4[m_5586, n_5625] <- write(%3)
+benchmark://loop_tool_simple-v0/simple
+for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+ for n_5625 in 128 : L1
+  for k_5587 in 128 : L2
+   %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+   %3[m_5586, n_5625] <- add(%2)
+  %4[m_5586, n_5625] <- write(%3)
+benchmark://loop_tool_simple-v0/simple
+for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+ for n_5625 in 128 : L1
+  for k_5587 in 128 : L2
+   %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+   %3[m_5586, n_5625] <- add(%2)
+  %4[m_5586, n_5625] <- write(%3)
+E0629 14:54:23.185833 140463474468416 example_service.py:249] CRITICAL -
+Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145422-151049-0111
+[34m[1mwandb[39m[22m: [33mWARNING[39m Found log directory outside of given root_logdir, dropping given root_logdir for event file in /home/dejang/ray_results/PPOTrainer_2022-06-29_14-54-26/PPOTrainer_compiler_gym_e618f_00000_0_0=20,1=20_2022-06-29_14-54-26
+[36m(PPOTrainer pid=2747313)[39m 2022-06-29 14:54:30,987	INFO trainer.py:2332 -- Your framework setting is 'tf', meaning you are using static-graph mode. Set framework='tf2' to enable eager execution with tf2.x. You may also then want to set eager_tracing=True in order to reach similar execution speed as with static-graph mode.
+[36m(PPOTrainer pid=2747313)[39m 2022-06-29 14:54:31,194	INFO ppo.py:414 -- In multi-agent mode, policies will be optimized sequentially by the multi-GPU optimizer. Consider setting simple_optimizer=True if this doesn't work for you.
+[36m(PPOTrainer pid=2747313)[39m 2022-06-29 14:54:31,194	INFO trainer.py:903 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags.
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m E0629 14:54:36.581149 139877103203904 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145435-554058-6f35
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(PPOTrainer pid=2747313)[39m 2022-06-29 14:54:39,220	WARNING util.py:65 -- Install gputil for GPU system monitoring.
+[34m[1mwandb[39m[22m: [33mWARNING[39m When using several event log directories, please call `wandb.tensorboard.patch(root_logdir="...")` before `wandb.init`
+[34m[1mwandb[39m[22m: [33mWARNING[39m Found log directory outside of given root_logdir, dropping given root_logdir for event file in /home/dejang/ray_results/PPOTrainer_2022-06-29_14-54-26/PPOTrainer_compiler_gym_e618f_00001_1_0=40,1=20_2022-06-29_14-54-39
+[36m(RolloutWorker pid=2747365)[39m E0629 14:54:39.249601 139877103203904 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145435-554058-6f35
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747365)[39m Action = up
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  3
+[36m(PPOTrainer pid=2747508)[39m 2022-06-29 14:54:43,941	INFO trainer.py:2332 -- Your framework setting is 'tf', meaning you are using static-graph mode. Set framework='tf2' to enable eager execution with tf2.x. You may also then want to set eager_tracing=True in order to reach similar execution speed as with static-graph mode.
+[36m(PPOTrainer pid=2747508)[39m 2022-06-29 14:54:44,156	INFO ppo.py:414 -- In multi-agent mode, policies will be optimized sequentially by the multi-GPU optimizer. Consider setting simple_optimizer=True if this doesn't work for you.
+[36m(PPOTrainer pid=2747508)[39m 2022-06-29 14:54:44,156	INFO trainer.py:903 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags.
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m E0629 14:54:49.557003 140131922155072 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145448-530599-6f35
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[34m[1mwandb[39m[22m: [33mWARNING[39m When using several event log directories, please call `wandb.tensorboard.patch(root_logdir="...")` before `wandb.init`
+[34m[1mwandb[39m[22m: [33mWARNING[39m Found log directory outside of given root_logdir, dropping given root_logdir for event file in /home/dejang/ray_results/PPOTrainer_2022-06-29_14-54-26/PPOTrainer_compiler_gym_e618f_00002_2_0=20,1=40_2022-06-29_14-54-52
+[36m(PPOTrainer pid=2747508)[39m 2022-06-29 14:54:52,206	WARNING util.py:65 -- Install gputil for GPU system monitoring.
+[36m(RolloutWorker pid=2747668)[39m E0629 14:54:52.235604 140131922155072 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145448-530599-6f35
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747668)[39m Action = up
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  2
+[36m(PPOTrainer pid=2747808)[39m 2022-06-29 14:54:56,714	INFO trainer.py:2332 -- Your framework setting is 'tf', meaning you are using static-graph mode. Set framework='tf2' to enable eager execution with tf2.x. You may also then want to set eager_tracing=True in order to reach similar execution speed as with static-graph mode.
+[36m(PPOTrainer pid=2747808)[39m 2022-06-29 14:54:56,918	INFO ppo.py:414 -- In multi-agent mode, policies will be optimized sequentially by the multi-GPU optimizer. Consider setting simple_optimizer=True if this doesn't work for you.
+[36m(PPOTrainer pid=2747808)[39m 2022-06-29 14:54:56,918	INFO trainer.py:903 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags.
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m E0629 14:55:02.382861 139931601782336 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145501-347265-6f35
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(PPOTrainer pid=2747808)[39m 2022-06-29 14:55:05,075	WARNING util.py:65 -- Install gputil for GPU system monitoring.
+[34m[1mwandb[39m[22m: [33mWARNING[39m When using several event log directories, please call `wandb.tensorboard.patch(root_logdir="...")` before `wandb.init`
+[34m[1mwandb[39m[22m: [33mWARNING[39m Found log directory outside of given root_logdir, dropping given root_logdir for event file in /home/dejang/ray_results/PPOTrainer_2022-06-29_14-54-26/PPOTrainer_compiler_gym_e618f_00003_3_0=40,1=40_2022-06-29_14-55-05
+[36m(RolloutWorker pid=2747966)[39m E0629 14:55:05.103601 139931601782336 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145501-347265-6f35
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747966)[39m Action = up
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  2
+[36m(PPOTrainer pid=2748095)[39m 2022-06-29 14:55:09,614	INFO trainer.py:2332 -- Your framework setting is 'tf', meaning you are using static-graph mode. Set framework='tf2' to enable eager execution with tf2.x. You may also then want to set eager_tracing=True in order to reach similar execution speed as with static-graph mode.
+[36m(PPOTrainer pid=2748095)[39m 2022-06-29 14:55:09,829	INFO ppo.py:414 -- In multi-agent mode, policies will be optimized sequentially by the multi-GPU optimizer. Consider setting simple_optimizer=True if this doesn't work for you.
+[36m(PPOTrainer pid=2748095)[39m 2022-06-29 14:55:09,829	INFO trainer.py:903 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags.
+[36m(RolloutWorker pid=2748252)[39m E0629 14:55:15.230710 139696420152896 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145514-204240-6f35
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m Action = swap_down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  1
+[36m(PPOTrainer pid=2748095)[39m 2022-06-29 14:55:17,905	WARNING util.py:65 -- Install gputil for GPU system monitoring.
+Result for PPOTrainer_compiler_gym_e618f_00002:
+  agent_timesteps_total: 5
+  counters:
+    num_agent_steps_sampled: 5
+    num_agent_steps_trained: 5
+    num_env_steps_sampled: 5
+    num_env_steps_trained: 5
+  custom_metrics: {}
+  date: 2022-06-29_14-55-08
+  done: false
+  episode_len_mean: .nan
+  episode_media: {}
+  episode_reward_max: .nan
+  episode_reward_mean: .nan
+  episode_reward_min: .nan
+  episodes_this_iter: 0
+  episodes_total: 0
+  experiment_id: 209062bd7460491db9c3ab2ea497b237
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.20000000298023224
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3860167264938354
+          entropy_coeff: 0.0
+          kl: 0.00022437745064962655
+          model: {}
+          policy_loss: -0.014704064466059208
+          total_loss: 1.9868420362472534
+          vf_explained_var: 0.0
+          vf_loss: 2.0015010833740234
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 5
+    num_agent_steps_trained: 5
+    num_env_steps_sampled: 5
+    num_env_steps_trained: 5
+  iterations_since_restore: 1
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 5
+  num_agent_steps_trained: 5
+  num_env_steps_sampled: 5
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 5
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 38.71666666666667
+    ram_util_percent: 58.333333333333336
+  pid: 2747808
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf: {}
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: .nan
+    episode_media: {}
+    episode_reward_max: .nan
+    episode_reward_mean: .nan
+    episode_reward_min: .nan
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths: []
+      episode_reward: []
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf: {}
+  time_since_restore: 3.558126449584961
+  time_this_iter_s: 3.558126449584961
+  time_total_s: 3.558126449584961
+  timers:
+    learn_throughput: 24.37
+    learn_time_ms: 205.167
+    load_throughput: 17418.206
+    load_time_ms: 0.287
+    training_iteration_time_ms: 3555.691
+    update_time_ms: 1.649
+  timestamp: 1656528908
+  timesteps_since_restore: 0
+  timesteps_total: 5
+  training_iteration: 1
+  trial_id: e618f_00002
+  warmup_time: 8.369242429733276
+Result for PPOTrainer_compiler_gym_e618f_00001:
+  agent_timesteps_total: 5
+  counters:
+    num_agent_steps_sampled: 5
+    num_agent_steps_trained: 5
+    num_env_steps_sampled: 5
+    num_env_steps_trained: 5
+  custom_metrics: {}
+  date: 2022-06-29_14-54-55
+  done: false
+  episode_len_mean: .nan
+  episode_media: {}
+  episode_reward_max: .nan
+  episode_reward_mean: .nan
+  episode_reward_min: .nan
+  episodes_this_iter: 0
+  episodes_total: 0
+  experiment_id: 660a5503437348b3848016617fefbbd7
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.20000000298023224
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3862144947052002
+          entropy_coeff: 0.0
+          kl: 5.757127291872166e-05
+          model: {}
+          policy_loss: -0.0075375535525381565
+          total_loss: 1.992805004119873
+          vf_explained_var: 0.0
+          vf_loss: 2.000330924987793
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 5
+    num_agent_steps_trained: 5
+    num_env_steps_sampled: 5
+    num_env_steps_trained: 5
+  iterations_since_restore: 1
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 5
+  num_agent_steps_trained: 5
+  num_env_steps_sampled: 5
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 5
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 37.45
+    ram_util_percent: 55.400000000000006
+  pid: 2747508
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf: {}
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: .nan
+    episode_media: {}
+    episode_reward_max: .nan
+    episode_reward_mean: .nan
+    episode_reward_min: .nan
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths: []
+      episode_reward: []
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf: {}
+  time_since_restore: 3.5679571628570557
+  time_this_iter_s: 3.5679571628570557
+  time_total_s: 3.5679571628570557
+  timers:
+    learn_throughput: 24.329
+    learn_time_ms: 205.512
+    load_throughput: 33288.127
+    load_time_ms: 0.15
+    training_iteration_time_ms: 3565.591
+    update_time_ms: 1.862
+  timestamp: 1656528895
+  timesteps_since_restore: 0
+  timesteps_total: 5
+  training_iteration: 1
+  trial_id: e618f_00001
+  warmup_time: 8.27396011352539
+Result for PPOTrainer_compiler_gym_e618f_00000:
+  agent_timesteps_total: 5
+  counters:
+    num_agent_steps_sampled: 5
+    num_agent_steps_trained: 5
+    num_env_steps_sampled: 5
+    num_env_steps_trained: 5
+  custom_metrics: {}
+  date: 2022-06-29_14-54-42
+  done: false
+  episode_len_mean: .nan
+  episode_media: {}
+  episode_reward_max: .nan
+  episode_reward_mean: .nan
+  episode_reward_min: .nan
+  episodes_this_iter: 0
+  episodes_total: 0
+  experiment_id: f88dfa7df9ca45168f205a8ba4639621
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.20000000298023224
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3862744569778442
+          entropy_coeff: 0.0
+          kl: 7.05513812135905e-05
+          model: {}
+          policy_loss: -0.008253732696175575
+          total_loss: 1.9928594827651978
+          vf_explained_var: 0.0
+          vf_loss: 2.001099109649658
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 5
+    num_agent_steps_trained: 5
+    num_env_steps_sampled: 5
+    num_env_steps_trained: 5
+  iterations_since_restore: 1
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 5
+  num_agent_steps_trained: 5
+  num_env_steps_sampled: 5
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 5
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 36.9
+    ram_util_percent: 52.199999999999996
+  pid: 2747313
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf: {}
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: .nan
+    episode_media: {}
+    episode_reward_max: .nan
+    episode_reward_mean: .nan
+    episode_reward_min: .nan
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths: []
+      episode_reward: []
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf: {}
+  time_since_restore: 3.51780366897583
+  time_this_iter_s: 3.51780366897583
+  time_total_s: 3.51780366897583
+  timers:
+    learn_throughput: 21.475
+    learn_time_ms: 232.832
+    load_throughput: 13706.876
+    load_time_ms: 0.365
+    training_iteration_time_ms: 3515.228
+    update_time_ms: 2.089
+  timestamp: 1656528882
+  timesteps_since_restore: 0
+  timesteps_total: 5
+  training_iteration: 1
+  trial_id: e618f_00000
+  warmup_time: 8.240801334381104
+[36m(RolloutWorker pid=2747668)[39m cc1: fatal error: /tmp/fn_69.c: No such file or directory
+[36m(RolloutWorker pid=2747668)[39m compilation terminated.
+[36m(RolloutWorker pid=2748252)[39m E0629 14:55:17.931110 139696420152896 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145514-204240-6f35
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747966)[39m E0629 14:55:20.743337 139931601782336 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145501-347265-6f35
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747365)[39m E0629 14:55:20.777571 139877103203904 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145435-554058-6f35
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747668)[39m E0629 14:55:20.924558 140131922155072 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145448-530599-6f35
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747365)[39m Action = swap_up
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747966)[39m Action = swap_up
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747668)[39m Action = swap_up
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2748252)[39m Action = up
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  2
+Result for PPOTrainer_compiler_gym_e618f_00003:
+  agent_timesteps_total: 5
+  counters:
+    num_agent_steps_sampled: 5
+    num_agent_steps_trained: 5
+    num_env_steps_sampled: 5
+    num_env_steps_trained: 5
+  custom_metrics: {}
+  date: 2022-06-29_14-55-21
+  done: false
+  episode_len_mean: .nan
+  episode_media: {}
+  episode_reward_max: .nan
+  episode_reward_mean: .nan
+  episode_reward_min: .nan
+  episodes_this_iter: 0
+  episodes_total: 0
+  experiment_id: 20a823e5d640460e8655afcd4af39a4b
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.20000000298023224
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3861228227615356
+          entropy_coeff: 0.0
+          kl: 0.00015629206609446555
+          model: {}
+          policy_loss: -0.012322903610765934
+          total_loss: 1.987752079963684
+          vf_explained_var: 0.0
+          vf_loss: 2.0000433921813965
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 5
+    num_agent_steps_trained: 5
+    num_env_steps_sampled: 5
+    num_env_steps_trained: 5
+  iterations_since_restore: 1
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 5
+  num_agent_steps_trained: 5
+  num_env_steps_sampled: 5
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 5
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 34.08
+    ram_util_percent: 60.48
+  pid: 2748095
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf: {}
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: .nan
+    episode_media: {}
+    episode_reward_max: .nan
+    episode_reward_mean: .nan
+    episode_reward_min: .nan
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths: []
+      episode_reward: []
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf: {}
+  time_since_restore: 3.451291561126709
+  time_this_iter_s: 3.451291561126709
+  time_total_s: 3.451291561126709
+  timers:
+    learn_throughput: 24.414
+    learn_time_ms: 204.804
+    load_throughput: 14423.329
+    load_time_ms: 0.347
+    training_iteration_time_ms: 3449.15
+    update_time_ms: 2.44
+  timestamp: 1656528921
+  timesteps_since_restore: 0
+  timesteps_total: 5
+  training_iteration: 1
+  trial_id: e618f_00003
+  warmup_time: 8.29993724822998
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747966)[39m Action = swap_up
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747365)[39m Action = swap_up
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747668)[39m Action = swap_up
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747966)[39m Action = swap_up
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747365)[39m Action = swap_up
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747668)[39m Action = swap_up
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  4
+Result for PPOTrainer_compiler_gym_e618f_00002:
+  agent_timesteps_total: 15
+  counters:
+    num_agent_steps_sampled: 15
+    num_agent_steps_trained: 15
+    num_env_steps_sampled: 15
+    num_env_steps_trained: 15
+  custom_metrics: {}
+  date: 2022-06-29_14-55-23
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2116393153.4729571
+  episode_reward_mean: -2116393153.4729571
+  episode_reward_min: -2116393153.4729571
+  episodes_this_iter: 0
+  episodes_total: 1
+  experiment_id: 209062bd7460491db9c3ab2ea497b237
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.05000000074505806
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3859407901763916
+          entropy_coeff: 0.0
+          kl: 9.877932461677119e-05
+          model: {}
+          policy_loss: -0.008973180316388607
+          total_loss: 7.335625171661377
+          vf_explained_var: 0.0
+          vf_loss: 7.344594478607178
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 15
+    num_agent_steps_trained: 15
+    num_env_steps_sampled: 15
+    num_env_steps_trained: 15
+  iterations_since_restore: 3
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 15
+  num_agent_steps_trained: 15
+  num_env_steps_sampled: 15
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 15
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 39.225
+    ram_util_percent: 60.5
+  pid: 2747808
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.17887895757501776
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 551.4592040668834
+    mean_inference_ms: 4.026673056862571
+    mean_raw_obs_processing_ms: 10.103854266079988
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2116393153.4729571
+    episode_reward_mean: -2116393153.4729571
+    episode_reward_min: -2116393153.4729571
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      episode_reward:
+      - -2116393153.4729571
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.17887895757501776
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 551.4592040668834
+      mean_inference_ms: 4.026673056862571
+      mean_raw_obs_processing_ms: 10.103854266079988
+  time_since_restore: 9.138229370117188
+  time_this_iter_s: 2.6316630840301514
+  time_total_s: 9.138229370117188
+  timers:
+    learn_throughput: 54.148
+    learn_time_ms: 92.34
+    load_throughput: 16513.008
+    load_time_ms: 0.303
+    training_iteration_time_ms: 3042.838
+    update_time_ms: 1.861
+  timestamp: 1656528923
+  timesteps_since_restore: 0
+  timesteps_total: 15
+  training_iteration: 3
+  trial_id: e618f_00002
+  warmup_time: 8.369242429733276
+Result for PPOTrainer_compiler_gym_e618f_00000:
+  agent_timesteps_total: 15
+  counters:
+    num_agent_steps_sampled: 15
+    num_agent_steps_trained: 15
+    num_env_steps_sampled: 15
+    num_env_steps_trained: 15
+  custom_metrics: {}
+  date: 2022-06-29_14-55-23
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2112968590.5859597
+  episode_reward_mean: -2112968590.5859597
+  episode_reward_min: -2112968590.5859597
+  episodes_this_iter: 0
+  episodes_total: 1
+  experiment_id: f88dfa7df9ca45168f205a8ba4639621
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.05000000074505806
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3861362934112549
+          entropy_coeff: 0.0
+          kl: 2.499393667676486e-05
+          model: {}
+          policy_loss: -0.004924063570797443
+          total_loss: 9.995076179504395
+          vf_explained_var: 0.0
+          vf_loss: 10.0
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 15
+    num_agent_steps_trained: 15
+    num_env_steps_sampled: 15
+    num_env_steps_trained: 15
+  iterations_since_restore: 3
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 15
+  num_agent_steps_trained: 15
+  num_env_steps_sampled: 15
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 15
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 39.35
+    ram_util_percent: 60.5
+  pid: 2747313
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.17547607421875
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 541.7463345961137
+    mean_inference_ms: 3.551851619373668
+    mean_raw_obs_processing_ms: 10.282798246903853
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2112968590.5859597
+    episode_reward_mean: -2112968590.5859597
+    episode_reward_min: -2112968590.5859597
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      episode_reward:
+      - -2112968590.5859597
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.17547607421875
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 541.7463345961137
+      mean_inference_ms: 3.551851619373668
+      mean_raw_obs_processing_ms: 10.282798246903853
+  time_since_restore: 9.145730257034302
+  time_this_iter_s: 2.7141060829162598
+  time_total_s: 9.145730257034302
+  timers:
+    learn_throughput: 49.114
+    learn_time_ms: 101.803
+    load_throughput: 22485.547
+    load_time_ms: 0.222
+    training_iteration_time_ms: 3044.954
+    update_time_ms: 1.802
+  timestamp: 1656528923
+  timesteps_since_restore: 0
+  timesteps_total: 15
+  training_iteration: 3
+  trial_id: e618f_00000
+  warmup_time: 8.240801334381104
+Result for PPOTrainer_compiler_gym_e618f_00001:
+  agent_timesteps_total: 15
+  counters:
+    num_agent_steps_sampled: 15
+    num_agent_steps_trained: 15
+    num_env_steps_sampled: 15
+    num_env_steps_trained: 15
+  custom_metrics: {}
+  date: 2022-06-29_14-55-23
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2113860984.255222
+  episode_reward_mean: -2113860984.255222
+  episode_reward_min: -2113860984.255222
+  episodes_this_iter: 0
+  episodes_total: 1
+  experiment_id: 660a5503437348b3848016617fefbbd7
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.05000000074505806
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3861299753189087
+          entropy_coeff: 0.0
+          kl: 2.4684615709702484e-05
+          model: {}
+          policy_loss: -0.004673521034419537
+          total_loss: 6.478681564331055
+          vf_explained_var: 0.0
+          vf_loss: 6.4833550453186035
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 15
+    num_agent_steps_trained: 15
+    num_env_steps_sampled: 15
+    num_env_steps_trained: 15
+  iterations_since_restore: 3
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 15
+  num_agent_steps_trained: 15
+  num_env_steps_sampled: 15
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 15
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 39.775000000000006
+    ram_util_percent: 60.5
+  pid: 2747508
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.15824491327459161
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 564.1112544319847
+    mean_inference_ms: 3.8465586575594815
+    mean_raw_obs_processing_ms: 10.189359838312322
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2113860984.255222
+    episode_reward_mean: -2113860984.255222
+    episode_reward_min: -2113860984.255222
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      episode_reward:
+      - -2113860984.255222
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.15824491327459161
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 564.1112544319847
+      mean_inference_ms: 3.8465586575594815
+      mean_raw_obs_processing_ms: 10.189359838312322
+  time_since_restore: 9.39007019996643
+  time_this_iter_s: 2.7321295738220215
+  time_total_s: 9.39007019996643
+  timers:
+    learn_throughput: 52.411
+    learn_time_ms: 95.401
+    load_throughput: 30247.385
+    load_time_ms: 0.165
+    training_iteration_time_ms: 3126.068
+    update_time_ms: 2.103
+  timestamp: 1656528923
+  timesteps_since_restore: 0
+  timesteps_total: 15
+  training_iteration: 3
+  trial_id: e618f_00001
+  warmup_time: 8.27396011352539
+[36m(RolloutWorker pid=2748252)[39m E0629 14:55:24.286224 139696420152896 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145514-204240-6f35
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2747966)[39m E0629 14:55:25.865138 139931601782336 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145501-347265-6f35
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for k_5587 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for k_5587 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2748252)[39m Action = swap_up
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for k_5587 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747966)[39m Action = swap_down
+[36m(RolloutWorker pid=2747966)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2747365)[39m Action = swap_down
+[36m(RolloutWorker pid=2747365)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747668)[39m Action = swap_down
+[36m(RolloutWorker pid=2747668)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2747966)[39m Action = up
+[36m(RolloutWorker pid=2747966)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for m_5586 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  7
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747365)[39m Action = up
+[36m(RolloutWorker pid=2747365)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for m_5586 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  7
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m E0629 14:55:25.993272 139877103203904 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145435-554058-6f35
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747668)[39m E0629 14:55:26.224525 140131922155072 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145448-530599-6f35
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Action = up
+[36m(RolloutWorker pid=2747668)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for m_5586 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  7
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2748252)[39m Action = swap_up
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747966)[39m Action = swap_down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747365)[39m Action = swap_down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747668)[39m Action = swap_down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2748252)[39m Action = swap_up
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  4
+Result for PPOTrainer_compiler_gym_e618f_00003:
+  agent_timesteps_total: 15
+  counters:
+    num_agent_steps_sampled: 15
+    num_agent_steps_trained: 15
+    num_env_steps_sampled: 15
+    num_env_steps_trained: 15
+  custom_metrics: {}
+  date: 2022-06-29_14-55-27
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2113787478.0579987
+  episode_reward_mean: -2113787478.0579987
+  episode_reward_min: -2113787478.0579987
+  episodes_this_iter: 0
+  episodes_total: 1
+  experiment_id: 20a823e5d640460e8655afcd4af39a4b
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.05000000074505806
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3858883380889893
+          entropy_coeff: 0.0
+          kl: 8.515702211298048e-05
+          model: {}
+          policy_loss: -0.00840438436716795
+          total_loss: 6.20708703994751
+          vf_explained_var: 0.0
+          vf_loss: 6.215487003326416
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 15
+    num_agent_steps_trained: 15
+    num_env_steps_sampled: 15
+    num_env_steps_trained: 15
+  iterations_since_restore: 3
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 15
+  num_agent_steps_trained: 15
+  num_env_steps_sampled: 15
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 15
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 42.37499999999999
+    ram_util_percent: 60.525
+  pid: 2748095
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.1587434248490767
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 549.4254068894819
+    mean_inference_ms: 3.972075202248313
+    mean_raw_obs_processing_ms: 10.34910028631037
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2113787478.0579987
+    episode_reward_mean: -2113787478.0579987
+    episode_reward_min: -2113787478.0579987
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      episode_reward:
+      - -2113787478.0579987
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.1587434248490767
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 549.4254068894819
+      mean_inference_ms: 3.972075202248313
+      mean_raw_obs_processing_ms: 10.34910028631037
+  time_since_restore: 9.256107330322266
+  time_this_iter_s: 2.777031183242798
+  time_total_s: 9.256107330322266
+  timers:
+    learn_throughput: 54.03
+    learn_time_ms: 92.542
+    load_throughput: 20446.721
+    load_time_ms: 0.245
+    training_iteration_time_ms: 3081.837
+    update_time_ms: 1.967
+  timestamp: 1656528927
+  timesteps_since_restore: 0
+  timesteps_total: 15
+  training_iteration: 3
+  trial_id: e618f_00003
+  warmup_time: 8.29993724822998
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747966)[39m Action = up
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for k_5587 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747365)[39m Action = up
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2748252)[39m E0629 14:55:29.612460 139696420152896 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145514-204240-6f35
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2747668)[39m Action = up
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2748252)[39m Action = swap_down
+[36m(RolloutWorker pid=2748252)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2747966)[39m Action = swap_up
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747365)[39m Action = swap_up
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747668)[39m Action = swap_up
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2748252)[39m Action = up
+[36m(RolloutWorker pid=2748252)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for m_5586 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L6
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  7
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  5
+Result for PPOTrainer_compiler_gym_e618f_00002:
+  agent_timesteps_total: 25
+  counters:
+    num_agent_steps_sampled: 25
+    num_agent_steps_trained: 25
+    num_env_steps_sampled: 25
+    num_env_steps_trained: 25
+  custom_metrics: {}
+  date: 2022-06-29_14-55-29
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2071212138.4261434
+  episode_reward_mean: -2093802645.9495502
+  episode_reward_min: -2116393153.4729571
+  episodes_this_iter: 0
+  episodes_total: 2
+  experiment_id: 209062bd7460491db9c3ab2ea497b237
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.012500000186264515
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3845984935760498
+          entropy_coeff: 0.0
+          kl: 0.0002899089886341244
+          model: {}
+          policy_loss: -0.01872572861611843
+          total_loss: 1.9846516847610474
+          vf_explained_var: 0.0
+          vf_loss: 2.003373861312866
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 25
+    num_agent_steps_trained: 25
+    num_env_steps_sampled: 25
+    num_env_steps_trained: 25
+  iterations_since_restore: 5
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 25
+  num_agent_steps_trained: 25
+  num_env_steps_sampled: 25
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 25
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 39.480000000000004
+    ram_util_percent: 60.5
+  pid: 2747808
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.17888618238044507
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 535.3944157109116
+    mean_inference_ms: 3.32271433495856
+    mean_raw_obs_processing_ms: 10.300036632653438
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2071212138.4261434
+    episode_reward_mean: -2093802645.9495502
+    episode_reward_min: -2116393153.4729571
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      episode_reward:
+      - -2116393153.4729571
+      - -2071212138.4261434
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.17888618238044507
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 535.3944157109116
+      mean_inference_ms: 3.32271433495856
+      mean_raw_obs_processing_ms: 10.300036632653438
+  time_since_restore: 15.084923028945923
+  time_this_iter_s: 3.5143065452575684
+  time_total_s: 15.084923028945923
+  timers:
+    learn_throughput: 68.039
+    learn_time_ms: 73.487
+    load_throughput: 19870.684
+    load_time_ms: 0.252
+    training_iteration_time_ms: 3013.603
+    update_time_ms: 1.96
+  timestamp: 1656528929
+  timesteps_since_restore: 0
+  timesteps_total: 25
+  training_iteration: 5
+  trial_id: e618f_00002
+  warmup_time: 8.369242429733276
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+Result for PPOTrainer_compiler_gym_e618f_00000:
+  agent_timesteps_total: 25
+  counters:
+    num_agent_steps_sampled: 25
+    num_agent_steps_trained: 25
+    num_env_steps_sampled: 25
+    num_env_steps_trained: 25
+  custom_metrics: {}
+  date: 2022-06-29_14-55-29
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2055122685.2196105
+  episode_reward_mean: -2084045637.902785
+  episode_reward_min: -2112968590.5859597
+  episodes_this_iter: 0
+  episodes_total: 2
+  experiment_id: f88dfa7df9ca45168f205a8ba4639621
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.012500000186264515
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3854135274887085
+          entropy_coeff: 0.0
+          kl: 9.544456406729296e-05
+          model: {}
+          policy_loss: -0.01059736218303442
+          total_loss: 1.9911834001541138
+          vf_explained_var: 0.0
+          vf_loss: 2.001779794692993
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 25
+    num_agent_steps_trained: 25
+    num_env_steps_sampled: 25
+    num_env_steps_trained: 25
+  iterations_since_restore: 5
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 25
+  num_agent_steps_trained: 25
+  num_env_steps_sampled: 25
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 25
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 39.46666666666666
+    ram_util_percent: 60.5
+  pid: 2747313
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.1655079069591704
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 529.9897374528828
+    mean_inference_ms: 2.9958852957853503
+    mean_raw_obs_processing_ms: 10.473755530980759
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2055122685.2196105
+    episode_reward_mean: -2084045637.902785
+    episode_reward_min: -2112968590.5859597
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      episode_reward:
+      - -2112968590.5859597
+      - -2055122685.2196105
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.1655079069591704
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 529.9897374528828
+      mean_inference_ms: 2.9958852957853503
+      mean_raw_obs_processing_ms: 10.473755530980759
+  time_since_restore: 15.094924449920654
+  time_this_iter_s: 3.5281455516815186
+  time_total_s: 15.094924449920654
+  timers:
+    learn_throughput: 64.194
+    learn_time_ms: 77.889
+    load_throughput: 19378.599
+    load_time_ms: 0.258
+    training_iteration_time_ms: 3015.489
+    update_time_ms: 1.815
+  timestamp: 1656528929
+  timesteps_since_restore: 0
+  timesteps_total: 25
+  training_iteration: 5
+  trial_id: e618f_00000
+  warmup_time: 8.240801334381104
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  5
+Result for PPOTrainer_compiler_gym_e618f_00001:
+  agent_timesteps_total: 25
+  counters:
+    num_agent_steps_sampled: 25
+    num_agent_steps_trained: 25
+    num_env_steps_sampled: 25
+    num_env_steps_trained: 25
+  custom_metrics: {}
+  date: 2022-06-29_14-55-29
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2050771745.508801
+  episode_reward_mean: -2082316364.8820114
+  episode_reward_min: -2113860984.255222
+  episodes_this_iter: 0
+  episodes_total: 2
+  experiment_id: 660a5503437348b3848016617fefbbd7
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.012500000186264515
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3854713439941406
+          entropy_coeff: 0.0
+          kl: 7.987987191881984e-05
+          model: {}
+          policy_loss: -0.00984144862741232
+          total_loss: 1.9928224086761475
+          vf_explained_var: 0.0
+          vf_loss: 2.0026626586914062
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 25
+    num_agent_steps_trained: 25
+    num_env_steps_sampled: 25
+    num_env_steps_trained: 25
+  iterations_since_restore: 5
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 25
+  num_agent_steps_trained: 25
+  num_env_steps_sampled: 25
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 25
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 39.599999999999994
+    ram_util_percent: 60.5
+  pid: 2747508
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.1547522359080129
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 548.712877484111
+    mean_inference_ms: 3.215786182519161
+    mean_raw_obs_processing_ms: 10.393027619366006
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2050771745.508801
+    episode_reward_mean: -2082316364.8820114
+    episode_reward_min: -2113860984.255222
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      episode_reward:
+      - -2113860984.255222
+      - -2050771745.508801
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.1547522359080129
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 548.712877484111
+      mean_inference_ms: 3.215786182519161
+      mean_raw_obs_processing_ms: 10.393027619366006
+  time_since_restore: 15.384925127029419
+  time_this_iter_s: 3.5220930576324463
+  time_total_s: 15.384925127029419
+  timers:
+    learn_throughput: 70.625
+    learn_time_ms: 70.796
+    load_throughput: 24713.08
+    load_time_ms: 0.202
+    training_iteration_time_ms: 3073.189
+    update_time_ms: 1.799
+  timestamp: 1656528929
+  timesteps_since_restore: 0
+  timesteps_total: 25
+  training_iteration: 5
+  trial_id: e618f_00001
+  warmup_time: 8.27396011352539
+[36m(RolloutWorker pid=2747966)[39m Action = swap_down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2748252)[39m Action = swap_down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747365)[39m Action = swap_down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2747668)[39m Action = swap_down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747966)[39m Action = up
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for k_5587 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for n_5625 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  7
+[36m(RolloutWorker pid=2747365)[39m Action = up
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for k_5587 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for n_5625 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  7
+[36m(RolloutWorker pid=2747668)[39m Action = up
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for k_5587 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for n_5625 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  7
+[36m(RolloutWorker pid=2748252)[39m Action = up
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747966)[39m Action = up
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  8
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747365)[39m Action = up
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  8
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747966)[39m E0629 14:55:32.054970 139931601782336 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145501-347265-6f35
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747365)[39m E0629 14:55:32.197167 139877103203904 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145435-554058-6f35
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747668)[39m E0629 14:55:32.394065 140131922155072 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145448-530599-6f35
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Action = up
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  8
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2748252)[39m Action = swap_up
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  5
+Result for PPOTrainer_compiler_gym_e618f_00003:
+  agent_timesteps_total: 25
+  counters:
+    num_agent_steps_sampled: 25
+    num_agent_steps_trained: 25
+    num_env_steps_sampled: 25
+    num_env_steps_trained: 25
+  custom_metrics: {}
+  date: 2022-06-29_14-55-33
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2025729829.7672005
+  episode_reward_mean: -2069758653.9125996
+  episode_reward_min: -2113787478.0579987
+  episodes_this_iter: 0
+  episodes_total: 2
+  experiment_id: 20a823e5d640460e8655afcd4af39a4b
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.012500000186264515
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3840928077697754
+          entropy_coeff: 0.0
+          kl: 0.00023158856492955238
+          model: {}
+          policy_loss: -0.016636693850159645
+          total_loss: 1.9867606163024902
+          vf_explained_var: 0.0
+          vf_loss: 2.003394365310669
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 25
+    num_agent_steps_trained: 25
+    num_env_steps_sampled: 25
+    num_env_steps_trained: 25
+  iterations_since_restore: 5
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 25
+  num_agent_steps_trained: 25
+  num_env_steps_sampled: 25
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 25
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 40.699999999999996
+    ram_util_percent: 60.083333333333336
+  pid: 2748095
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.1509426992176931
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 537.1349926118726
+    mean_inference_ms: 3.2993890506364565
+    mean_raw_obs_processing_ms: 10.514320233167508
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2025729829.7672005
+    episode_reward_mean: -2069758653.9125996
+    episode_reward_min: -2113787478.0579987
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      episode_reward:
+      - -2113787478.0579987
+      - -2025729829.7672005
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.1509426992176931
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 537.1349926118726
+      mean_inference_ms: 3.2993890506364565
+      mean_raw_obs_processing_ms: 10.514320233167508
+  time_since_restore: 15.20829963684082
+  time_this_iter_s: 3.5267727375030518
+  time_total_s: 15.20829963684082
+  timers:
+    learn_throughput: 69.907
+    learn_time_ms: 71.523
+    load_throughput: 21691.684
+    load_time_ms: 0.231
+    training_iteration_time_ms: 3037.493
+    update_time_ms: 1.643
+  timestamp: 1656528933
+  timesteps_since_restore: 0
+  timesteps_total: 25
+  training_iteration: 5
+  trial_id: e618f_00003
+  warmup_time: 8.29993724822998
+[36m(RolloutWorker pid=2748252)[39m Action = swap_down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2748252)[39m E0629 14:55:35.827832 139696420152896 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145514-204240-6f35
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2747365)[39m Action = swap_down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747668)[39m Action = swap_down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  1
+Result for PPOTrainer_compiler_gym_e618f_00002:
+  agent_timesteps_total: 35
+  counters:
+    num_agent_steps_sampled: 35
+    num_agent_steps_trained: 35
+    num_env_steps_sampled: 35
+    num_env_steps_trained: 35
+  custom_metrics: {}
+  date: 2022-06-29_14-55-35
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2062888418.8100266
+  episode_reward_mean: -2083497903.569709
+  episode_reward_min: -2116393153.4729571
+  episodes_this_iter: 0
+  episodes_total: 3
+  experiment_id: 209062bd7460491db9c3ab2ea497b237
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0031250000465661287
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3847308158874512
+          entropy_coeff: 0.0
+          kl: 2.28056433115853e-05
+          model: {}
+          policy_loss: 2.38418573772492e-09
+          total_loss: 2.0000619888305664
+          vf_explained_var: 0.0
+          vf_loss: 2.0000619888305664
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 35
+    num_agent_steps_trained: 35
+    num_env_steps_sampled: 35
+    num_env_steps_trained: 35
+  iterations_since_restore: 7
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 35
+  num_agent_steps_trained: 35
+  num_env_steps_sampled: 35
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 35
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 41.89999999999999
+    ram_util_percent: 59.35
+  pid: 2747808
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.17327592675093137
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 537.3262134737206
+    mean_inference_ms: 2.9251380366930135
+    mean_raw_obs_processing_ms: 10.426326619953393
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2062888418.8100266
+    episode_reward_mean: -2083497903.569709
+    episode_reward_min: -2116393153.4729571
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2116393153.4729571
+      - -2071212138.4261434
+      - -2062888418.8100266
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.17327592675093137
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 537.3262134737206
+      mean_inference_ms: 2.9251380366930135
+      mean_raw_obs_processing_ms: 10.426326619953393
+  time_since_restore: 20.529156923294067
+  time_this_iter_s: 2.8765950202941895
+  time_total_s: 20.529156923294067
+  timers:
+    learn_throughput: 80.793
+    learn_time_ms: 61.886
+    load_throughput: 21232.375
+    load_time_ms: 0.235
+    training_iteration_time_ms: 2929.238
+    update_time_ms: 1.717
+  timestamp: 1656528935
+  timesteps_since_restore: 0
+  timesteps_total: 35
+  training_iteration: 7
+  trial_id: e618f_00002
+  warmup_time: 8.369242429733276
+[36m(RolloutWorker pid=2748252)[39m Action = up
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for k_5587 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for n_5625 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  7
+[36m(RolloutWorker pid=2747365)[39m Action = swap_up
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  2
+Result for PPOTrainer_compiler_gym_e618f_00000:
+  agent_timesteps_total: 35
+  counters:
+    num_agent_steps_sampled: 35
+    num_agent_steps_trained: 35
+    num_env_steps_sampled: 35
+    num_env_steps_trained: 35
+  custom_metrics: {}
+  date: 2022-06-29_14-55-35
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2051332378.0933416
+  episode_reward_mean: -2073141217.9663038
+  episode_reward_min: -2112968590.5859597
+  episodes_this_iter: 0
+  episodes_total: 3
+  experiment_id: f88dfa7df9ca45168f205a8ba4639621
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0031250000465661287
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3854697942733765
+          entropy_coeff: 0.0
+          kl: 1.7082635167753324e-05
+          model: {}
+          policy_loss: -0.0012493033427745104
+          total_loss: 1.9998844861984253
+          vf_explained_var: 0.0
+          vf_loss: 2.001133680343628
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 35
+    num_agent_steps_trained: 35
+    num_env_steps_sampled: 35
+    num_env_steps_trained: 35
+  iterations_since_restore: 7
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 35
+  num_agent_steps_trained: 35
+  num_env_steps_sampled: 35
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 35
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 41.22
+    ram_util_percent: 59.08
+  pid: 2747313
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.16180881767839392
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 533.5695299973275
+    mean_inference_ms: 2.6834127163080197
+    mean_raw_obs_processing_ms: 10.571034012441002
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2051332378.0933416
+    episode_reward_mean: -2073141217.9663038
+    episode_reward_min: -2112968590.5859597
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2112968590.5859597
+      - -2055122685.2196105
+      - -2051332378.0933416
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.16180881767839392
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 533.5695299973275
+      mean_inference_ms: 2.6834127163080197
+      mean_raw_obs_processing_ms: 10.571034012441002
+  time_since_restore: 20.895936727523804
+  time_this_iter_s: 3.229241371154785
+  time_total_s: 20.895936727523804
+  timers:
+    learn_throughput: 74.876
+    learn_time_ms: 66.777
+    load_throughput: 20557.435
+    load_time_ms: 0.243
+    training_iteration_time_ms: 2981.481
+    update_time_ms: 1.724
+  timestamp: 1656528935
+  timesteps_since_restore: 0
+  timesteps_total: 35
+  training_iteration: 7
+  trial_id: e618f_00000
+  warmup_time: 8.240801334381104
+[36m(RolloutWorker pid=2747668)[39m Action = swap_up
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  2
+Result for PPOTrainer_compiler_gym_e618f_00001:
+  agent_timesteps_total: 35
+  counters:
+    num_agent_steps_sampled: 35
+    num_agent_steps_trained: 35
+    num_env_steps_sampled: 35
+    num_env_steps_trained: 35
+  custom_metrics: {}
+  date: 2022-06-29_14-55-35
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2044070528.2569072
+  episode_reward_mean: -2069567752.6736434
+  episode_reward_min: -2113860984.255222
+  episodes_this_iter: 0
+  episodes_total: 3
+  experiment_id: 660a5503437348b3848016617fefbbd7
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0031250000465661287
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3854999542236328
+          entropy_coeff: 0.0
+          kl: 1.4045610441826284e-05
+          model: {}
+          policy_loss: -0.0011965993326157331
+          total_loss: 2.0003628730773926
+          vf_explained_var: 0.0
+          vf_loss: 2.001559257507324
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 35
+    num_agent_steps_trained: 35
+    num_env_steps_sampled: 35
+    num_env_steps_trained: 35
+  iterations_since_restore: 7
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 35
+  num_agent_steps_trained: 35
+  num_env_steps_sampled: 35
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 35
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 41.08
+    ram_util_percent: 59.120000000000005
+  pid: 2747508
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.15139536490704725
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 549.5443529896921
+    mean_inference_ms: 2.8481382467568834
+    mean_raw_obs_processing_ms: 10.523893688553311
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2044070528.2569072
+    episode_reward_mean: -2069567752.6736434
+    episode_reward_min: -2113860984.255222
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2113860984.255222
+      - -2050771745.508801
+      - -2044070528.2569072
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.15139536490704725
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 549.5443529896921
+      mean_inference_ms: 2.8481382467568834
+      mean_raw_obs_processing_ms: 10.523893688553311
+  time_since_restore: 21.20832324028015
+  time_this_iter_s: 3.2408394813537598
+  time_total_s: 21.20832324028015
+  timers:
+    learn_throughput: 81.959
+    learn_time_ms: 61.006
+    load_throughput: 22955.534
+    load_time_ms: 0.218
+    training_iteration_time_ms: 3025.82
+    update_time_ms: 1.722
+  timestamp: 1656528935
+  timesteps_since_restore: 0
+  timesteps_total: 35
+  training_iteration: 7
+  trial_id: e618f_00001
+  warmup_time: 8.27396011352539
+[36m(RolloutWorker pid=2748252)[39m Action = up
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for n_5625 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  8
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747966)[39m Action = swap_up
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747365)[39m Action = swap_up
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747668)[39m Action = swap_up
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747966)[39m E0629 14:55:38.530462 139931601782336 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145501-347265-6f35
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747365)[39m E0629 14:55:39.029978 139877103203904 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145435-554058-6f35
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747668)[39m E0629 14:55:39.293113 140131922155072 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145448-530599-6f35
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747966)[39m Action = up
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+Result for PPOTrainer_compiler_gym_e618f_00003:
+  agent_timesteps_total: 35
+  counters:
+    num_agent_steps_sampled: 35
+    num_agent_steps_trained: 35
+    num_env_steps_sampled: 35
+    num_env_steps_trained: 35
+  custom_metrics: {}
+  date: 2022-06-29_14-55-38
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2025729829.7672005
+  episode_reward_mean: -2060431414.977375
+  episode_reward_min: -2113787478.0579987
+  episodes_this_iter: 0
+  episodes_total: 3
+  experiment_id: 20a823e5d640460e8655afcd4af39a4b
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0031250000465661287
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3841874599456787
+          entropy_coeff: 0.0
+          kl: 2.0799028789042495e-05
+          model: {}
+          policy_loss: 2.781550323405213e-09
+          total_loss: 2.0002291202545166
+          vf_explained_var: 0.0
+          vf_loss: 2.0002291202545166
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 35
+    num_agent_steps_trained: 35
+    num_env_steps_sampled: 35
+    num_env_steps_trained: 35
+  iterations_since_restore: 7
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 35
+  num_agent_steps_trained: 35
+  num_env_steps_sampled: 35
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 35
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 38.9
+    ram_util_percent: 59.074999999999996
+  pid: 2748095
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.14799941780791015
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 540.1482473886673
+    mean_inference_ms: 2.925636237523179
+    mean_raw_obs_processing_ms: 10.606696107048721
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2025729829.7672005
+    episode_reward_mean: -2060431414.977375
+    episode_reward_min: -2113787478.0579987
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2113787478.0579987
+      - -2025729829.7672005
+      - -2041776937.1069262
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.14799941780791015
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 540.1482473886673
+      mean_inference_ms: 2.925636237523179
+      mean_raw_obs_processing_ms: 10.606696107048721
+  time_since_restore: 20.724589586257935
+  time_this_iter_s: 2.9091718196868896
+  time_total_s: 20.724589586257935
+  timers:
+    learn_throughput: 79.83
+    learn_time_ms: 62.633
+    load_throughput: 20583.376
+    load_time_ms: 0.243
+    training_iteration_time_ms: 2955.474
+    update_time_ms: 1.59
+  timestamp: 1656528938
+  timesteps_since_restore: 0
+  timesteps_total: 35
+  training_iteration: 7
+  trial_id: e618f_00003
+  warmup_time: 8.29993724822998
+[36m(RolloutWorker pid=2747365)[39m Action = up
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747668)[39m Action = up
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747966)[39m Action = swap_down
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747365)[39m Action = swap_down
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2748252)[39m Action = swap_up
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747668)[39m Action = swap_down
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  2
+Result for PPOTrainer_compiler_gym_e618f_00002:
+  agent_timesteps_total: 45
+  counters:
+    num_agent_steps_sampled: 45
+    num_agent_steps_trained: 45
+    num_env_steps_sampled: 45
+    num_env_steps_trained: 45
+  custom_metrics: {}
+  date: 2022-06-29_14-55-41
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2039905120.6167781
+  episode_reward_mean: -2072599707.8314764
+  episode_reward_min: -2116393153.4729571
+  episodes_this_iter: 0
+  episodes_total: 4
+  experiment_id: 209062bd7460491db9c3ab2ea497b237
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0007812500116415322
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3850891590118408
+          entropy_coeff: 0.0
+          kl: 0.00017188582569360733
+          model: {}
+          policy_loss: -0.012906868010759354
+          total_loss: 1.989040493965149
+          vf_explained_var: 0.0
+          vf_loss: 2.0019474029541016
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 45
+    num_agent_steps_trained: 45
+    num_env_steps_sampled: 45
+    num_env_steps_trained: 45
+  iterations_since_restore: 9
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 45
+  num_agent_steps_trained: 45
+  num_env_steps_sampled: 45
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 45
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 38.839999999999996
+    ram_util_percent: 59.08
+  pid: 2747808
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.1706683712166141
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 543.0883791922864
+    mean_inference_ms: 2.6644496432833544
+    mean_raw_obs_processing_ms: 10.518521163561534
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2039905120.6167781
+    episode_reward_mean: -2072599707.8314764
+    episode_reward_min: -2116393153.4729571
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2116393153.4729571
+      - -2071212138.4261434
+      - -2062888418.8100266
+      - -2039905120.6167781
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.1706683712166141
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 543.0883791922864
+      mean_inference_ms: 2.6644496432833544
+      mean_raw_obs_processing_ms: 10.518521163561534
+  time_since_restore: 27.298911571502686
+  time_this_iter_s: 3.2439088821411133
+  time_total_s: 27.298911571502686
+  timers:
+    learn_throughput: 89.735
+    learn_time_ms: 55.719
+    load_throughput: 20652.553
+    load_time_ms: 0.242
+    training_iteration_time_ms: 3029.604
+    update_time_ms: 1.676
+  timestamp: 1656528941
+  timesteps_since_restore: 0
+  timesteps_total: 45
+  training_iteration: 9
+  trial_id: e618f_00002
+  warmup_time: 8.369242429733276
+[36m(RolloutWorker pid=2747668)[39m Action = down
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2748252)[39m Action = up
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2748252)[39m E0629 14:55:42.422886 139696420152896 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145514-204240-6f35
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2747365)[39m cc1: fatal error: /tmp/fn_531.c: No such file or directory
+[36m(RolloutWorker pid=2747365)[39m compilation terminated.
+Result for PPOTrainer_compiler_gym_e618f_00000:
+  agent_timesteps_total: 45
+  counters:
+    num_agent_steps_sampled: 45
+    num_agent_steps_trained: 45
+    num_env_steps_sampled: 45
+    num_env_steps_trained: 45
+  custom_metrics: {}
+  date: 2022-06-29_14-55-42
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2030386789.198473
+  episode_reward_mean: -2062452610.774346
+  episode_reward_min: -2112968590.5859597
+  episodes_this_iter: 0
+  episodes_total: 4
+  experiment_id: f88dfa7df9ca45168f205a8ba4639621
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0007812500116415322
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3858582973480225
+          entropy_coeff: 0.0
+          kl: 6.634005694650114e-05
+          model: {}
+          policy_loss: -0.008244151249527931
+          total_loss: 1.9932926893234253
+          vf_explained_var: 0.0
+          vf_loss: 2.0015368461608887
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 45
+    num_agent_steps_trained: 45
+    num_env_steps_sampled: 45
+    num_env_steps_trained: 45
+  iterations_since_restore: 9
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 45
+  num_agent_steps_trained: 45
+  num_env_steps_sampled: 45
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 45
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 39.52
+    ram_util_percent: 59.05999999999999
+  pid: 2747313
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.1593320408398382
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 542.3055917974609
+    mean_inference_ms: 2.476616587331202
+    mean_raw_obs_processing_ms: 10.638161432204644
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2030386789.198473
+    episode_reward_mean: -2062452610.774346
+    episode_reward_min: -2112968590.5859597
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2112968590.5859597
+      - -2055122685.2196105
+      - -2051332378.0933416
+      - -2030386789.198473
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.1593320408398382
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 542.3055917974609
+      mean_inference_ms: 2.476616587331202
+      mean_raw_obs_processing_ms: 10.638161432204644
+  time_since_restore: 27.65260624885559
+  time_this_iter_s: 3.208679676055908
+  time_total_s: 27.65260624885559
+  timers:
+    learn_throughput: 82.809
+    learn_time_ms: 60.38
+    load_throughput: 19518.478
+    load_time_ms: 0.256
+    training_iteration_time_ms: 3068.903
+    update_time_ms: 1.74
+  timestamp: 1656528942
+  timesteps_since_restore: 0
+  timesteps_total: 45
+  training_iteration: 9
+  trial_id: e618f_00000
+  warmup_time: 8.240801334381104
+[36m(RolloutWorker pid=2747966)[39m Action = swap_up
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+Result for PPOTrainer_compiler_gym_e618f_00001:
+  agent_timesteps_total: 45
+  counters:
+    num_agent_steps_sampled: 45
+    num_agent_steps_trained: 45
+    num_env_steps_sampled: 45
+    num_env_steps_trained: 45
+  custom_metrics: {}
+  date: 2022-06-29_14-55-42
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2032655828.5176554
+  episode_reward_mean: -2060339771.6346464
+  episode_reward_min: -2113860984.255222
+  episodes_this_iter: 0
+  episodes_total: 4
+  experiment_id: 660a5503437348b3848016617fefbbd7
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0007812500116415322
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3856467008590698
+          entropy_coeff: 0.0
+          kl: 3.9011938497424126e-05
+          model: {}
+          policy_loss: -0.006205678451806307
+          total_loss: 1.9950404167175293
+          vf_explained_var: 0.0
+          vf_loss: 2.001246213912964
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 45
+    num_agent_steps_trained: 45
+    num_env_steps_sampled: 45
+    num_env_steps_trained: 45
+  iterations_since_restore: 9
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 45
+  num_agent_steps_trained: 45
+  num_env_steps_sampled: 45
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 45
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 39.5
+    ram_util_percent: 59.05999999999999
+  pid: 2747508
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.14892260724039166
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 556.676488946728
+    mean_inference_ms: 2.6042574641672895
+    mean_raw_obs_processing_ms: 10.610710346694823
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2032655828.5176554
+    episode_reward_mean: -2060339771.6346464
+    episode_reward_min: -2113860984.255222
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2113860984.255222
+      - -2050771745.508801
+      - -2044070528.2569072
+      - -2032655828.5176554
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.14892260724039166
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 556.676488946728
+      mean_inference_ms: 2.6042574641672895
+      mean_raw_obs_processing_ms: 10.610710346694823
+  time_since_restore: 28.009356021881104
+  time_this_iter_s: 3.2141878604888916
+  time_total_s: 28.009356021881104
+  timers:
+    learn_throughput: 90.231
+    learn_time_ms: 55.413
+    load_throughput: 22900.228
+    load_time_ms: 0.218
+    training_iteration_time_ms: 3108.359
+    update_time_ms: 1.693
+  timestamp: 1656528942
+  timesteps_since_restore: 0
+  timesteps_total: 45
+  training_iteration: 9
+  trial_id: e618f_00001
+  warmup_time: 8.27396011352539
+[36m(RolloutWorker pid=2747365)[39m Action = swap_up
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747668)[39m Action = swap_up
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2747966)[39m Action = down
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for m_5586 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747365)[39m Action = down
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for m_5586 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2747668)[39m Action = up
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for m_5586 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2748252)[39m Action = swap_down
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  1
+[36m(RolloutWorker pid=2747966)[39m E0629 14:55:45.528909 139931601782336 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145501-347265-6f35
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m Action = swap_up
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for k_5587 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for m_5586 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747668)[39m Action = swap_down
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for k_5587 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for m_5586 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2747365)[39m Action = swap_up
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for k_5587 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for m_5586 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2748252)[39m Action = down
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  2
+[36m(RolloutWorker pid=2747966)[39m Action = up
+[36m(RolloutWorker pid=2747966)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747966)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+[36m(RolloutWorker pid=2747966)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2747668)[39m Action = swap_up
+[36m(RolloutWorker pid=2747668)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747668)[39m   for m_5586 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2747668)[39m  for m_5586 in 128 : L6
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2747966)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747966)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747966)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747966)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747966)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747966)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747966)
+Result for PPOTrainer_compiler_gym_e618f_00002:
+  agent_timesteps_total: 50
+  counters:
+    num_agent_steps_sampled: 50
+    num_agent_steps_trained: 50
+    num_env_steps_sampled: 50
+    num_env_steps_trained: 50
+  custom_metrics: {}
+  date: 2022-06-29_14-55-45
+  done: true
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2025184045.1230214
+  episode_reward_mean: -2063116575.2897854
+  episode_reward_min: -2116393153.4729571
+  episodes_this_iter: 1
+  episodes_total: 5
+  experiment_id: 209062bd7460491db9c3ab2ea497b237
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0003906250058207661
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3856678009033203
+          entropy_coeff: 0.0
+          kl: 0.0001769888331182301
+          model: {}
+          policy_loss: -0.010917430743575096
+          total_loss: 0.843987226486206
+          vf_explained_var: 0.04394448176026344
+          vf_loss: 0.8549047112464905
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 50
+    num_agent_steps_trained: 50
+    num_env_steps_sampled: 50
+    num_env_steps_trained: 50
+  iterations_since_restore: 10
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 50
+  num_agent_steps_trained: 50
+  num_env_steps_sampled: 50
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 50
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 39.260000000000005
+    ram_util_percent: 59.06
+  pid: 2747808
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.16750760783563426
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 550.9349058980976
+    mean_inference_ms: 2.478269882305816
+    mean_raw_obs_processing_ms: 10.588449197323932
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2025184045.1230214
+    episode_reward_mean: -2063116575.2897854
+    episode_reward_min: -2116393153.4729571
+    episodes_this_iter: 1
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2116393153.4729571
+      - -2071212138.4261434
+      - -2062888418.8100266
+      - -2039905120.6167781
+      - -2025184045.1230214
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.16750760783563426
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 550.9349058980976
+      mean_inference_ms: 2.478269882305816
+      mean_raw_obs_processing_ms: 10.588449197323932
+  time_since_restore: 31.008687019348145
+  time_this_iter_s: 3.709775447845459
+  time_total_s: 31.008687019348145
+  timers:
+    learn_throughput: 91.092
+    learn_time_ms: 54.889
+    load_throughput: 20954.756
+    load_time_ms: 0.239
+    training_iteration_time_ms: 3097.234
+    update_time_ms: 1.617
+  timestamp: 1656528945
+  timesteps_since_restore: 0
+  timesteps_total: 50
+  training_iteration: 10
+  trial_id: e618f_00002
+  warmup_time: 8.369242429733276
+Result for PPOTrainer_compiler_gym_e618f_00003:
+  agent_timesteps_total: 45
+  counters:
+    num_agent_steps_sampled: 45
+    num_agent_steps_trained: 45
+    num_env_steps_sampled: 45
+    num_env_steps_trained: 45
+  custom_metrics: {}
+  date: 2022-06-29_14-55-45
+  done: false
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2025729829.7672005
+  episode_reward_mean: -2058244213.2380633
+  episode_reward_min: -2113787478.0579987
+  episodes_this_iter: 0
+  episodes_total: 4
+  experiment_id: 20a823e5d640460e8655afcd4af39a4b
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0007812500116415322
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3842676877975464
+          entropy_coeff: 0.0
+          kl: 9.271511225961149e-05
+          model: {}
+          policy_loss: -0.009142829105257988
+          total_loss: 1.9922738075256348
+          vf_explained_var: 0.0
+          vf_loss: 2.0014164447784424
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 45
+    num_agent_steps_trained: 45
+    num_env_steps_sampled: 45
+    num_env_steps_trained: 45
+  iterations_since_restore: 9
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 45
+  num_agent_steps_trained: 45
+  num_env_steps_sampled: 45
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 45
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 38.900000000000006
+    ram_util_percent: 59.025
+  pid: 2748095
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.1460645397457478
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 546.7627883214471
+    mean_inference_ms: 2.676194697111664
+    mean_raw_obs_processing_ms: 10.672969167923348
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2025729829.7672005
+    episode_reward_mean: -2058244213.2380633
+    episode_reward_min: -2113787478.0579987
+    episodes_this_iter: 0
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2113787478.0579987
+      - -2025729829.7672005
+      - -2041776937.1069262
+      - -2051682608.0201285
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.1460645397457478
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 546.7627883214471
+      mean_inference_ms: 2.676194697111664
+      mean_raw_obs_processing_ms: 10.672969167923348
+  time_since_restore: 27.56696128845215
+  time_this_iter_s: 3.23310923576355
+  time_total_s: 27.56696128845215
+  timers:
+    learn_throughput: 87.778
+    learn_time_ms: 56.962
+    load_throughput: 21114.63
+    load_time_ms: 0.237
+    training_iteration_time_ms: 3058.203
+    update_time_ms: 1.595
+  timestamp: 1656528945
+  timesteps_since_restore: 0
+  timesteps_total: 45
+  training_iteration: 9
+  trial_id: e618f_00003
+  warmup_time: 8.29993724822998
+[36m(RolloutWorker pid=2747365)[39m Action = up
+[36m(RolloutWorker pid=2747365)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2747365)[39m  for m_5586 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2747365)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747365)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747365)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747365)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747365)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747365)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747668)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2747668)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2747668)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2747668)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2747668)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2747668)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2747668)
+Result for PPOTrainer_compiler_gym_e618f_00000:
+  agent_timesteps_total: 50
+  counters:
+    num_agent_steps_sampled: 50
+    num_agent_steps_trained: 50
+    num_env_steps_sampled: 50
+    num_env_steps_trained: 50
+  custom_metrics: {}
+  date: 2022-06-29_14-55-46
+  done: true
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2030386789.198473
+  episode_reward_mean: -2062143252.0039055
+  episode_reward_min: -2112968590.5859597
+  episodes_this_iter: 1
+  episodes_total: 5
+  experiment_id: f88dfa7df9ca45168f205a8ba4639621
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0003906250058207661
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3861387968063354
+          entropy_coeff: 0.0
+          kl: 4.2755724280141294e-05
+          model: {}
+          policy_loss: -0.005733971484005451
+          total_loss: 0.9523656368255615
+          vf_explained_var: 0.07844201475381851
+          vf_loss: 0.9580997228622437
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 50
+    num_agent_steps_trained: 50
+    num_env_steps_sampled: 50
+    num_env_steps_trained: 50
+  iterations_since_restore: 10
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 50
+  num_agent_steps_trained: 50
+  num_env_steps_sampled: 50
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 50
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 38.660000000000004
+    ram_util_percent: 59.08
+  pid: 2747313
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.15685376121430317
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 551.8978171547585
+    mean_inference_ms: 2.323810075476366
+    mean_raw_obs_processing_ms: 10.686388522259675
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2030386789.198473
+    episode_reward_mean: -2062143252.0039055
+    episode_reward_min: -2112968590.5859597
+    episodes_this_iter: 1
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2112968590.5859597
+      - -2055122685.2196105
+      - -2051332378.0933416
+      - -2030386789.198473
+      - -2060905816.9221425
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.15685376121430317
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 551.8978171547585
+      mean_inference_ms: 2.323810075476366
+      mean_raw_obs_processing_ms: 10.686388522259675
+  time_since_restore: 31.4502215385437
+  time_this_iter_s: 3.7976152896881104
+  time_total_s: 31.4502215385437
+  timers:
+    learn_throughput: 85.778
+    learn_time_ms: 58.29
+    load_throughput: 20424.153
+    load_time_ms: 0.245
+    training_iteration_time_ms: 3141.37
+    update_time_ms: 1.712
+  timestamp: 1656528946
+  timesteps_since_restore: 0
+  timesteps_total: 50
+  training_iteration: 10
+  trial_id: e618f_00000
+  warmup_time: 8.240801334381104
+Result for PPOTrainer_compiler_gym_e618f_00001:
+  agent_timesteps_total: 50
+  counters:
+    num_agent_steps_sampled: 50
+    num_agent_steps_trained: 50
+    num_env_steps_sampled: 50
+    num_env_steps_trained: 50
+  custom_metrics: {}
+  date: 2022-06-29_14-55-46
+  done: true
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2032655828.5176554
+  episode_reward_mean: -2058342156.6313508
+  episode_reward_min: -2113860984.255222
+  episodes_this_iter: 1
+  episodes_total: 5
+  experiment_id: 660a5503437348b3848016617fefbbd7
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0003906250058207661
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.385865330696106
+          entropy_coeff: 0.0
+          kl: 1.2798040188499726e-05
+          model: {}
+          policy_loss: -0.0021740563679486513
+          total_loss: 0.3165963888168335
+          vf_explained_var: 0.012091674841940403
+          vf_loss: 0.3187703788280487
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 50
+    num_agent_steps_trained: 50
+    num_env_steps_sampled: 50
+    num_env_steps_trained: 50
+  iterations_since_restore: 10
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 50
+  num_agent_steps_trained: 50
+  num_env_steps_sampled: 50
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 50
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 37.50000000000001
+    ram_util_percent: 59.1
+  pid: 2747508
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.14809612591754312
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 564.4020525205129
+    mean_inference_ms: 2.4323563386816986
+    mean_raw_obs_processing_ms: 10.67363715582888
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2032655828.5176554
+    episode_reward_mean: -2058342156.6313508
+    episode_reward_min: -2113860984.255222
+    episodes_this_iter: 1
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2113860984.255222
+      - -2050771745.508801
+      - -2044070528.2569072
+      - -2032655828.5176554
+      - -2050351696.6181679
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.14809612591754312
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 564.4020525205129
+      mean_inference_ms: 2.4323563386816986
+      mean_raw_obs_processing_ms: 10.67363715582888
+  time_since_restore: 31.663049936294556
+  time_this_iter_s: 3.653693914413452
+  time_total_s: 31.663049936294556
+  timers:
+    learn_throughput: 94.147
+    learn_time_ms: 53.108
+    load_throughput: 23434.484
+    load_time_ms: 0.213
+    training_iteration_time_ms: 3162.253
+    update_time_ms: 1.644
+  timestamp: 1656528946
+  timesteps_since_restore: 0
+  timesteps_total: 50
+  training_iteration: 10
+  trial_id: e618f_00001
+  warmup_time: 8.27396011352539
+[36m(RolloutWorker pid=2747365)[39m E0629 14:55:46.108814 139877103203904 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747365)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145435-554058-6f35
+[36m(RolloutWorker pid=2747365)
+[36m(RolloutWorker pid=2747668)[39m E0629 14:55:46.227114 140131922155072 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2747668)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145448-530599-6f35
+[36m(RolloutWorker pid=2747668)
+[36m(RolloutWorker pid=2748252)[39m Action = swap_up
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2  <<<<<< cursor (line 2 )
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  3
+[36m(RolloutWorker pid=2748252)[39m Action = up
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for k_5587 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for m_5586 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  4
+[36m(RolloutWorker pid=2748252)[39m Action = swap_down
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for k_5587 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for m_5586 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L5
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  5
+[36m(RolloutWorker pid=2748252)[39m E0629 14:55:49.535240 139696420152896 example_service.py:249] CRITICAL -
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m Working_dir = /dev/shm/compiler_gym_dejang/s/0629T145514-204240-6f35
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m Action = swap_up
+[36m(RolloutWorker pid=2748252)[39m for k_5587 in 128 : L0
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1  <<<<<< cursor (line 1 )
+[36m(RolloutWorker pid=2748252)[39m   for m_5586 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m for n_5625 in 128 : L5
+[36m(RolloutWorker pid=2748252)[39m  for m_5586 in 128 : L6
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+[36m(RolloutWorker pid=2748252)[39m >>> AGENT ITERATION =  6
+[36m(RolloutWorker pid=2748252)[39m for m_5586 in 128 : L0  <<<<<< cursor (line 0 )
+[36m(RolloutWorker pid=2748252)[39m  for n_5625 in 128 : L1
+[36m(RolloutWorker pid=2748252)[39m   for k_5587 in 128 : L2
+[36m(RolloutWorker pid=2748252)[39m    %2[m_5586, k_5587, n_5625] <- multiply(%0, %1)
+[36m(RolloutWorker pid=2748252)[39m    %3[m_5586, n_5625] <- add(%2)
+[36m(RolloutWorker pid=2748252)[39m   %4[m_5586, n_5625] <- write(%3)
+[36m(RolloutWorker pid=2748252)
+Result for PPOTrainer_compiler_gym_e618f_00003:
+  agent_timesteps_total: 50
+  counters:
+    num_agent_steps_sampled: 50
+    num_agent_steps_trained: 50
+    num_env_steps_sampled: 50
+    num_env_steps_trained: 50
+  custom_metrics: {}
+  date: 2022-06-29_14-55-49
+  done: true
+  episode_len_mean: 10.0
+  episode_media: {}
+  episode_reward_max: -2025729829.7672005
+  episode_reward_mean: -2058932134.9132905
+  episode_reward_min: -2113787478.0579987
+  episodes_this_iter: 1
+  episodes_total: 5
+  experiment_id: 20a823e5d640460e8655afcd4af39a4b
+  hostname: codah
+  info:
+    learner:
+      default_policy:
+        custom_metrics: {}
+        learner_stats:
+          cur_kl_coeff: 0.0003906250058207661
+          cur_lr: 4.999999873689376e-05
+          entropy: 1.3846781253814697
+          entropy_coeff: 0.0
+          kl: 4.414424256538041e-05
+          model: {}
+          policy_loss: -0.004699434619396925
+          total_loss: 0.27712753415107727
+          vf_explained_var: 0.0271683931350708
+          vf_loss: 0.2818268835544586
+        num_agent_steps_trained: 5.0
+    num_agent_steps_sampled: 50
+    num_agent_steps_trained: 50
+    num_env_steps_sampled: 50
+    num_env_steps_trained: 50
+  iterations_since_restore: 10
+  node_ip: 100.37.253.28
+  num_agent_steps_sampled: 50
+  num_agent_steps_trained: 50
+  num_env_steps_sampled: 50
+  num_env_steps_sampled_this_iter: 5
+  num_env_steps_trained: 50
+  num_env_steps_trained_this_iter: 5
+  num_healthy_workers: 1
+  off_policy_estimator: {}
+  perf:
+    cpu_util_percent: 20.883333333333333
+    ram_util_percent: 53.93333333333333
+  pid: 2748095
+  policy_reward_max: {}
+  policy_reward_mean: {}
+  policy_reward_min: {}
+  sampler_perf:
+    mean_action_processing_ms: 0.14491490101908217
+    mean_env_render_ms: 0.0
+    mean_env_wait_ms: 555.3297785422297
+    mean_inference_ms: 2.4980086168273714
+    mean_raw_obs_processing_ms: 10.719971716330196
+  sampler_results:
+    custom_metrics: {}
+    episode_len_mean: 10.0
+    episode_media: {}
+    episode_reward_max: -2025729829.7672005
+    episode_reward_mean: -2058932134.9132905
+    episode_reward_min: -2113787478.0579987
+    episodes_this_iter: 1
+    hist_stats:
+      episode_lengths:
+      - 10
+      - 10
+      - 10
+      - 10
+      - 10
+      episode_reward:
+      - -2113787478.0579987
+      - -2025729829.7672005
+      - -2041776937.1069262
+      - -2051682608.0201285
+      - -2061683821.6141994
+    off_policy_estimator: {}
+    policy_reward_max: {}
+    policy_reward_mean: {}
+    policy_reward_min: {}
+    sampler_perf:
+      mean_action_processing_ms: 0.14491490101908217
+      mean_env_render_ms: 0.0
+      mean_env_wait_ms: 555.3297785422297
+      mean_inference_ms: 2.4980086168273714
+      mean_raw_obs_processing_ms: 10.719971716330196
+  time_since_restore: 31.392248392105103
+  time_this_iter_s: 3.825287103652954
+  time_total_s: 31.392248392105103
+  timers:
+    learn_throughput: 90.875
+    learn_time_ms: 55.021
+    load_throughput: 21219.792
+    load_time_ms: 0.236
+    training_iteration_time_ms: 3134.547
+    update_time_ms: 1.612
+  timestamp: 1656528949
+  timesteps_since_restore: 0
+  timesteps_total: 50
+  training_iteration: 10
+  trial_id: e618f_00003
+  warmup_time: 8.29993724822998
+/home/dejang/ray_results/PPOTrainer_2022-06-29_14-54-26/PPOTrainer_compiler_gym_e618f_00001_1_0=40,1=20_2022-06-29_14-54-39
+2022-06-29 14:55:50,536	INFO tune.py:747 -- Total run time: 83.88 seconds (83.05 seconds for the tuning loop).

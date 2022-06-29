@@ -64,13 +64,12 @@ def main():
     register_env()
 
     bench = "benchmark://loop_tool_simple-v0/simple"
-    pdb.set_trace()
     with compiler_gym.make("loop_tool-v0") as env:
         breakpoint()
         agent = q_agents.QAgentTensor(
             env=env,
             bench=bench,
-            observation = "ir_tensor",
+            observation = "stride_tensor",
             reward="flops_loop_nest",
             numTraining=100, 
             numTest=4,

@@ -1,0 +1,21 @@
+{
+    "os": "Linux-5.15.7-arch1-1-x86_64-with-glibc2.17",
+    "python": "3.8.13",
+    "heartbeatAt": "2022-06-29T18:42:03.736301",
+    "startedAt": "2022-06-29T18:42:02.637411",
+    "docker": null,
+    "cpu_count": 12,
+    "cuda": null,
+    "args": null,
+    "state": "running",
+    "program": "<python with no main file>",
+    "git": {
+        "remote": "https://github.com/loopstack/loop_tool_env.git",
+        "commit": "5a6294754d0df4997106a2a998156944495aae13"
+    },
+    "email": "dejang@fb.com",
+    "root": "/home/dejang/loop_tool_env",
+    "host": "codah",
+    "username": "dejang",
+    "executable": "/home/dejang/anaconda3/envs/compiler_gym/bin/python"
+}

@@ -15,6 +15,8 @@ import networkx as nx
 import pickle
 import json
 
+import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -55,14 +57,18 @@ class QAgentTensor(QAgentBase):
         QAgentBase.__init__(self, **args)
         self.criterion = nn.SmoothL1Loss()
 
-        self.policy_net = Q_net(in_size=60, 
-                                out_size=4, 
-                                hidden_size=512, 
+        observation_space = args['observation']
+        size_in = np.prod(args['env'].observation.spaces[observation_space].space.shape)
+        size_out = args['env'].action_spaces[0].n
+
+        self.policy_net = Q_net(in_size=size_in, 
+                                out_size=size_out, 
+                                hidden_size=2 * size_in, 
                                 dropout=0.5).to(device)
 
-        self.target_net = Q_net(in_size=60, 
-                                out_size=4, 
-                                hidden_size=512, 
+        self.target_net = Q_net(in_size=size_in, 
+                                out_size=size_out, 
+                                hidden_size=2 * size_in, 
                                 dropout=0.5).to(device)
 
 

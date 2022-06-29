@@ -40,7 +40,7 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
     
     env = loop_tool_service.make(
         "loop_tool_env-v0",
-        observation_space="ir_tensor",
+        observation_space="loops_tensor",
         reward_space="flops_loop_nest",
         # reward_space="runtime",
     )

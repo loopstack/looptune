@@ -3,3 +3,4 @@ dist
 *.egg-info
 platform.info
 __pycache__
+*/wandb/*

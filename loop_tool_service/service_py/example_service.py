@@ -298,16 +298,18 @@ class LoopToolCompilationSession(CompilationSession):
         # Compile benchmark with given optimization
         action = self._action_space.space.named_discrete.name[choice_index]
         if action not in self.env.get_available_actions():
+            print(f"ACTION_NOT_AVAILABLE (action = {action})")
+            print(f"Actions = {self.env.get_available_actions()}")
             return (end_of_session, new_action_space, not action_had_effect)
 
         logging.info(
             f"Applying action {choice_index}, equivalent command-line arguments: '{action}'"
         )
-        print(f'Action = {action}')
-        print(self.env.agent)
 
         action_had_effect = self.env.apply_action(action=action, save_state=self.save_state)          
-
+        print(f'Action = {action}')
+        print(self.env.agent)
+        
         logging.info(f"\naction_had_effect ({action}) = {action_had_effect}\n")
 
         if action_had_effect:
@@ -324,7 +326,7 @@ class LoopToolCompilationSession(CompilationSession):
         # )
 
         self.cur_iter += 1
-        print(">>> AGENT ITERATION = ", self.cur_iter)
+        print(f">>> AGENT ITERATION = {self.cur_iter}, actions = {self.env.actions}")
         return (end_of_session, new_action_space, not action_had_effect)
 
 

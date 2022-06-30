@@ -67,6 +67,7 @@ class Environment:
         self.agent = lt.LoopTreeAgent(lt.LoopTree(ir))
         print(self.agent)
         self.action_had_effect = False
+        self.actions = []
 
 
     def get_available_actions(self):
@@ -86,6 +87,9 @@ class Environment:
 
         if save_state == False:
             self.agent = lt.LoopTreeAgent(agent_copy)
+        else:
+            self.actions.append(action)
+
         return self.action_had_effect
 
     ##############################################################
@@ -105,6 +109,7 @@ class Environment:
     def get_flops_loop_nest_tensor(self) -> Event:
         with lt.Backend("loop_nest"):
             tensor = DoubleTensor(shape = [1], value=[self.agent.eval("FLOPS")])
+        print(f'<<<<<<<<<<<<<<< Reward = {tensor.value[0] / 1e9} GFLOPS >>>>>>>>>>>>>>>')
         return Event(double_tensor=tensor)
 
     def get_ir(self) -> Event:
@@ -126,7 +131,7 @@ class Environment:
 
         for stride, freq in stride_freq_pairs:
             bucket_id = int(np.log2(stride))
-            stride_freq_vector[bucket_id] += freq
+            stride_freq_vector[bucket_id] += float(freq)
 
         return Event(float_tensor=FloatTensor(shape=[dim0, bucket_num], value=stride_freq_vector))
     

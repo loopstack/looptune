@@ -20,7 +20,7 @@ class RewardScalar(Reward):
     def reset(self, benchmark: str, observation_view):
         # print("Reward Flops: reset")
         del benchmark  # unused
-        self.prev_flops = observation_view["flops"]
+        self.prev_flops = observation_view["flops"] / 1e9
 
     def update(self, action, observations, observation_view):
         # print("Reward Flops: update")
@@ -51,7 +51,7 @@ class RewardTensor(Reward):
     def reset(self, benchmark: str, observation_view):
         # print("Reward Flops: reset")
         del benchmark  # unused
-        self.prev_flops = observation_view["flops_tensor"]
+        self.prev_flops = observation_view["flops_tensor"] / 1e9
 
     def update(self, action, observations, observation_view):
         # print("Reward Flops: update")

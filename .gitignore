@@ -4,3 +4,4 @@ dist
 platform.info
 __pycache__
 */wandb/*
+loop_tool_service/benchmarks/loop_tool_dataset/big

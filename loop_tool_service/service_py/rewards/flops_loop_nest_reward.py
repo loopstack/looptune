@@ -64,3 +64,30 @@ class RewardTensor(Reward):
         self.prev_flops = new_flops        
         return reward
 
+
+class AbsoluteRewardTensor(Reward):
+    """An example reward that uses changes in the "flops" observation value
+    to compute incremental reward.
+    """
+
+    def __init__(self):
+        super().__init__(
+            id="flops_loop_nest_tensor",
+            observation_spaces=["flops_loop_nest_tensor"],
+            default_value=0,
+            default_negates_returns=True,
+            deterministic=False,
+            platform_dependent=True,
+        )
+        # self.prev_flops = 0
+
+    def reset(self, benchmark: str, observation_view):
+        # print("Reward flops_loop_nest_tensor: reset")
+        del benchmark  # unused
+        # self.prev_flops = observation_view["flops_loop_nest_tensor"] / 1e9
+
+    def update(self, action, observations, observation_view):
+        # print("Reward flops_loop_nest_tensor: update")
+        del action
+        del observation_view     
+        return observations[0] / 1e9

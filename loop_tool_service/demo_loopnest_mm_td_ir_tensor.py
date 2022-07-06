@@ -75,7 +75,7 @@ def main():
             numTest=4,
             exploration=0.2, 
             learning_rate=0.8, 
-            discount=0.05,
+            discount=0.9,
         )
         agent.train()
         agent.test()

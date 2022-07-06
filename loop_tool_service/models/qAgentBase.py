@@ -3,6 +3,8 @@ import pdb
 import json
 from matplotlib import pyplot as plt
 import numpy as np
+import torch
+
 
 import loop_tool as lt
 
@@ -52,6 +54,7 @@ class QAgentBase():
         self.train_history = []
         self.test_history = []
         self.epochs_history = []
+        self.loss_history = []
         self.converged = False
 
     ####################################
@@ -95,7 +98,7 @@ class QAgentBase():
 
     def getBestQAction(self, state) -> float:  
         q_dict = self.getQValues(state) 
-        return min(q_dict, key=q_dict.get)
+        return max(q_dict, key=q_dict.get)
 
 
     def getQValue(self, state, action) -> float:
@@ -118,13 +121,13 @@ class QAgentBase():
         if random.random() < exploration:
             print('Explore <<<<<<<<<<<<<<<<<<<<<')
             chosen_action = min(self.Q_counts[state.hash], key=self.Q_counts[state.hash].get)
+            self.Q_counts[state.hash][chosen_action] += 1
         else:
             print('Policy <<<<<<<<<<<<<<<<<<<<<')
             chosen_action = self.getBestQAction(state)
         
         print(f"Chosen Action = {self.env.action_space.to_string(chosen_action)}\n")
 
-        self.Q_counts[state.hash][chosen_action] += 1
         return chosen_action
 
 
@@ -140,7 +143,12 @@ class QAgentBase():
         for i in range(self.numTest):
             action = self.getAction(state=state, exploration=0)
             self.print_state(state)
-            breakpoint()
+
+            if self.getQValue(state, action) <= 0:
+                print("Stop! This action doesn't help")
+                break # There is no known action that improves state
+
+            # breakpoint()
             observation, reward, done, info = self.env.step(
                 action=action,
                 observation_spaces=[self.observation],
@@ -168,8 +176,9 @@ class QAgentBase():
         print('#################################################')
         print("Current best policy:")
         self.env.send_param("print_looptree", "")
-        print('#################################################')
-        
+        print(f'Cumulative Reward = {sum(rewards)}')
+        print('#################################################')        
+        # breakpoint()
 
 
   
@@ -179,6 +188,8 @@ class QAgentBase():
 
 
     def train(self, iterations=None):
+        actions = [1, 3, 0, 0]
+        my_actions = -1
 
         for i in range(self.numTraining):
             print(f"**************************** {i} ******************************")
@@ -193,17 +204,24 @@ class QAgentBase():
                 obs = self.env.observation[self.observation]
                 state = State(obs, self.hashState(obs))
 
-            action = self.getAction(state=state, exploration=self.exploration)
-            breakpoint()
+
+            # if i % 4 == 0:
+            #     breakpoint()
+
+            my_actions = (my_actions + 1) % 8
+            if my_actions < 4 or True:
+                action = actions[i % 4]
+                available_actions = self.getAvailableActions(state.hash)
+                self.Q_counts[state.hash][action] += 1
+            else:
+                action = self.getAction(state=state, exploration=self.exploration)
+            
+            # breakpoint()
             state_prev = state
             self.print_state(state)
 
             try:
-                observation, rewards, done, info = self.env.step(
-                    action=action,
-                    observation_spaces=[self.observation],
-                    reward_spaces=[self.reward],
-                )
+                observation, rewards, done, info = self.env.step(action=action,observation_spaces=[self.observation],reward_spaces=[self.reward],)
             except ServiceError as e:
                 print(f"AGENT: Timeout Error Step: {e}")
                 continue
@@ -248,10 +266,10 @@ class QAgentBase():
         axs[1, 0].plot(self.epochs_history, color="green")
         axs[1, 0].plot(np.zeros_like(self.epochs_history), color="blue")
                 
-        # ax4.title.set_text('Test rewards')
-        # ax4.plot(test_policy, color="green")
-        # ax4.plot(np.zeros_like(test_policy), color="blue")
-        
+        axs[1, 1].title.set_text('Loss')
+        axs[1, 1].plot(self.loss_history, color="green")
+        axs[1, 1].plot(np.zeros_like(self.loss_history), color="blue")
+
         plt.tight_layout()
         # plt.show()
         reward_file = "rewards.png"

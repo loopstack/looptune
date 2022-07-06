@@ -65,7 +65,7 @@ class Environment:
 
         ir = lt.deserialize(benchmark.program.contents)
         self.agent = lt.LoopTreeAgent(lt.LoopTree(ir))
-        print(self.agent)
+        logging.info(self.agent)
         self.action_had_effect = False
         self.actions = []
 
@@ -109,7 +109,7 @@ class Environment:
     def get_flops_loop_nest_tensor(self) -> Event:
         with lt.Backend("loop_nest"):
             tensor = DoubleTensor(shape = [1], value=[self.agent.eval("FLOPS")])
-        print(f'<<<<<<<<<<<<<<< Reward = {tensor.value[0] / 1e9} GFLOPS >>>>>>>>>>>>>>>')
+        logging.info(f'<<<<<<<<<<<<<<< Reward = {tensor.value[0] / 1e9} GFLOPS >>>>>>>>>>>>>>>')
         return Event(double_tensor=tensor)
 
     def get_ir(self) -> Event:
@@ -128,10 +128,10 @@ class Environment:
         assert(dim0 == 1)
         stride_freq_vector = [0] * bucket_num
         stride_freq_pairs = self.agent.get_stride_frequency()
-
+        total_freq = sum([ x[1] for x in stride_freq_pairs] )
         for stride, freq in stride_freq_pairs:
             bucket_id = int(np.log2(stride))
-            stride_freq_vector[bucket_id] += float(freq)
+            stride_freq_vector[bucket_id] += freq/total_freq # Normalize freq
 
         return Event(float_tensor=FloatTensor(shape=[dim0, bucket_num], value=stride_freq_vector))
     
@@ -144,6 +144,18 @@ class Environment:
     
     def get_loop_tree(self) -> Event:
         return Event(string_value=self.agent.dump())
+
+    def get_prev_actions(self) -> Event:
+        dim0, dim1 = self.observation_spaces['5_prev_actions_tensor'].float_box.high.shape
+        last_actions_vector = []
+        for action in reversed(self.actions[-5:]):
+            one_hot_action = [ a == action for a in self.action_space.space.named_discrete.name ]
+            last_actions_vector.extend(one_hot_action)
+
+        last_actions_vector.extend([0] * (dim1 - len(last_actions_vector)))
+
+        return Event(float_tensor=FloatTensor(shape=[dim0, dim1], value=last_actions_vector))
+
 
     ##############################################################
     # Auxilary functions

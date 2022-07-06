@@ -191,12 +191,6 @@ class LoopToolCompilationSession(CompilationSession):
                 byte_sequence=ByteSequenceSpace(length_range=Int64Range(min=0)),
             ),
         ),        
-        # ObservationSpace(
-        #     name="loops_tensor",
-        #     space=Space(
-        #         int64_sequence=Int64SequenceSpace(length_range=Int64Range(min=0))
-        #     ),
-        # ),
         ObservationSpace( # Note: Be CAREFUL with dimensions, they need to be exactly the same like in perf.py
             name="loops_tensor",
             space=Space(
@@ -223,6 +217,20 @@ class LoopToolCompilationSession(CompilationSession):
             platform_dependent=True,
             default_observation=Event(
                 float_tensor=FloatTensor(shape = [1, 32], value=[0] * 32),
+            ),
+        ),
+        ObservationSpace( # Note: Ret pos of the cursor (simple check if network learns)
+            name="5_prev_actions_tensor",
+            space=Space(
+                float_box=FloatBox(
+                    low = FloatTensor(shape = [1, 5 * 4], value=[0] * 5 * 4),
+                    high = FloatTensor(shape = [1, 5 * 4], value=[1] * 5 * 4),
+                )
+            ),
+            deterministic=False,
+            platform_dependent=True,
+            default_observation=Event(
+                float_tensor=FloatTensor(shape = [1, 5 * 4], value=[0] * 5 * 4),
             ),
         ),
     ]
@@ -289,7 +297,7 @@ class LoopToolCompilationSession(CompilationSession):
         new_action_space = False
         end_of_session = False
         action_had_effect = False
-
+        breakpoint()
         num_choices = len(self.action_spaces[0].space.named_discrete.name)
         choice_index = action.int64_value
         if choice_index < 0 or choice_index >= num_choices:
@@ -298,8 +306,8 @@ class LoopToolCompilationSession(CompilationSession):
         # Compile benchmark with given optimization
         action = self._action_space.space.named_discrete.name[choice_index]
         if action not in self.env.get_available_actions():
-            print(f"ACTION_NOT_AVAILABLE (action = {action})")
-            print(f"Actions = {self.env.get_available_actions()}")
+            logging.info(f"ACTION_NOT_AVAILABLE (action = {action})")
+            logging.info(f"Actions = {self.env.get_available_actions()}")
             return (end_of_session, new_action_space, not action_had_effect)
 
         logging.info(
@@ -307,8 +315,9 @@ class LoopToolCompilationSession(CompilationSession):
         )
 
         action_had_effect = self.env.apply_action(action=action, save_state=self.save_state)          
-        print(f'Action = {action}')
-        print(self.env.agent)
+        
+        logging.info(f'Action = {action}')
+        logging.info(self.env.agent)
         
         logging.info(f"\naction_had_effect ({action}) = {action_had_effect}\n")
 
@@ -326,7 +335,7 @@ class LoopToolCompilationSession(CompilationSession):
         # )
 
         self.cur_iter += 1
-        print(f">>> AGENT ITERATION = {self.cur_iter}, actions = {self.env.actions}")
+        logging.info(f">>> AGENT ITERATION = {self.cur_iter}, actions = {self.env.actions}")
         return (end_of_session, new_action_space, not action_had_effect)
 
 
@@ -365,7 +374,8 @@ class LoopToolCompilationSession(CompilationSession):
         elif observation_space.name == "loop_tree":
             observation = self.env.get_loop_tree()    
             return observation
-                        
+        elif observation_space.name == "5_prev_actions_tensor":
+            return self.env.get_prev_actions()
         else:
             raise KeyError(observation_space.name)
 
@@ -381,6 +391,8 @@ class LoopToolCompilationSession(CompilationSession):
         # new_fork = deepcopy(self)
         # new_fork = super().fork()
         # print(new_fork)
+        breakpoint()
+
         return LoopToolCompilationSession(
             working_directory=self.working_dir,
             action_space=self.action_space,

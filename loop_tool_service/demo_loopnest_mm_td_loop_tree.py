@@ -58,20 +58,20 @@ def main():
     init_logging(level=logging.CRITICAL)
     register_env()
 
-    bench = "benchmark://loop_tool_simple-v0/mm128"
+    bench = "benchmark://loop_tool_simple-v0/simple"
 
     with loop_tool_service.make_env("loop_tool-v0") as env:
         pdb.set_trace()
         agent = q_agents.QAgentLoopTree(
             env=env,
             bench=bench,
-            observation = "loop_tree",
+            observation = "5_prev_actions_tensor",
             reward="flops_loop_nest",
-            numTraining=100, 
-            numTest=10,
+            numTraining=1000, 
+            numTest=4,
             exploration=0.7, 
             learning_rate=0.8, 
-            discount=0.01,
+            discount=0.9,
         )
         agent.train()
         agent.test()

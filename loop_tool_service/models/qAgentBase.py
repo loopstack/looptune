@@ -3,7 +3,8 @@ import pdb
 import json
 from matplotlib import pyplot as plt
 import numpy as np
-import torch
+import os
+from pathlib import Path
 
 
 import loop_tool as lt
@@ -36,7 +37,8 @@ class QAgentBase():
             numTest=10, 
             exploration=0.5, 
             learning_rate=0.5, 
-            discount=1
+            discount=1,
+            save_file_path = "rewards.png"
         ):
 
         self.env = env
@@ -44,6 +46,7 @@ class QAgentBase():
         self.observation = observation
         self.reward = reward
         
+        self.reward_dict = {}
         self.Q_counts = {}
         self.exploration = float(exploration)
         self.learning_rate = float(learning_rate)
@@ -56,6 +59,7 @@ class QAgentBase():
         self.epochs_history = []
         self.loss_history = []
         self.converged = False
+        self.save_file_path = Path(os.getenv('LOOP_TOOL_ROOT')) / Path('results') / Path(save_file_path)
 
     ####################################
     #    Override These Functions      #
@@ -141,8 +145,8 @@ class QAgentBase():
         state = State(obs, self.hashState(obs))
 
         for i in range(self.numTest):
-            action = self.getAction(state=state, exploration=0)
             self.print_state(state)
+            action = self.getAction(state=state, exploration=0)
 
             if self.getQValue(state, action) <= 0:
                 print("Stop! This action doesn't help")
@@ -215,16 +219,22 @@ class QAgentBase():
                 self.Q_counts[state.hash][action] += 1
             else:
                 action = self.getAction(state=state, exploration=self.exploration)
-            
+
             # breakpoint()
             state_prev = state
             self.print_state(state)
 
             try:
-                observation, rewards, done, info = self.env.step(action=action,observation_spaces=[self.observation],reward_spaces=[self.reward],)
+                if state.hash not in self.reward_dict:
+                    observation, rewards, done, info = self.env.step(action=action,observation_spaces=[self.observation],reward_spaces=[self.reward],)
+                    self.reward_dict[state.hash] = rewards
+                else:
+                    observation, rewards, done, info = self.env.step(action=action,observation_spaces=[self.observation])
+                    rewards = self.reward_dict[state.hash]
+                    
             except ServiceError as e:
                 print(f"AGENT: Timeout Error Step: {e}")
-                continue
+                pdb.set_trace()
             except ValueError:
                 pdb.set_trace()
                 pass
@@ -253,6 +263,8 @@ class QAgentBase():
 
     def plot_history(self):        
         fig, axs = plt.subplots(2, 2)
+        
+        fig.suptitle(f'Obs = {self.observation}, Exp = {self.exploration}, Lr = {self.learning_rate}, Dis = {self.discount}')
 
         axs[0, 0].title.set_text('Train rewards')
         axs[0, 0].plot(self.train_history, color="red")
@@ -271,11 +283,8 @@ class QAgentBase():
         axs[1, 1].plot(np.zeros_like(self.loss_history), color="blue")
 
         plt.tight_layout()
-        # plt.show()
-        reward_file = "rewards.png"
-        # if os.path.isfile(reward_file):
-        #   os.remove(reward_file)
-        plt.savefig(reward_file)
+        self.save_file_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(self.save_file_path)
 
     def print_state(self, state):
         print(f"====================================================================")

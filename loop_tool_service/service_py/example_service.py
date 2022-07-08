@@ -297,7 +297,7 @@ class LoopToolCompilationSession(CompilationSession):
         new_action_space = False
         end_of_session = False
         action_had_effect = False
-        breakpoint()
+
         num_choices = len(self.action_spaces[0].space.named_discrete.name)
         choice_index = action.int64_value
         if choice_index < 0 or choice_index >= num_choices:
@@ -391,7 +391,6 @@ class LoopToolCompilationSession(CompilationSession):
         # new_fork = deepcopy(self)
         # new_fork = super().fork()
         # print(new_fork)
-        breakpoint()
 
         return LoopToolCompilationSession(
             working_directory=self.working_dir,

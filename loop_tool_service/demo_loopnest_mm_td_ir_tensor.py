@@ -63,22 +63,34 @@ def main():
     init_logging(level=logging.CRITICAL)
     register_env()
 
+    observation_space = '5_prev_actions_tensor'
+    exploration = 0.2
+    learning_rates = [0.1]
+    discount_factors = [0.6, 0.7, 0.8]
+    numTraining = 100
+    numTest = 4
+
     bench = "benchmark://loop_tool_simple-v0/simple"
     with compiler_gym.make("loop_tool-v0") as env:
         breakpoint()
-        agent = q_agents.QAgentTensor(
-            env=env,
-            bench=bench,
-            observation = "stride_tensor",
-            reward="flops_loop_nest",
-            numTraining=100, 
-            numTest=4,
-            exploration=0.2, 
-            learning_rate=0.8, 
-            discount=0.9,
-        )
-        agent.train()
-        agent.test()
+
+        for lr in learning_rates:
+            for dis in discount_factors:
+
+                agent = q_agents.QAgentTensor(
+                    env=env,
+                    bench=bench,
+                    observation = observation_space,
+                    reward="flops_loop_nest",
+                    numTraining=numTraining, 
+                    numTest=numTest,
+                    exploration=exploration, 
+                    learning_rate=lr, 
+                    discount=dis,
+                    save_file_path=f'{observation_space}/{numTraining}_{exploration}_{lr}_{dis}.png'
+                )
+                agent.train()
+                agent.test()
 
 
 if __name__ == "__main__":

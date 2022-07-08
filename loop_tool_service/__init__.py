@@ -78,7 +78,6 @@ class LoopToolCompilerEnvWrapper(CompilerEnvWrapper):
         **kwargs
     ):
         logging.info("*******  **************** Apply multi-step ***********************")
-        breakpoint()
         observation, reward, done, info = super().multistep(actions, observation_spaces, reward_spaces, **kwargs)
         # Log only when you have 1 action 
         if self.logging and len(actions) == 1 and observation:     

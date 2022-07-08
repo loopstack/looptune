@@ -1,3 +1,4 @@
+from functools import total_ordering
 from networkx.drawing.nx_pydot import to_pydot
 
 from cgi import test
@@ -68,17 +69,19 @@ class QAgentTensor(QAgentBase):
                                 hidden_size=self.size_in, 
                                 dropout=0.5).to(device)
 
+        self.target_iter = 0
         self.target_net = Q_net(in_size=self.size_in, 
                                 out_size=self.size_out, 
                                 hidden_size=self.size_in, 
                                 dropout=0.5).to(device)
 
-
+        self.confidence = 0
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
-        self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=0.1)
+        self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=self.learning_rate)
         # self.optimizer = torch.optim.RMSProp(self.policy_net.parameters(), lr=0.1)
-
+        breakpoint()
+        self.scheduler = torch.optim.lr_scheduler.LinearLR(self.optimizer, total_iters=self.numTraining)
 
     def hashState(self, state):
         return state.tostring()
@@ -119,24 +122,45 @@ class QAgentTensor(QAgentBase):
         # action_onehot = torch.tensor(action_onehot)
 
 
+        if len(self.loss_history):
+            self.confidence = min(1 / np.mean(self.loss_history[-5:]), 1)
+        else:
+            self.confidence = 0
+
         pred_q = self.policy_net(state_tensor)
-        target_q = torch.clone(pred_q)
-        target_q[0][action] = reward + self.discount * torch.max(self.policy_net(nextState_tensor))
+        target_q = torch.clone(pred_q) * 0
+        # target_q[0][action] = reward + self.discount * torch.max(self.policy_net(nextState_tensor))
+
+        # TODO: Confidendce of the network * self.discount max...
+        target_q[0][action] = reward + self.confidence * self.discount * torch.max(self.target_net(nextState_tensor))
+        # self.Q[state.hash][action] += self.learning_rate * ( reward + self.discount * self.getBestQValue(nextState) - self.getQValue(state.hash, action) )
 
         print(state_tensor)
         print(self.policy_net(state_tensor))
         print(reward)
         print(action)
         
+
         loss = self.criterion(pred_q, target_q)
-        # breakpoint()
+        self.loss_history.append(loss.detach().numpy())
+
         self.optimizer.zero_grad()
-        loss.backward()
+        loss.backward(retain_graph=True)
         self.optimizer.step()
 
-        print(loss)
-        # breakpoint()
-        # if action in [1, 3]: breakpoint()
-        print('_________________________________________')
+        print(self.policy_net(state_tensor))
+        print('_______________________LOSS____________________________', loss)
 
+
+        # if reward < 15:
+        #     breakpoint()
+
+
+        print('_________________________________________')
+        # Update the target network, copying all weights and biases in DQN
+        self.target_iter += 1
+        if self.target_iter == 4:
+            self.target_iter = 0
+            self.target_net.load_state_dict(self.policy_net.state_dict())
+            self.scheduler.step()
 

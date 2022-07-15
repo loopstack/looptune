@@ -132,27 +132,27 @@ class OptimizationTarget(str, Enum):
 
                     new_env.runtime_warmup_count = 0
                     print("*************** FINAL REWARD 3******************\n\n")
-                    
-                    # new_env.apply(env.state)
                     print("*************** FINAL REWARD 4******************\n\n")
 
-                    final_gflops = new_env.observation.flops_loop_nest() / 1e9
+                    base_gflops = new_env.observation.flops_loop_nest() / 1e9
                     print("*************** FINAL REWARD 5******************\n\n")
+                    print(f"Env actions = {env.actions}")
+                    new_env.multistep(env.actions)
+
+                    final_gflops = new_env.observation.flops_loop_nest() / 1e9
 
                     # assert len(final_runtimes) == runtime_count
                     print("*************** FINAL REWARD 6******************\n\n")
 
-
                     # assert len(o3_runtimes) == runtime_count
 
                 print("*************** FINAL REWARD 9******************\n\n")
-                max_gflops = 141.74
-                print("Max GFLOPS: %s", max_gflops)
+                print("Base GFLOPS: %s", base_gflops)
                 print("Final GFLOPS: %s", final_gflops)
-                speedup = max(np.median(final_gflops) / np.median(max_gflops), 1e-12)
+                speedup = max(np.median(final_gflops) / np.median(base_gflops), 1e-12)
                 print("Speedup: %.4f", speedup)
 
-                return speedup
+                return final_gflops
 
             
 

@@ -8,9 +8,9 @@ import shutil
 import pickle
 import pdb
 from pathlib import Path
+import re
 
-
-def split_data(path_to_data):
+def label_data(path_to_data):
     
     file_names = [ f for f in os.listdir(path_to_data)]
     
@@ -20,8 +20,14 @@ def split_data(path_to_data):
 
         tree = None
         with open(file_path, "r") as file:
-            ir = lt.deserialize(file.read())
+            lines = file.readlines()
+            if re.match("^\d+\.\d+$", lines[-1]):
+                continue
+
+            ir = lt.deserialize(''.join(lines))
             tree = lt.LoopTree(ir)
+            print(tree)
+            
         with open(file_path, "a") as file:
             file.write(str(tree.FLOPS()))
     
@@ -34,7 +40,7 @@ def main():
         return 
 
     path_to_data = sys.argv[1]
-    split_data(path_to_data)
+    label_data(path_to_data)
 
 
 if __name__ == '__main__':

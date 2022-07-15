@@ -6,4 +6,8 @@
 
 benchmarks:
     - uris:
-          - benchmark://loop_tool_simple-v0/simple
+        #   - benchmark://loop_tool_simple-v0/simple
+        #   - benchmark://loop_tool_simple-v0/mm
+          - benchmark://loop_tool_simple-v0/conv
+          - benchmark://loop_tool_simple-v0/mm128
+          - benchmark://loop_tool_simple-v0/mm256

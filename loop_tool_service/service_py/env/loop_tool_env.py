@@ -71,7 +71,12 @@ class Environment:
 
 
     def get_available_actions(self):
-        return self.agent.get_available_actions()
+        def intersection(l1, l2):
+            return [ x for x in l1 if x in l2 ]
+
+        available_actions = intersection(self.agent.get_available_actions(), 
+                                         self.action_space.space.named_discrete.name)
+        return available_actions
 
     ##############################################################
     # Apply action
@@ -125,14 +130,9 @@ class Environment:
 
     def get_stride_tensor(self) -> Event:
         dim0, bucket_num = self.observation_spaces['stride_tensor'].float_box.high.shape
+        stride_freq_vector = self.agent.get_stride_historgram()
         assert(dim0 == 1)
-        stride_freq_vector = [0] * bucket_num
-        stride_freq_pairs = self.agent.get_stride_frequency()
-        total_freq = sum([ x[1] for x in stride_freq_pairs] )
-        for stride, freq in stride_freq_pairs:
-            bucket_id = int(np.log2(stride))
-            stride_freq_vector[bucket_id] += freq/total_freq # Normalize freq
-
+        assert(len(stride_freq_vector) == bucket_num)
         return Event(float_tensor=FloatTensor(shape=[dim0, bucket_num], value=stride_freq_vector))
     
     def get_loops_tensor(self) -> Event:

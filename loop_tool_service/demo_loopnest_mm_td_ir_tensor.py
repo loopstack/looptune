@@ -63,7 +63,7 @@ def main():
     init_logging(level=logging.CRITICAL)
     register_env()
 
-    observation_space = '5_prev_actions_tensor'
+    observation_space = 'stride_tensor'
     exploration = 0.2
     learning_rates = [0.1]
     discount_factors = [0.6, 0.7, 0.8]

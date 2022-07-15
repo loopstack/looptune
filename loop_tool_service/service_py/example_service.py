@@ -279,11 +279,7 @@ class LoopToolCompilationSession(CompilationSession):
             self.save_state = False if value == "0" else True
             return "Succeeded"
         elif key == "available_actions":
-            def intersection(l1, l2):
-                return [ x for x in l1 if x in l2 ]
-            available_actions = intersection(self.env.get_available_actions(), 
-                                             self.action_spaces[0].space.named_discrete.name)
-            return json.dumps(available_actions)
+            return json.dumps(self.env.get_available_actions())
         
         elif key == "print_looptree":
             print(self.env.agent)

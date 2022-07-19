@@ -9,11 +9,13 @@ import uuid
 import os
 import sys
 import logging
+import json
+from copy import deepcopy
 
 from compiler_gym.envs import CompilerEnv
 from compiler_gym.util.timer import Timer
 
-from compiler2_service.analyzers.dataset_exploration.core import Walker
+from loop_tool_service.models.autotuners.core import Walker
 
 
 class GreedyWalker(Walker):
@@ -21,56 +23,33 @@ class GreedyWalker(Walker):
         self, 
         env: CompilerEnv, 
         dataset_uri: str,
-        observation: str, 
         reward: str, 
         walk_count: int, 
         step_count: int,
-        max_base_opt: int = 30, # CLANG -O3 has ~150 passes
-        seek_count: int = -1 # number of actions you try before deciding
+        seek_count: int = float('inf'), # number of actions you try before deciding
+        search_depth: int = 1,
+        search_width: int = 10000,
+        bench_count: int = 1000000000,
+        model_path = None,
         ):
 
         Walker.__init__(self, 
                         env=env,
                         dataset_uri=dataset_uri,
-                        observation=observation,
                         reward=reward,
                         walk_count=walk_count,
                         step_count=step_count,
-                        max_base_opt=max_base_opt)
+                        bench_count=bench_count,
+                        model_path=model_path)
         
-        self.seek_count = min(seek_count, env.action_space.n)
-        
+        self.search_depth = search_depth
+        self.search_width = search_width
+        # self.eval_state_fn = eval_state_fn if eval_state_fn else self.eval_state
 
     ####################################################################
     # Overwrite functions
     ####################################################################
-    def walk(self, step_count: int, baseline_opt: list): 
-        # use format_log for appending new enterence in list you return
-        self.prev_actions = baseline_opt
-        rewards = {}
 
-        for self.step_num in range(1, step_count + 1):
-            self.env.send_param("save_state", "0")
-
-            for action_str in random.sample(self.env.action_space.names, self.seek_count):
-                action_index = self.env.action_space.from_string(action_str)
-
-                with Timer() as step_time:
-                    observation, reward, done, info = self.env.step(
-                        action_index, 
-                        seek=True,
-                        observation_spaces=self.observation,
-                        reward_spaces=self.reward
-                    )
-                    rewards[action_index] = reward[0]
-
-                    if done:
-                        logging.critical("Episode ended by environment")
-                        break
-
-            best_action_index = max(rewards, key=rewards.get)
-            self.env.send_param("save_state", "1")
-            self.env.step(best_action_index)                
-            self.prev_actions.append(self.env.action_space.names[best_action_index])
-
-
+    def next_action(self):        
+        action, reward = json.loads(self.env.send_param('next_best_action', f'{self.search_depth},{self.search_depth}')) 
+        return action, reward

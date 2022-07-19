@@ -21,6 +21,8 @@ import os
 import sys
 import loop_tool as lt
 import csv
+import json
+import random
 
 from compiler_gym.datasets import Benchmark, Dataset
 from compiler_gym.datasets.uri import BenchmarkUri
@@ -56,8 +58,7 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                runtime_reward.RewardScalar(),
-                flops_reward.RewardScalar(),
+                flops_loop_nest_reward.RewardScalar(),
                 # flops_loop_nest_reward.RewardScalar(),
                 ],
             "datasets": [
@@ -72,18 +73,15 @@ def main():
     init_logging(level=logging.CRITICAL)
     register_env()
 
-    actions = ["down", "split_16", "down", "down", "split_16", "down", "split_4",  "down", "vectorize"]
+    actions = ["down", "down", "down", "down", "split_16", "down", "split_4",  "down", "vectorize"]
 
-    with open("/Users/dejang/Desktop/work/loop_tool_env/loop_tool_service/benchmarks/loop_tool_dataset/actions.txt", "r") as f:
-        actions = f.readlines()[0].split(',')
-        actions = [a.strip() for a in actions]
-        pdb.set_trace()
+    # with open("/Users/dejang/Desktop/work/loop_tool_env/loop_tool_service/benchmarks/loop_tool_dataset/actions.txt", "r") as f:
+    #     actions = f.readlines()[0].split(',')
+    #     actions = [a.strip() for a in actions]
+        # pdb.set_trace()
     
     with loop_tool_service.make_env("loop_tool-v0") as env:
         for bench in env.datasets["benchmark://loop_tool_simple-v0"]:
-            bench = "benchmark://loop_tool_simple-v0/muladd"
-            pdb.set_trace()
-
             try:
                 env.reset(benchmark=bench)
                 # env.send_param("timeout_sec", "1")
@@ -91,14 +89,25 @@ def main():
                 print("AGENT: Timeout Error Reset")
                 continue
 
-            for action in actions:
+            
+            env.send_param("print_looptree", "")
+            env.multistep(actions = ['down', 'down'], observation_spaces=["stride_tensor"],reward_spaces=["flops_loop_nest"], seek=True)
+            env.send_param("print_looptree", "")
+
+
+            for i in range(4):
+                available_actions = json.loads(env.send_param("available_actions", ""))
+                action = random.choice(available_actions)
                 print(f"**********************************************************")
                 print(f"Action = {action}\n")
+                env.send_param("print_looptree", "")
+                breakpoint()
+
                 try:
                     observation, reward, done, info = env.step(
                         action=env.action_space.from_string(action),
-                        observation_spaces=["loop_tree_ir"],
-                        reward_spaces=["flops", "flops"],
+                        observation_spaces=["stride_tensor"],
+                        reward_spaces=["flops_loop_nest"],
                     )
                 except ServiceError:
                     print("AGENT: Timeout Error Step")
@@ -117,9 +126,9 @@ def main():
                     print(f"{observation}\n")
 
 
-            pdb.set_trace()
-            
-            break
+                breakpoint()
+                
+                
 
 if __name__ == "__main__":
     main()

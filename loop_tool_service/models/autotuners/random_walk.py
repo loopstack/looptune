@@ -13,7 +13,7 @@ from compiler_gym.envs import CompilerEnv
 from compiler_gym.util.timer import Timer
 import logging
 
-from compiler2_service.analyzers.dataset_exploration.core import Walker
+from loop_tool_service.models.autotuners.core import Walker
 
 
 class RandomWalker(Walker):
@@ -34,8 +34,7 @@ class RandomWalker(Walker):
                         observation=observation,
                         reward=reward,
                         walk_count=walk_count,
-                        step_count=step_count,
-                        max_base_opt=max_base_opt)
+                        step_count=step_count)
 
     ####################################################################
     # Overwrite functions

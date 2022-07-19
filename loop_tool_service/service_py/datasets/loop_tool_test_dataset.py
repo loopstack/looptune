@@ -27,7 +27,6 @@ class Dataset(Dataset):
             site_data_base=site_data_path("example_dataset"),
         )
 
-        breakpoint()
         benchmark_config = BenchmarkDynamicConfig(
                     build_cmd=Command(
                         argument=["$CC", "$IN"],
@@ -42,7 +41,7 @@ class Dataset(Dataset):
                 )
 
         self._benchmarks = {}
-        benchmark_prefix = "benchmark://loop_tool_simple-v0"
+        benchmark_prefix = "benchmark://loop_tool_test-v0"
 
         example_files = os.listdir(BENCHMARKS_PATH)
         for i, example_filename in enumerate(example_files):

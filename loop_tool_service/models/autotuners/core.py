@@ -5,19 +5,13 @@ import uuid
 import os
 import sys
 
-from compiler2_service.agent_py.datasets import (
-    hpctoolkit_dataset,
-    poj104_dataset,
-    poj104_dataset_small,
-)
-
+import json
 import humanize
 from absl import app, flags
 from tqdm import tqdm
 
 from compiler_gym.envs import CompilerEnv
 from compiler_gym.util.flags.benchmark_from_flags import benchmark_from_flags
-from compiler_gym.util.flags.env_from_flags import env_from_flags
 from compiler_gym.util.shell_format import emph
 from compiler_gym.util.timer import Timer
 
@@ -29,22 +23,22 @@ class Walker:
         self, 
         env: CompilerEnv, 
         dataset_uri: str,
-        observation: str, 
         reward: str, 
         walk_count: int, 
         step_count: int,
-        max_base_opt: int = 30 # CLANG -O3 has ~150 passes
+        bench_count: int,
+        model_path: str,
         ):
 
         ####################################################################
         # Initialization 
         ####################################################################
         self.env = env
-        self.observation = observation.split(',')
-        self.reward = reward.split(',')
+        self.reward = reward
         self.walk_count = walk_count
         self.step_count = step_count        
-        self.max_base_opt = max_base_opt
+        self.bench_count = bench_count
+        self.model_path = model_path
 
         # Internal parameters
         self.dataset_uri = dataset_uri
@@ -60,8 +54,11 @@ class Walker:
     ####################################################################
     def run(self):
         data_set = self.env.datasets[self.dataset_uri]
-        for bench in tqdm(data_set, total=len(data_set)):
+        i = 0
+        for bench in tqdm(data_set, total=min(len(data_set), self.bench_count)):
+            if i == self.bench_count: break
             self.explore_benchmark(bench)
+            i += 1
 
     def explore_benchmark(self, bench: str) -> None:
         """Perform a random walk of the action space.
@@ -72,32 +69,53 @@ class Walker:
             environment to end the episode.
         """
         log = []
-        rewards = []
+        rewards_actions = []
             
         with Timer() as episode_time:
             self.bench_uri = str(bench)       
+            print(self.bench_uri)
+            self.env.reset(bench)
+        
+            start_flops = self.env.observation[self.reward] / 1e9
 
             for self.walk_num in range(1, self.walk_count + 1):
-                base_opt_num = random.randrange(self.max_base_opt)
-                baseline_opt = random.sample(self.env.action_space.flags, k=base_opt_num)
                 self.env.reset(bench)
-                self.env.send_param("save_state", "1")
+                if self.model_path != None:
+                    self.env.send_param('load_model', self.model_path)
 
-                self.env.multistep(
-                    actions=[self.env.action_space.from_string(a) for a in baseline_opt],
-                    observation_spaces=self.observation,
-                    reward_spaces=self.reward
-                    )
+                rewards_actions.append(self.walk(self.step_count))
+                print(f'{start_flops} -> {rewards_actions[-1][0]} GFLOPs, Actions = {rewards_actions[-1][1]}')
+            
+            print(f"--------BEST = {max(rewards_actions)}---------")
 
-                self.walk(self.step_count, baseline_opt)
-    
 
     ####################################################################
     # Overwrite functions
     ####################################################################
-    def walk(self, step_count: int, baseline_opt: list)-> list: 
-        logging("class Walker: You must implement walk function")
-        raise NotImplementedError()
+    def next_action(self):
+        print('Implement next_action given environment')
+        raise NotImplementedError
+
+
+    def walk(self, step_count: int)-> list: 
+        # use format_log for appending new enterence in list you return
+        self.prev_actions = []
+        cur_reward = 0
+
+        for self.step_num in range(1, step_count + 1):
+        
+            new_action_str, new_reward = self.next_action()
+            # if new_reward >= cur_reward or True:
+
+            cur_reward = new_reward
+            action_index = self.env.action_space.from_string(new_action_str)
+            self.env.step(action_index)
+            self.prev_actions.append(new_action_str)
+            # else:
+            #     break
+        return self.env.observation[self.reward] / 1e9, self.prev_actions
+               
+
 
 
     ####################################################################

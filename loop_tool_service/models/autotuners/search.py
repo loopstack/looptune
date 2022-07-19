@@ -17,7 +17,7 @@ import uuid
 import os
 import sys
 
-
+from loop_tool_service.paths import LOOP_TOOL_ROOT
 
 
 from compiler_gym.util.registration import register
@@ -27,10 +27,14 @@ from absl import app, flags
 
 from joblib import Parallel, delayed
 
-flags.DEFINE_integer("seek_count", 10, "The number seek steps before you decide.")
-flags.DEFINE_integer("walk_count", 10, "The number of walks.")
-flags.DEFINE_integer("step_count", 20, "The number of steps.")
-flags.DEFINE_string("data_set", "benchmark://poj104-v0", "Data set.")
+flags.DEFINE_integer("bench_count", 2, "The number of benchmarks.")
+flags.DEFINE_integer("search_depth", 1, "How deep you go in search before you decide.")
+flags.DEFINE_integer("search_width", 1000, "The number action you expand every level of the search.")
+flags.DEFINE_integer("walk_count", 5, "The number of walks.")
+flags.DEFINE_integer("step_count", 6, "The number of steps.")
+flags.DEFINE_string("reward", "flops_loop_nest", "Reward.")
+flags.DEFINE_string("data_set", "benchmark://loop_tool_test-v0", "Data set.")
+flags.DEFINE_string("model_path",  f"{str(LOOP_TOOL_ROOT)}/loop_tool_service/models/weights/model.pth", "If you want to search based on model")
 
 FLAGS = flags.FLAGS
 
@@ -48,7 +52,7 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.RewardTensor(),
+                flops_loop_nest_reward.RewardScalar(),
                 ],
             "datasets": [
                 loop_tool_test_dataset.Dataset(),
@@ -71,25 +75,18 @@ def main(argv):
     with loop_tool_service.make_env("loop_tool-v0") as env:
         walker = GreedyWalker(env=env, 
                               dataset_uri = FLAGS.data_set,
-                              observation=FLAGS.observation,
                               reward=FLAGS.reward,  
                               walk_count=max(1, FLAGS.walk_count),
-                              step_count=max(1, FLAGS.step_count)
+                              step_count=max(1, FLAGS.step_count),
+                              search_depth=FLAGS.search_depth,
+                              search_width=FLAGS.search_width,
+                              bench_count=FLAGS.bench_count,
+                              model_path=FLAGS.model_path
                               )
 
 
         walker.run()
 
-        # walker = RandomWalker(env=env, 
-        #                       dataset_uri = FLAGS.data_set,
-        #                       observation=FLAGS.observation,
-        #                       reward=FLAGS.reward,
-        #                       walk_count=max(1, FLAGS.walk_count),
-        #                       step_count=max(1, FLAGS.step_count),                               
-        #                       )
-
-
-        # walker.run()
         
 if __name__ == "__main__":
     app.run(main)

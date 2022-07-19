@@ -75,7 +75,7 @@ def permute_annotations(permuted_tree):
   return annotated_trees
 
 
-def create_permutations_db(loop_tree):
+def create_permutations_db(loop_tree, has_annotations=True):
   global max_loops
   all_possible_trees = []
   
@@ -88,7 +88,13 @@ def create_permutations_db(loop_tree):
       for perm in permutations(comb):
         try:
           permuted_tree = reorder_loop(loop_tree, perm)
-          for permuted_tree in permute_annotations(permuted_tree):
+
+          if has_annotations:
+            trees = permute_annotations(permuted_tree)
+          else:
+            trees = [permuted_tree]
+
+          for permuted_tree in trees:
             agent = lt.LoopTreeAgent(permuted_tree)
             
             loops_tensor = agent.get_loops_tensor()
@@ -107,7 +113,7 @@ def create_permutations_db(loop_tree):
 
         except KeyboardInterrupt:
           exit()
-        except:
+        except RuntimeError:
           pass
 
   return all_possible_trees
@@ -169,7 +175,7 @@ from tqdm import tqdm
 
 
 
-def generate_loop_trees():
+def generate_loop_trees(has_annotations=True):
   df = pd.DataFrame(columns=['ir', 'loops_tensor', 'program_tensor', 'gflops'])
   count = 0
   examples_count = []
@@ -182,7 +188,7 @@ def generate_loop_trees():
           if new_lt is not None:
             count += 1            
             # breakpoint()
-            df_example = pd.DataFrame(create_permutations_db(new_lt),columns=['ir', 'loops_tensor', 'program_tensor', 'gflops'])
+            df_example = pd.DataFrame(create_permutations_db(new_lt, has_annotations),columns=['ir', 'loops_tensor', 'program_tensor', 'gflops'])
             df = pd.concat([df, df_example])
             examples_count.append(df_example.shape[0])
 
@@ -193,9 +199,9 @@ def generate_loop_trees():
             
 
 
-df = generate_loop_trees()
+df = generate_loop_trees(has_annotations=False)
 df.head()
 
 breakpoint()
-df.to_pickle("tensor_dataset.pkl")  
+df.to_pickle("tensor_dataset_noanot.pkl")  
 

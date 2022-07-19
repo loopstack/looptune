@@ -78,7 +78,11 @@ class LoopToolCompilerEnvWrapper(CompilerEnvWrapper):
         **kwargs
     ):
         logging.info("*******  **************** Apply multi-step ***********************")
+
+        if seek: self.env.send_param("save_restore", "0")
         observation, reward, done, info = super().multistep(actions, observation_spaces, reward_spaces, **kwargs)
+        if seek: self.env.send_param("save_restore", "1")
+
         # Log only when you have 1 action 
         if self.logging and len(actions) == 1 and observation:     
             # Log only if you have previous_observation
@@ -97,8 +101,8 @@ class LoopToolCompilerEnvWrapper(CompilerEnvWrapper):
                 )
             self.prev_observation = copy.deepcopy(observation)
 
-        if seek:
-            self.env.actions = self.env.actions[:-len(actions)]
+        # if seek:
+        #     self.env.actions = self.env.actions[:-len(actions)]
 
         return observation, reward, done, info
 

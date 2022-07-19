@@ -9,6 +9,8 @@ import loop_tool as lt
 import networkx as nx
 import pydot
 import ast
+import json
+import random
 
 from compiler_gym.service.proto import (
     Event,
@@ -48,6 +50,7 @@ from compiler_gym.service.proto import (
 # from compiler_gym.util.commands import Popen, run_command
 from loop_tool_service.service_py.utils import run_command, proto_buff_container_to_list, print_list, run_command_stdout_redirect
 
+import torch 
 
 
 class Environment:
@@ -68,13 +71,16 @@ class Environment:
         logging.info(self.agent)
         self.action_had_effect = False
         self.actions = []
+        self.agent_saved = None
+        self.model = None
 
-
-    def get_available_actions(self):
+    def get_available_actions(self, agent=None):
         def intersection(l1, l2):
             return [ x for x in l1 if x in l2 ]
 
-        available_actions = intersection(self.agent.get_available_actions(), 
+        if agent == None:
+            agent = self.agent
+        available_actions = intersection(agent.get_available_actions(), 
                                          self.action_space.space.named_discrete.name)
         return available_actions
 
@@ -130,7 +136,7 @@ class Environment:
 
     def get_stride_tensor(self) -> Event:
         dim0, bucket_num = self.observation_spaces['stride_tensor'].float_box.high.shape
-        stride_freq_vector = self.agent.get_stride_historgram()
+        stride_freq_vector = self.agent.get_stride_histogram()
         assert(dim0 == 1)
         assert(len(stride_freq_vector) == bucket_num)
         return Event(float_tensor=FloatTensor(shape=[dim0, bucket_num], value=stride_freq_vector))
@@ -175,3 +181,74 @@ class Environment:
     def extract_features(self, label, max_feature_size = 50):
         dict = ast.literal_eval(ast.literal_eval(label))
         return list(dict.values())
+
+
+
+    def load_model(self, model_path_str):
+        if model_path_str == '':
+            self.model = None
+        else:
+            self.model = torch.jit.load(model_path_str)
+            self.model.eval()
+            # self.model = SmallNet.load_model(model_path_str)
+            # self.model.load_state_dict(torch.load(model_path_str))
+
+
+    # Search
+    def get_best_next_action(self, search_depth, search_width):
+        if self.model != None:
+            eval_fn = self.eval_state_model
+        else:
+            eval_fn = self.eval_state
+
+        next_action, new_reward =  self.get_best_action_helper(
+            agent=self.agent, 
+            search_depth=search_depth, 
+            search_width=search_width,
+            eval_fn=eval_fn
+        )
+        return json.dumps((next_action, new_reward))
+        
+    def get_best_action_helper(self, agent, search_depth, search_width, eval_fn):
+        best_reward = -1
+        best_action = None
+
+        if search_depth == 0:
+            # self.env.send_param("undo_action", "")
+            return best_action, eval_fn(agent)
+
+
+        available_actions = self.get_available_actions(agent=agent)
+        search_width_real = min(len(available_actions), search_width)
+        chosen_actions = random.sample(available_actions, search_width_real)
+        # print(chosen_actions)
+
+        for action_str in chosen_actions:
+
+            agent_copy = deepcopy(agent)
+
+            # print(f'search_depth = {search_depth}')
+            # print(agent.actions)
+            # print(agent)
+            next_action, new_reward =  self.get_best_action_helper(agent_copy, search_depth - 1, search_width, eval_fn)
+
+            if new_reward > best_reward:
+                best_reward = new_reward 
+                best_action = action_str
+
+        # env_fork.send_param("undo_action", "")
+        # print(best_action, best_reward)
+        return best_action, best_reward
+
+
+    def eval_state(self, agent):
+        print("________________________________________________________---")
+        with lt.Backend("loop_nest"):
+            return agent.eval("FLOPS")
+
+    def eval_state_model(self, agent):
+        state_tensor = [ np.log2(x + 1) for x in agent.get_stride_histogram() ]
+
+        state_tensor = torch.tensor(state_tensor).float().to('cuda')
+        pred_flops = self.model(state_tensor)
+        return pred_flops.item()

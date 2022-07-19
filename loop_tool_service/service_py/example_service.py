@@ -14,6 +14,8 @@ from typing import Dict, List, Optional, Tuple
 
 from pkg_resources import working_set
 
+from copy import deepcopy
+
 from env import loop_tool_env
 import json
 
@@ -254,7 +256,7 @@ class LoopToolCompilationSession(CompilationSession):
         self._action_space = action_space
 
         os.chdir(str(working_directory))
-        logging.critical(f"\n\nWorking_dir = {str(working_directory)}\n")
+        # logging.critical(f"\n\nWorking_dir = {str(working_directory)}\n")
         # pdb.set_trace()
 
         self.save_state = save_state if save_state != None else True
@@ -273,15 +275,53 @@ class LoopToolCompilationSession(CompilationSession):
         self.cur_iter = 0
         self.prev_observation = {}
 
-
     def handle_session_parameter(self, key: str, value: str) -> Optional[str]:
         if key == "save_state":
             self.save_state = False if value == "0" else True
             return "Succeeded"
+        
+        elif key == "save_restore":
+            if value == '0': # save
+                self.env.agent_saved = deepcopy(self.env.agent)
+            else: # restore
+                self.env.agent = deepcopy(self.env.agent_saved)
+            return "Succeeded"
+        
+        elif key == "load_model":
+            self.env.load_model(value)
+            return ""
+
+        elif key == "next_best_action":
+            search_depth, search_width = value.split(',')
+
+
+            # import cProfile
+            # import cProfile, pstats
+            # profiler = cProfile.Profile()
+            # breakpoint()
+            # profiler.enable()
+            ret = self.env.get_best_next_action(
+                search_depth=int(search_depth), 
+                search_width=int(search_width),
+            )
+            # profiler.disable()
+        
+            # stats = pstats.Stats(profiler).sort_stats('cumtime')
+            # stats.print_stats()
+            # breakpoint()
+
+            return ret
+
+
         elif key == "available_actions":
             return json.dumps(self.env.get_available_actions())
         
+        elif key == "undo_action":
+            self.env.agent.undo_action()
+            return ""
+        
         elif key == "print_looptree":
+            print(self.env.agent.actions)
             print(self.env.agent)
             return ""
         else:
@@ -399,3 +439,4 @@ class LoopToolCompilationSession(CompilationSession):
 
 if __name__ == "__main__":
     create_and_run_compiler_gym_service(LoopToolCompilationSession)
+

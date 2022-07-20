@@ -24,7 +24,7 @@ from compiler_gym.util.registration import register
 
 
 from absl import app, flags
-
+from tqdm import tqdm
 from joblib import Parallel, delayed
 
 flags.DEFINE_integer("bench_count", 2, "The number of benchmarks.")
@@ -73,19 +73,20 @@ def main(argv):
     register_env()
 
     with loop_tool_service.make_env("loop_tool-v0") as env:
-        walker = GreedyWalker(env=env, 
-                              dataset_uri = FLAGS.data_set,
-                              reward=FLAGS.reward,  
-                              walk_count=max(1, FLAGS.walk_count),
-                              step_count=max(1, FLAGS.step_count),
-                              search_depth=FLAGS.search_depth,
-                              search_width=FLAGS.search_width,
-                              bench_count=FLAGS.bench_count,
-                              model_path=FLAGS.model_path
-                              )
 
+        data_set = env.datasets[FLAGS.data_set]
+        i = 0
+        for bench in tqdm(data_set, total=min(len(data_set), FLAGS.bench_count)):
+            if i == FLAGS.bench_count: break
+            print(bench)
+            env.reset()
 
-        walker.run()
+            if FLAGS.model_path != '':
+                env.send_param('load_model', FLAGS.model_path)
+
+            env.send_param("search", f'{FLAGS.walk_count}, {FLAGS.step_count}, {FLAGS.search_depth}, {FLAGS.search_width}')
+            i += 1
+
 
         
 if __name__ == "__main__":

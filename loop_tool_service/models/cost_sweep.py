@@ -39,7 +39,7 @@ sweep_config = {
       'min': 0.0001,
       'max': 0.01
     },
-    "epochs": { "value" : 10000 },
+    "epochs": { "value" : 5000 },
     "batch_size": { "value" : 100 },
     "dropout": { "values" : [0, 0.2] },
     "data_size": { "value" : -1 },

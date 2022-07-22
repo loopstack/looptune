@@ -1,53 +1,0 @@
-wandb: Currently logged in as: dejang. Use `wandb login --relogin` to force relogin
-wandb: WARNING Ignored wandb.init() arg project when running a sweep.
-wandb: WARNING Ignored wandb.init() arg entity when running a sweep.
-wandb: Tracking run with wandb version 0.12.21
-wandb: Run data is saved locally in /private/home/dejang/tools/loop_tool_env/loop_tool_service/models/cost_model/cost/wandb/run-20220722_145212-ezlhc27g
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run flowing-sweep-2
-wandb: ⭐️ View project at https://wandb.ai/dejang/loop_tool
-wandb: 🧹 View sweep at https://wandb.ai/dejang/loop_tool/sweeps/r0f5ae59
-wandb: 🚀 View run at https://wandb.ai/dejang/loop_tool/runs/ezlhc27g
-  0%|          | 0/5 [00:00<?, ?it/s] 20%|██        | 1/5 [00:03<00:13,  3.35s/it] 40%|████      | 2/5 [00:04<00:06,  2.11s/it] 60%|██████    | 3/5 [00:05<00:03,  1.76s/it] 80%|████████  | 4/5 [00:07<00:01,  1.55s/it]100%|██████████| 5/5 [00:08<00:00,  1.48s/it]100%|██████████| 5/5 [00:08<00:00,  1.70s/it]
-wandb: Waiting for W&B process to finish... (failed 1). Press Control-C to abort syncing.
-wandb: - 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: \ 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: | 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: / 0.001 MB of 0.043 MB uploaded (0.000 MB deduped)wandb: - 0.001 MB of 0.043 MB uploaded (0.000 MB deduped)wandb: \ 0.043 MB of 0.043 MB uploaded (0.000 MB deduped)wandb: | 0.043 MB of 0.043 MB uploaded (0.000 MB deduped)wandb: / 0.043 MB of 0.043 MB uploaded (0.000 MB deduped)wandb: - 0.043 MB of 0.043 MB uploaded (0.000 MB deduped)wandb: \ 0.043 MB of 0.043 MB uploaded (0.000 MB deduped)wandb: | 0.043 MB of 0.043 MB uploaded (0.000 MB deduped)wandb: / 0.043 MB of 0.043 MB uploaded (0.000 MB deduped)wandb:                                                                                
-wandb: 
-wandb: Run history:
-wandb:        batch loss ▅▄█▄▇▂▃▄▃▆▂▂▁▆▃▄▄▃▅▄▄▄▃▃▄▃▄▄▃▄▆▃▃▄▃▄▃▄▂▃
-wandb: final_performance ▁
-wandb:         test_loss ▁█▅▃▄
-wandb:        train_loss █▂▁▁▁
-wandb: 
-wandb: Run summary:
-wandb:        batch loss 104.71511
-wandb: final_performance 0.6952
-wandb:         test_loss 271.1708
-wandb:        train_loss 302.25651
-wandb: 
-wandb: Synced flowing-sweep-2: https://wandb.ai/dejang/loop_tool/runs/ezlhc27g
-wandb: Synced 4 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
-wandb: Find logs at: ./wandb/run-20220722_145212-ezlhc27g/logs
-submitit ERROR (2022-07-22 14:52:40,282) - Submitted job triggered an exception
-ERROR:submitit:Submitted job triggered an exception
-Traceback (most recent call last):
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/runpy.py", line 194, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/runpy.py", line 87, in _run_code
-    exec(code, run_globals)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/_submit.py", line 11, in <module>
-    submitit_main()
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/submission.py", line 72, in submitit_main
-    process_job(args.folder)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/submission.py", line 65, in process_job
-    raise error
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/submission.py", line 54, in process_job
-    result = delayed.result()
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/utils.py", line 133, in result
-    self._result = self.function(*self.args, **self.kwargs)
-  File "cost_sweep_slurm.py", line 209, in train
-    model.save(os.path.join(wandb.run.dir, "model.h5"))
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1207, in __getattr__
-    raise AttributeError("'{}' object has no attribute '{}'".format(
-AttributeError: 'SmallNet' object has no attribute 'save'
-srun: error: learnfair5187: task 0: Exited with exit code 1
-srun: launch/slurm: _step_signal: Terminating StepId=61400356.0

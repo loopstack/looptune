@@ -1,3 +1,0 @@
-submitit INFO (2022-07-22 15:14:24,734) - Starting with JobEnvironment(job_id=61401524, hostname=learnfair5187, local_rank=0(1), node=0(1), global_rank=0(1))
-submitit INFO (2022-07-22 15:14:24,734) - Loading pickle: /private/home/dejang/tools/loop_tool_env/loop_tool_service/models/cost_model/cost/submitit_logs/61401524_submitted.pkl
-Dataset training validation = 3912, 978

@@ -1,67 +1,0 @@
-wandb: Currently logged in as: dejang. Use `wandb login --relogin` to force relogin
-wandb: WARNING Ignored wandb.init() arg project when running a sweep.
-wandb: WARNING Ignored wandb.init() arg entity when running a sweep.
-wandb: Tracking run with wandb version 0.12.21
-wandb: Run data is saved locally in /private/home/dejang/tools/loop_tool_env/loop_tool_service/models/cost_model/cost/wandb/run-20220722_142432-sqjxtley
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run gentle-sweep-1
-wandb: ⭐️ View project at https://wandb.ai/dejang/loop_tool
-wandb: 🧹 View sweep at https://wandb.ai/dejang/loop_tool/sweeps/pje3so6i
-wandb: 🚀 View run at https://wandb.ai/dejang/loop_tool/runs/sqjxtley
-  0%|          | 0/5 [00:00<?, ?it/s] 20%|██        | 1/5 [00:02<00:11,  2.83s/it] 40%|████      | 2/5 [00:03<00:04,  1.58s/it] 60%|██████    | 3/5 [00:04<00:02,  1.17s/it] 80%|████████  | 4/5 [00:04<00:00,  1.04it/s]100%|██████████| 5/5 [00:05<00:00,  1.17it/s]100%|██████████| 5/5 [00:05<00:00,  1.11s/it]
-wandb: Waiting for W&B process to finish... (failed 1). Press Control-C to abort syncing.
-wandb: - 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: \ 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: | 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: / 0.001 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: - 0.001 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: \ 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: | 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: / 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: - 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: \ 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: | 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb:                                                                                
-wandb: 
-wandb: Run history:
-wandb:        batch loss ▄█▃▂▂▂▄▃▃▃▁▄▃▃▃▄▄▂▂▃▂▂▃▂▁▂▃▁▂▂▁▁▁▃▂▃▃▄▁▂
-wandb: final_performance ▁
-wandb:         test_loss █▇▆▃▁
-wandb:        train_loss █▃▂▁▁
-wandb: 
-wandb: Run summary:
-wandb:        batch loss 114.31528
-wandb: final_performance 0.73904
-wandb:         test_loss 203.36837
-wandb:        train_loss 281.72475
-wandb: 
-wandb: Synced gentle-sweep-1: https://wandb.ai/dejang/loop_tool/runs/sqjxtley
-wandb: Synced 4 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
-wandb: Find logs at: ./wandb/run-20220722_142432-sqjxtley/logs
-submitit ERROR (2022-07-22 14:24:54,159) - Submitted job triggered an exception
-ERROR:submitit:Submitted job triggered an exception
-Traceback (most recent call last):
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/runpy.py", line 194, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/runpy.py", line 87, in _run_code
-    exec(code, run_globals)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/_submit.py", line 11, in <module>
-    submitit_main()
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/submission.py", line 72, in submitit_main
-    process_job(args.folder)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/submission.py", line 65, in process_job
-    raise error
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/submission.py", line 54, in process_job
-    result = delayed.result()
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/utils.py", line 133, in result
-    self._result = self.function(*self.args, **self.kwargs)
-  File "cost_sweep_slurm.py", line 207, in train
-    model_scripted = torch.jit.script(model) # Export to TorchScript
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/jit/_script.py", line 1286, in script
-    return torch.jit._recursive.create_script_module(
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/jit/_recursive.py", line 458, in create_script_module
-    return create_script_module_impl(nn_module, concrete_type, stubs_fn)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/jit/_recursive.py", line 472, in create_script_module_impl
-    hook_stubs, pre_hook_stubs = get_hook_stubs(nn_module)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/jit/_recursive.py", line 761, in get_hook_stubs
-    hook_stubs.append(make_stub(hook, hook.__name__))
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/jit/_recursive.py", line 51, in make_stub
-    ast = get_jit_def(func, name, self_name="RecursiveScriptModule")
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/jit/frontend.py", line 234, in get_jit_def
-    parsed_def = parse_def(fn)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/_sources.py", line 97, in parse_def
-    sourcelines = normalize_source_lines(sourcelines)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/_sources.py", line 55, in normalize_source_lines
-    fn_def = sourcelines[idx]
-UnboundLocalError: local variable 'idx' referenced before assignment
-srun: error: learnfair7511: task 0: Exited with exit code 1
-srun: launch/slurm: _step_signal: Terminating StepId=61398322.0

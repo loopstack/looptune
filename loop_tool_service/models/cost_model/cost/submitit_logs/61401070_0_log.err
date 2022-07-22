@@ -1,55 +1,0 @@
-wandb: Currently logged in as: dejang. Use `wandb login --relogin` to force relogin
-wandb: WARNING Ignored wandb.init() arg project when running a sweep.
-wandb: WARNING Ignored wandb.init() arg entity when running a sweep.
-wandb: Tracking run with wandb version 0.12.21
-wandb: Run data is saved locally in /private/home/dejang/tools/loop_tool_env/loop_tool_service/models/cost_model/cost/wandb/run-20220722_150415-qxjjpcjl
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run decent-sweep-2
-wandb: ⭐️ View project at https://wandb.ai/dejang/loop_tool
-wandb: 🧹 View sweep at https://wandb.ai/dejang/loop_tool/sweeps/dftmsroa
-wandb: 🚀 View run at https://wandb.ai/dejang/loop_tool/runs/qxjjpcjl
-  0%|          | 0/5 [00:00<?, ?it/s] 20%|██        | 1/5 [00:02<00:11,  2.79s/it] 40%|████      | 2/5 [00:03<00:05,  1.76s/it] 60%|██████    | 3/5 [00:04<00:02,  1.47s/it] 80%|████████  | 4/5 [00:05<00:01,  1.30s/it]100%|██████████| 5/5 [00:07<00:00,  1.24s/it]100%|██████████| 5/5 [00:07<00:00,  1.43s/it]
-wandb: Waiting for W&B process to finish... (failed 1). Press Control-C to abort syncing.
-wandb: - 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: \ 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: | 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: / 0.001 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: - 0.001 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: \ 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: | 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: / 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: - 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: \ 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb: | 0.024 MB of 0.024 MB uploaded (0.000 MB deduped)wandb:                                                                                
-wandb: 
-wandb: Run history:
-wandb:        batch loss ▇▇▅▆▄▆▅▆▅▃▄█▃▄▂▁▃▃▃▂▃▃▃▃▄▂▃▃▂▃▂▃▁▂▁▂▂▂▂▅
-wandb: final_performance ▁
-wandb:         test_loss █▃▁▁▁
-wandb:        train_loss █▄▂▁▁
-wandb: 
-wandb: Run summary:
-wandb:        batch loss 161.31493
-wandb: final_performance 0.6023
-wandb:         test_loss 232.62581
-wandb:        train_loss 220.7461
-wandb: 
-wandb: Synced decent-sweep-2: https://wandb.ai/dejang/loop_tool/runs/qxjjpcjl
-wandb: Synced 4 W&B file(s), 0 media file(s), 0 artifact file(s) and 1 other file(s)
-wandb: Find logs at: ./wandb/run-20220722_150415-qxjjpcjl/logs
-submitit ERROR (2022-07-22 15:04:36,713) - Submitted job triggered an exception
-ERROR:submitit:Submitted job triggered an exception
-Traceback (most recent call last):
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/runpy.py", line 194, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/runpy.py", line 87, in _run_code
-    exec(code, run_globals)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/_submit.py", line 11, in <module>
-    submitit_main()
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/submission.py", line 72, in submitit_main
-    process_job(args.folder)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/submission.py", line 65, in process_job
-    raise error
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/submission.py", line 54, in process_job
-    result = delayed.result()
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/submitit/core/utils.py", line 133, in result
-    self._result = self.function(*self.args, **self.kwargs)
-  File "cost_sweep_slurm.py", line 212, in train
-    torch.save(model, os.path.join(wandb.run.dir, "model.h5"))
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/serialization.py", line 379, in save
-    _save(obj, opened_zipfile, pickle_module, pickle_protocol)
-  File "/private/home/dejang/.conda/envs/compiler_gym/lib/python3.8/site-packages/torch/serialization.py", line 589, in _save
-    pickler.dump(obj)
-AttributeError: Can't pickle local object 'TorchHistory.add_log_hooks_to_pytorch_module.<locals>.<lambda>'
-srun: error: learnfair2297: task 0: Exited with exit code 1
-srun: launch/slurm: _step_signal: Terminating StepId=61401070.0

@@ -32,13 +32,13 @@ class LoopToolCompilerEnvWrapper(CompilerEnvWrapper):
         self.logging = logging
         self.log_list = []
         self.prev_observation = None
-        try:
-            signal.signal(signal.SIGINT, self.log_to_file)
-        except Exception:
-            print("Problem while registering the CTRL+C event")
-            # FIXME: See what to do when multiple threads are running within the same process.
-            import traceback
-            traceback.print_exc()
+        # try:
+        #     signal.signal(signal.SIGINT, self.log_to_file)
+        # except Exception:
+        #     print("Problem while registering the CTRL+C event")
+        #     # FIXME: See what to do when multiple threads are running within the same process.
+        #     import traceback
+        #     traceback.print_exc()
 
     def step(  # pylint: disable=arguments-differ
         self,
@@ -113,12 +113,12 @@ class LoopToolCompilerEnvWrapper(CompilerEnvWrapper):
 
     def close(self):
         # Dump current content of the log_list to a file.
-        self.log_to_file()
+        # self.log_to_file()
         super().close()
 
-    def __del__(self):
-        # In case someone forgot to call close for the env.
-        self.log_to_file()
+    # def __del__(self):
+    #     # In case someone forgot to call close for the env.
+    #     self.log_to_file()
 
     @staticmethod
     def create_log_dir(env_name):
@@ -174,21 +174,21 @@ class LoopToolCompilerEnvWrapper(CompilerEnvWrapper):
                 reward]
 
 
-    def log_to_file(self):
-        if len(self.log_list) == 0:
-            return
+    # def log_to_file(self):
+    #     if len(self.log_list) == 0:
+    #         return
 
-        log_path = self.create_log_dir(self.env.spec.id)
+    #     log_path = self.create_log_dir(self.env.spec.id)
 
-        columns = ["BenchmarkName", "State", "NextState", "Action", "CommandLine", "Reward"]
-        df = pd.DataFrame(self.log_list, columns=columns) 
-        df.head()
-        with open(log_path + '/results.pkl', 'wb') as f:
-            pickle.dump(df, f)
+    #     columns = ["BenchmarkName", "State", "NextState", "Action", "CommandLine", "Reward"]
+    #     df = pd.DataFrame(self.log_list, columns=columns) 
+    #     df.head()
+    #     with open(log_path + '/results.pkl', 'wb') as f:
+    #         pickle.dump(df, f)
         
-        print("\nResults written to: ", log_path + "/results.pkl\n")
-        # Clear the content
-        self.log_list.clear()
+    #     print("\nResults written to: ", log_path + "/results.pkl\n")
+    #     # Clear the content
+    #     self.log_list.clear()
 
 
 

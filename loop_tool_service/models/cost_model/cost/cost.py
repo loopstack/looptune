@@ -1,13 +1,14 @@
-import os
+from os import listdir
+from os.path import isfile, join
 
+import loop_tool as lt
 import numpy as np
 import pandas as pd
 import random
 from matplotlib import pyplot as plt
 
 from tqdm import tqdm
-
-import my_net
+import loop_tool_service.models.my_net as my_net
 
 import torch
 import torch.nn as nn
@@ -21,9 +22,8 @@ import pdb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-sweep_count = 50
-os.environ['WANDB_NOTEBOOK_NAME'] = 'cost_sweep.ipynb'
 
+sweep_count = 1
 sweep_config = {
   "name" : "Cost-sweep",
   "method": "random",
@@ -31,22 +31,13 @@ sweep_config = {
     "name": "final_performance",
     "goal": "maximize",
   },
-  "parameters" : {
-    "hidden_size" : {"values": [ 400, 500 ]},
-    "layers" : {"values": [ 3, 4]},
-    'lr': {
-      'distribution': 'log_uniform_values',
-      'min': 0.0001,
-      'max': 0.01
-    },
-    "epochs": { "value" : 5000 },
-    "batch_size": { "value" : 100 },
-    "dropout": { "values" : [0, 0.2] },
-    "data_size": { "value" : -1 },
-  }
+  "hidden_size" : 400,
+  "layers": 10,
+  'lr': 1e-5,
+  "epochs": int(1e4),
+  "batch_size": 100,
+  "dropout": 0.2,
 }
-
-sweep_id = wandb.sweep(sweep_config, project="loop_tool")
 
 
 class LoopToolDataset(Dataset):
@@ -59,18 +50,17 @@ class LoopToolDataset(Dataset):
     def __getitem__(self, i):
         stride_freq_log_0 = np.log2(self.df['program_tensor'].iloc[i] + 1)
         label = self.df['gflops'].iloc[i]
-        return torch.flatten(stride_freq_log_0.float()).to(device), torch.tensor(label).float().to(device)
+        return torch.flatten(stride_freq_log_0.float()).to(device), torch.tensor([label]).float().to(device)
 
     def __len__(self):    
         return len(self.df)
 
 
-def load_dataset(config):
-    if config['data_size'] < 0:
-        df = pd.read_pickle("datasets/tensor_dataset_noanot.pkl").iloc[:, :]
-    else:
-        df = pd.read_pickle("datasets/tensor_dataset_noanot.pkl").iloc[:config['data_size'], :]
 
+def load_dataset(config):
+    from loop_tool_service.paths import LOOP_TOOL_ROOT
+    data_path = str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/datasets/tensor_dataset_noanot.pkl"
+    df = pd.read_pickle(data_path).iloc[:, :]
     loop_tool_dataset = LoopToolDataset(df=df)
 
     test_size = len(loop_tool_dataset.df) // 5
@@ -88,6 +78,7 @@ def load_dataset(config):
     return trainLoad, testLoad
 
 
+
 def load_model(config):
     model_path = "model_weights.pt"
     model = my_net.SmallNet(
@@ -98,9 +89,8 @@ def load_model(config):
         dropout=config['dropout'],
     ).to(device)
 
-    wandb.watch(model, log="all")
-
     return model
+
 
 
 def train_epoch(model, TrainLoader, optimizer, criterion):
@@ -112,8 +102,8 @@ def train_epoch(model, TrainLoader, optimizer, criterion):
         # for state, cost in zip(state, cost):
             
         pred_cost = torch.flatten(model(state)) # good
-        # pred_cost = model(state) # bad
-
+        pred_cost = model(state) # bad
+        # breakpoint()
         train_loss = criterion(pred_cost, cost)
         # print(state)
         # print(cost, pred_cost)
@@ -122,8 +112,7 @@ def train_epoch(model, TrainLoader, optimizer, criterion):
         optimizer.zero_grad()
         train_loss.backward()
         optimizer.step()
-        wandb.log({"batch loss": train_loss.item()})
-
+        
     return train_losses_batch
 
 
@@ -135,8 +124,8 @@ def test_epoch(model, TestLoader, optimizer, criterion):
         for state, cost in TestLoader:
             # for state, cost in zip(state, cost):
 
-            pred_cost =  torch.flatten(model(state))
-            # pred_cost =  model(state)
+            # pred_cost =  torch.flatten(model(state))
+            pred_cost =  model(state)
             test_loss = criterion(pred_cost, cost )
             test_losses_batch.append(test_loss.item())
     
@@ -165,38 +154,60 @@ def final_performance(model, TestLoader):
     return np.mean(correct)
 
 
-
-def train(config=None):
+def train(config, model, trainLoad, testLoad):
     train_loss = []
     test_loss = []
 
-    # out = Output()
-    # display.display(out)
-    with wandb.init(
-        project="loop_tool", 
-        entity="dejang", 
-    ):
-        config = wandb.config
-        trainLoad, testLoad = load_dataset(config)
-        model = load_model(config)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
+    criterion = nn.MSELoss(reduction='mean')
 
+    for epoch in tqdm(range(config['epochs'])):    
+        train_losses_batch = train_epoch(model, trainLoad, optimizer, criterion)
+        test_losses_batch = test_epoch(model, testLoad, optimizer, criterion)
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
-        criterion = nn.MSELoss()
+        train_loss.append(np.mean(train_losses_batch))
+        test_loss.append(np.mean(test_losses_batch))
+    
+        plt.title('Loss (blue-train, red-test)')
+        plt.plot(train_loss, color='blue')
+        plt.plot(test_loss, color='red')
 
-        for epoch in tqdm(range(config['epochs'])):    
-            train_losses_batch = train_epoch(model, trainLoad, optimizer, criterion)
-            test_losses_batch = test_epoch(model, testLoad, optimizer, criterion)
-
-            wandb.log({
-                    "train_loss": np.mean(train_losses_batch),
-                    "test_loss": np.mean(test_losses_batch)
-                }
-            )
-        pf = final_performance(model, testLoad)
-        print(f"final_performance {pf}" )
-        wandb.log({"final_performance": final_performance(model, testLoad) })
+        plt.tight_layout()
+        plt.savefig('tmp.png')
+        
+    print(f'Final performance = {final_performance(model, testLoad)}')
+            
     return train_loss, test_loss
 
 
-wandb.agent(sweep_id=sweep_id, function=train, count=sweep_count)
+config = sweep_config
+trainLoad, testLoad = load_dataset(config=config)
+model = load_model(config)
+
+train_loss, test_loss = train(config, model, trainLoad, testLoad)
+
+
+from loop_tool_service.paths import LOOP_TOOL_ROOT
+breakpoint()
+model_path = str(LOOP_TOOL_ROOT) + '/loop_tool_service/models/weights/model_cost_final.pth'
+model_scripted = torch.jit.script(model) # Export to TorchScript
+model_scripted.save(model_path) # Save
+
+# torch.save(model, "./weights/model.pth")
+
+from loop_tool_service.paths import LOOP_TOOL_ROOT
+data_path = str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/datasets/tensor_dataset_noanot.pkl"
+
+df = pd.read_pickle(data_path)
+diff = []
+model.eval()
+for index, row in df.iterrows():
+    # print(row['program_tensor'])
+    stride_freq_log_0 = np.log2(df['program_tensor'].iloc[index] + 1)
+    
+    state = torch.flatten(stride_freq_log_0).float().to(device)
+    label = row['gflops']
+    
+    pred = model(state).item()
+    diff.append(abs(pred - label))
+    print(pred, label)

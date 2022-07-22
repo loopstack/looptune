@@ -291,26 +291,29 @@ class LoopToolCompilationSession(CompilationSession):
             self.env.load_model(value)
             return ""
 
-        elif key == "next_best_action":
-            search_depth, search_width = value.split(',')
-
+        elif key == "search": # value = "walk_count, step_count, search_depth, search_width"
+            walk_count, step_count, search_depth, search_width = value.split(',')
 
             # import cProfile
             # import cProfile, pstats
             # profiler = cProfile.Profile()
             # breakpoint()
             # profiler.enable()
-            ret = self.env.get_best_next_action(
+
+            reward_actions = self.env.explore_benchmark(
+                int(walk_count), 
+                int(step_count),
                 search_depth=int(search_depth), 
                 search_width=int(search_width),
             )
+
             # profiler.disable()
         
             # stats = pstats.Stats(profiler).sort_stats('cumtime')
             # stats.print_stats()
             # breakpoint()
 
-            return ret
+            return json.dumps(reward_actions)
 
 
         elif key == "available_actions":

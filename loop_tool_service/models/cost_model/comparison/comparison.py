@@ -19,7 +19,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 
-import my_net
+import loop_tool_service.models.my_net as my_net
 
 import pdb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -30,8 +30,8 @@ sweep_config = {
   "name" : "Comparison-sweep",
   "method": "random",
   "metric": {
-    "name": "test_loss",
-    "goal": "minimize",
+    "name": "final_performance",
+    "goal": "maximize",
   },
   "hidden_size" : 200,
   "layers": 3,
@@ -63,7 +63,9 @@ class LoopToolDataset(Dataset):
         return len(self.df)
 
 def load_dataset(config):
-    df = pd.read_pickle("datasets/tensor_dataset_noanot.pkl").iloc[:100, :]
+    from loop_tool_service.paths import LOOP_TOOL_ROOT
+    data_path = str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/datasets/tensor_dataset_noanot.pkl"
+    df = pd.read_pickle(data_path).iloc[:100, :]
     loop_tool_dataset = LoopToolDataset(df=df)
 
     test_size = len(loop_tool_dataset.df) // 5
@@ -83,7 +85,7 @@ def load_dataset(config):
 
 def load_model(config):
     model_path = "model_weights.pt"
-    model = my_net.SmallNet(
+    model = my_net.SmallNetSigmoid(
         in_size=config['size_in'], 
         out_size=config['size_out'], 
         hidden_size=config['hidden_size'],

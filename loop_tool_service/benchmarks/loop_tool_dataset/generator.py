@@ -184,6 +184,10 @@ def main():
     else:
         print('File not found :/')
 
+    agent = lt.LoopTreeAgent(lt.LoopTree(C.ir))
+    breakpoint()
+    agent.apply_action("unroll")
+    breakpoint()
 
     if tune:
         with lt.Backend("loop_nest"):

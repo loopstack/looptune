@@ -1,14 +1,13 @@
-from os import listdir
-from os.path import isfile, join
+import os
 
-import loop_tool as lt
 import numpy as np
 import pandas as pd
 import random
 from matplotlib import pyplot as plt
 
 from tqdm import tqdm
-import my_net
+
+import loop_tool_service.models.my_net
 
 import torch
 import torch.nn as nn
@@ -23,21 +22,21 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 
-sweep_count = 1
-sweep_config = {
-  "name" : "Cost-sweep",
-  "method": "random",
-  "metric": {
-    "name": "final_performance",
-    "goal": "minimize",
-  },
-  "hidden_size" : 200,
-  "layers": 4,
-  'lr': 0.00001,
-  "epochs": 10,#10000,
-  "batch_size": 100,
-  "dropout": 0.2,
-}
+
+hyperparameter_defaults = dict(
+    layers = 4,
+    hidden_size = 300,
+    lr = 1e-4,
+    dropout = 0.2,
+    epochs = 100,
+    batch_size = 100,
+    data_size = 200
+)
+
+wandb.init(config=hyperparameter_defaults, project="loop_tool_env")
+config = wandb.config
+
+
 
 
 class LoopToolDataset(Dataset):
@@ -56,9 +55,16 @@ class LoopToolDataset(Dataset):
         return len(self.df)
 
 
-
 def load_dataset(config):
-    df = pd.read_pickle("datasets/tensor_dataset_noanot.pkl").iloc[:1000, :]
+
+    from loop_tool_service.paths import LOOP_TOOL_ROOT
+    data_path = str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/datasets/tensor_dataset_noanot.pkl"
+
+    if config.data_size < 0:
+        df = pd.read_pickle(data_path)
+    else:
+        df = pd.read_pickle(data_path).iloc[:config.data_size, :]
+
     loop_tool_dataset = LoopToolDataset(df=df)
 
     test_size = len(loop_tool_dataset.df) // 5
@@ -67,28 +73,28 @@ def load_dataset(config):
     print(f'Dataset training validation = {train_size}, {test_size}')
     train_set, test_set = torch.utils.data.random_split(loop_tool_dataset, [train_size, test_size])
 
-    trainLoad = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True)
-    testLoad = DataLoader(test_set, batch_size=config['batch_size'], shuffle=True)
+    trainLoad = DataLoader(train_set, batch_size=config.batch_size, shuffle=True)
+    testLoad = DataLoader(test_set, batch_size=config.batch_size, shuffle=True)
 
-    config['size_in'] = len(torch.flatten(df['program_tensor'].iloc[0]))
-    config['size_out'] = 1
+    config.size_in = len(torch.flatten(df['program_tensor'].iloc[0]))
+    config.size_out = 1
     
     return trainLoad, testLoad
-
 
 
 def load_model(config):
     model_path = "model_weights.pt"
     model = my_net.SmallNet(
-        in_size=config['size_in'], 
-        out_size=config['size_out'], 
-        hidden_size=config['hidden_size'],
-        num_layers=config['layers'],
-        dropout=config['dropout'],
+        in_size=config.size_in, 
+        out_size=config.size_out, 
+        hidden_size=config.hidden_size,
+        num_layers=config.layers,
+        dropout=config.dropout,
     ).to(device)
 
-    return model
+    wandb.watch(model, log="all")
 
+    return model
 
 
 def train_epoch(model, TrainLoader, optimizer, criterion):
@@ -110,7 +116,8 @@ def train_epoch(model, TrainLoader, optimizer, criterion):
         optimizer.zero_grad()
         train_loss.backward()
         optimizer.step()
-        
+        wandb.log({"batch loss": train_loss.item()})
+
     return train_losses_batch
 
 
@@ -152,57 +159,34 @@ def final_performance(model, TestLoader):
     return np.mean(correct)
 
 
-def train(config, model, trainLoad, testLoad):
+
+def train():
     train_loss = []
     test_loss = []
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
-    criterion = nn.MSELoss(reduction='mean')
+    trainLoad, testLoad = load_dataset(config)
+    model = load_model(config)
 
-    for epoch in tqdm(range(config['epochs'])):    
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+    criterion = nn.MSELoss()
+
+    for epoch in tqdm(range(config.epochs)):    
         train_losses_batch = train_epoch(model, trainLoad, optimizer, criterion)
         test_losses_batch = test_epoch(model, testLoad, optimizer, criterion)
 
-        train_loss.append(np.mean(train_losses_batch))
-        test_loss.append(np.mean(test_losses_batch))
-    
-        plt.title('Loss (blue-train, red-test)')
-        plt.plot(train_loss, color='blue')
-        plt.plot(test_loss, color='red')
-
-        plt.tight_layout()
-        plt.savefig('tmp.png')
-        
-    print(f'Final performance = {final_performance(model, testLoad)}')
-            
+        wandb.log({
+                "train_loss": np.mean(train_losses_batch),
+                "test_loss": np.mean(test_losses_batch)
+            }
+        )
+    pf = final_performance(model, testLoad)
+    print(f"final_performance {pf}" )
+    wandb.log({"final_performance": final_performance(model, testLoad) })
     return train_loss, test_loss
 
 
-config = sweep_config
-trainLoad, testLoad = load_dataset(config=config)
-model = load_model(config)
-
-train_loss, test_loss = train(config, model, trainLoad, testLoad)
 
 
-
-breakpoint()
-model_scripted = torch.jit.script(model) # Export to TorchScript
-model_scripted.save('./weights/model.pth') # Save
-
-# torch.save(model, "./weights/model.pth")
-
-
-# df = pd.read_pickle("datasets/tensor_dataset_noanot.pkl")
-# diff = []
-# model.eval()
-# for index, row in df.iterrows():
-#     # print(row['program_tensor'])
-#     stride_freq_log_0 = np.log2(df['program_tensor'].iloc[index] + 1)
-    
-#     state = torch.flatten(stride_freq_log_0).float().to(device)
-#     label = row['gflops']
-    
-#     pred = model(state).item()
-#     diff.append(abs(pred - label))
-#     print(pred, label)
+if __name__ == '__main__':
+   train()

@@ -1,0 +1,5 @@
+submitit INFO (2022-07-22 14:31:20,798) - Starting with JobEnvironment(job_id=61398919, hostname=learnfair2147, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-07-22 14:31:20,798) - Loading pickle: /private/home/dejang/tools/loop_tool_env/loop_tool_service/models/cost_model/cost/submitit_logs/61398919_submitted.pkl
+Dataset training validation = 3912, 978
+final_performance 0.6597077244258872
+submitit ERROR (2022-07-22 14:31:55,027) - Submitted job triggered an exception

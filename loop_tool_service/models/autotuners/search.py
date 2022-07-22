@@ -34,7 +34,7 @@ flags.DEFINE_integer("walk_count", 5, "The number of walks.")
 flags.DEFINE_integer("step_count", 6, "The number of steps.")
 flags.DEFINE_string("reward", "flops_loop_nest", "Reward.")
 flags.DEFINE_string("data_set", "benchmark://loop_tool_test-v0", "Data set.")
-flags.DEFINE_string("model_path",  f"{str(LOOP_TOOL_ROOT)}/loop_tool_service/models/weights/model.pth", "If you want to search based on model")
+flags.DEFINE_string("model_path",  f"{str(LOOP_TOOL_ROOT)}/loop_tool_service/models/weights/model_cost.pth", "If you want to search based on model")
 
 FLAGS = flags.FLAGS
 

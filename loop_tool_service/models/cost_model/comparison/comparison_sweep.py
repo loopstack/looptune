@@ -18,14 +18,14 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 
-import my_net
+import loop_tool_service.models.my_net as my_net
 import wandb
 
 import pdb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-sweep_count = 20
+sweep_count = 50
 os.environ['WANDB_NOTEBOOK_NAME'] = 'comparison_sweep.ipynb'
 
 sweep_config = {
@@ -33,7 +33,7 @@ sweep_config = {
   "method": "random",
   "metric": {
     "name": "final_performance",
-    "goal": "minimize",
+    "goal": "maximize",
   },
   "parameters" : {
     "hidden_size" : {"values": [ 100, 200, 300 ]},
@@ -41,10 +41,10 @@ sweep_config = {
     'reduction' : {"values": [ 'sum', 'mean' ]},
     'lr': {
       'distribution': 'log_uniform_values',
-      'min': 0.0001,
+      'min': 0.00001,
       'max': 0.1
     },
-    "epochs": { "value" : 1000 },
+    "epochs": { "value" : 5000 },
     "batch_size": { "value" : 100 },
     "dropout": { "value" : 0.2 },
   }
@@ -75,7 +75,9 @@ class LoopToolDataset(Dataset):
 
 
 def load_dataset(config):
-    df = pd.read_pickle("datasets/tensor_dataset_noanot.pkl")
+    from loop_tool_service.paths import LOOP_TOOL_ROOT
+    data_path = str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/datasets/tensor_dataset_noanot.pkl"
+    df = pd.read_pickle(data_path)
     loop_tool_dataset = LoopToolDataset(df=df)
 
     test_size = len(loop_tool_dataset.df) // 5
@@ -95,7 +97,7 @@ def load_dataset(config):
 
 def load_model(config):
     model_path = "model_weights.pt"
-    model = my_net.SmallNet(
+    model = my_net.SmallNetSigmoid(
         in_size=config['size_in'], 
         out_size=config['size_out'], 
         hidden_size=config['hidden_size'],

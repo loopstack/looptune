@@ -10,3 +10,4 @@ results
 tmp.png
 wandb
 weights
+*submitit_logs*

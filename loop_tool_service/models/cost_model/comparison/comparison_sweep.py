@@ -25,33 +25,6 @@ import pdb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-sweep_count = 50
-os.environ['WANDB_NOTEBOOK_NAME'] = 'comparison_sweep.ipynb'
-
-sweep_config = {
-  "name" : "Comparison-sweep",
-  "method": "random",
-  "metric": {
-    "name": "final_performance",
-    "goal": "maximize",
-  },
-  "parameters" : {
-    "hidden_size" : {"values": [ 100, 200, 300 ]},
-    "layers" : {"values": [ 2, 3 ]},
-    'reduction' : {"values": [ 'sum', 'mean' ]},
-    'lr': {
-      'distribution': 'log_uniform_values',
-      'min': 0.00001,
-      'max': 0.1
-    },
-    "epochs": { "value" : 5000 },
-    "batch_size": { "value" : 100 },
-    "dropout": { "value" : 0.2 },
-  }
-}
-
-sweep_id = wandb.sweep(sweep_config, project="loop_tool")
-
 
 class LoopToolDataset(Dataset):
     def __init__(
@@ -77,7 +50,11 @@ class LoopToolDataset(Dataset):
 def load_dataset(config):
     from loop_tool_service.paths import LOOP_TOOL_ROOT
     data_path = str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/datasets/tensor_dataset_noanot.pkl"
-    df = pd.read_pickle(data_path)
+    if config['data_size'] < 0:
+        df = pd.read_pickle(data_path)
+    else:
+        df = pd.read_pickle(data_path).iloc[:config['data_size'], :]
+        
     loop_tool_dataset = LoopToolDataset(df=df)
 
     test_size = len(loop_tool_dataset.df) // 5
@@ -96,7 +73,6 @@ def load_dataset(config):
 
 
 def load_model(config):
-    model_path = "model_weights.pt"
     model = my_net.SmallNetSigmoid(
         in_size=config['size_in'], 
         out_size=config['size_out'], 
@@ -106,12 +82,14 @@ def load_model(config):
     ).to(device)
 
     wandb.watch(model, log="all")
-
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>. constructed load_model")
     return model
 
 
 def train_epoch(model, TrainLoader, optimizer, criterion):
     train_losses_batch = []
+
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>. train_epoch")
 
     for state, cost in TrainLoader:
         model.train()
@@ -172,6 +150,7 @@ def train(config=None):
     with wandb.init(
         project="loop_tool", 
         entity="dejang", 
+        config=config
     ):
         config = wandb.config
         trainLoad, testLoad = load_dataset(config)
@@ -189,9 +168,39 @@ def train(config=None):
                 "test_loss": np.mean(test_losses_batch)}
             )
         
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>. Final Performance")
         wandb.log({"final_performance": final_performance(model, testLoad)})
 
     return train_loss, test_loss
 
 
-wandb.agent(sweep_id=sweep_id, function=train, count=sweep_count)
+if __name__ == "__main__":
+ 
+    sweep_count = 2
+    os.environ['WANDB_NOTEBOOK_NAME'] = 'comparison_sweep.ipynb'
+
+    breakpoint()
+    sweep_config = {
+    "name" : "Comparison-sweep",
+    "method": "random",
+    "metric": {
+        "name": "final_performance",
+        "goal": "maximize",
+    },
+    "parameters" : {
+        "hidden_size" : {"values": [ 100, 200, 300 ]},
+        "layers" : {"values": [ 2, 3 ]},
+        'reduction' : {"values": [ 'sum', 'mean' ]},
+        'lr': {
+        'distribution': 'log_uniform_values',
+        'min': 0.00001,
+        'max': 0.1
+        },
+        "epochs": { "value" : 50 },
+        "batch_size": { "value" : 100 },
+        "dropout": { "value" : 0.2 },
+    }
+    }
+
+    sweep_id = wandb.sweep(sweep_config, project="loop_tool")
+    wandb.agent(sweep_id=sweep_id, function=train, count=sweep_count)

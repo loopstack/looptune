@@ -23,34 +23,34 @@ import subprocess
 import pdb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+from comparison_sweep import train
 
-sweep_count = 2
+sweep_count = 10
 sweep_config = {
-    "name" : "Cost-sweep",
-    "method": "random",
-    "metric": {
-        "name": "final_performance",
-        "goal": "maximize",
+  "name" : "Comparison-sweep",
+  "method": "random",
+  "metric": {
+    "name": "final_performance",
+    "goal": "maximize",
+  },
+  "parameters" : {
+    "hidden_size" : {"values": [ 100, 200, 300 ]},
+    "layers" : {"values": [ 3, 4, 5 ]},
+    'reduction' : {"values": [ 'sum', 'mean' ]},
+    'lr': {
+      'distribution': 'log_uniform_values',
+      'min': 0.00001,
+      'max': 0.1
     },
-    "parameters" : {
-        "hidden_size" : {"values": [ 300, 400 ]},
-        "layers" : {"values": [ 5, 10]},
-        'lr': {
-        'distribution': 'log_uniform_values',
-        'min': 0.000001,
-        'max': 0.01
-        },
-        "epochs": { "value" : 5 },
-        "batch_size": { "value" : 100 },
-        "dropout": { "value" : 0.2 },
-        "data_size": { "value" : 10 },
-        "timeout_min": { "value": 10}
-    }
+    "epochs": { "value" : 1000 },
+    "batch_size": { "value" : 100 },
+    "dropout": { "value" : 0.2 },
+    "data_size": { "value" : -1 },
+    "timeout_min": { "value": 200}
+  }
 }
 
 
-
-from cost_sweep import train
 
 def submit_job():
         executor = SubmititJobSubmitter(

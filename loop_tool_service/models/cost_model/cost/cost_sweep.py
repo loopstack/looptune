@@ -21,33 +21,6 @@ import pdb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-sweep_count = 20
-os.environ['WANDB_NOTEBOOK_NAME'] = 'cost_sweep.ipynb'
-
-sweep_config = {
-  "name" : "Cost-sweep",
-  "method": "random",
-  "metric": {
-    "name": "final_performance",
-    "goal": "maximize",
-  },
-  "parameters" : {
-    "hidden_size" : {"values": [ 300, 400 ]},
-    "layers" : {"values": [ 5, 10]},
-    'lr': {
-      'distribution': 'log_uniform_values',
-      'min': 0.000001,
-      'max': 0.001
-    },
-    "epochs": { "value" : 5000 },
-    "batch_size": { "value" : 50 },
-    "dropout": { "values" : [0, 0.2] },
-    "data_size": { "value" : -1 },
-  }
-}
-
-sweep_id = wandb.sweep(sweep_config, project="loop_tool")
-
 
 class LoopToolDataset(Dataset):
     def __init__(
@@ -201,4 +174,34 @@ def train(config=None):
     return train_loss, test_loss
 
 
-wandb.agent(sweep_id=sweep_id, function=train, count=sweep_count)
+
+if __name__ == '__main__':
+
+    sweep_count = 20
+    os.environ['WANDB_NOTEBOOK_NAME'] = 'cost_sweep.ipynb'
+
+    sweep_config = {
+    "name" : "Cost-sweep",
+    "method": "random",
+    "metric": {
+        "name": "final_performance",
+        "goal": "maximize",
+    },
+    "parameters" : {
+        "hidden_size" : {"values": [ 300, 400 ]},
+        "layers" : {"values": [ 5, 10]},
+        'lr': {
+        'distribution': 'log_uniform_values',
+        'min': 0.000001,
+        'max': 0.001
+        },
+        "epochs": { "value" : 5000 },
+        "batch_size": { "value" : 50 },
+        "dropout": { "values" : [0, 0.2] },
+        "data_size": { "value" : -1 },
+    }
+    }
+
+    sweep_id = wandb.sweep(sweep_config, project="loop_tool")
+
+    wandb.agent(sweep_id=sweep_id, function=train, count=sweep_count)

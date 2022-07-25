@@ -30,7 +30,7 @@ class SmallNet(nn.Module):
 
 class SmallNetSigmoid(nn.Module):
     def __init__(self, in_size, out_size, hidden_size, num_layers, dropout=0):
-        super(SmallNet,self).__init__()
+        super(SmallNetSigmoid,self).__init__()
         
         self.layers = nn.ModuleList()
         for i in range(num_layers):

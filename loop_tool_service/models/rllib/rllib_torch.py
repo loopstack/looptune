@@ -74,7 +74,7 @@ parser.add_argument(
     "be achieved within --stop-timesteps AND --stop-iters.",
 )
 parser.add_argument(
-    "--stop-iters", type=int, default=5, help="Number of iterations to train."
+    "--stop-iters", type=int, default=1, help="Number of iterations to train."
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=100, help="Number of timesteps to train."
@@ -147,9 +147,9 @@ with make_env() as env:
     bench = ["benchmark://loop_tool_simple-v0/simple",
              "benchmark://loop_tool_simple-v0/mm128", 
              "benchmark://loop_tool_simple-v0/mm"] 
-    train_benchmarks = bench
-    val_benchmarks = bench
-    test_benchmarks = bench
+    train_benchmarks = bench[0:1]
+    val_benchmarks = bench[0:1]
+    test_benchmarks = bench[0:1]
 
 print("Number of benchmarks for training:", len(train_benchmarks))
 print("Number of benchmarks for validation:", len(val_benchmarks))
@@ -338,10 +338,17 @@ if __name__ == "__main__":
 
                 while not done:
                     action = agent.compute_single_action(observation)
-                    observation, _, done, _ = env.step(int(action))
+                    observation, _, done, info = env.step(int(action))
+                    if info['action_had_no_effect']:
+                        print('Network chose impossible action')
+                        available_actions = json.loads(env.send_param("available_actions", ""))
+                        action_str = random.choice(available_actions)
+                        observation, _, done, info = env.step(env.action_space.from_string(action_str))
+
                     flops = env.observation["flops_loop_nest_tensor"]
                     step_count += 1
-                    print(f'{step_count}. Flops = {flops}, Actions = {env.actions}')
+                    print(f'{step_count}. Flops = {flops}, Actions = {[ env.action_space.to_string(a) for a in env.actions]}')
+                    env.send_param("print_looptree", "")
 
                 walk_count = 10
                 search_depth=0

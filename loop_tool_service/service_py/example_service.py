@@ -362,7 +362,7 @@ class LoopToolCompilationSession(CompilationSession):
         
         logging.info(f"\naction_had_effect ({action}) = {action_had_effect}\n")
 
-        if action_had_effect:
+        if self.env.lt_changed:
             self.prev_observation = {} # Clear cache if action had an effect
 
         # new_action_space = ActionSpace(

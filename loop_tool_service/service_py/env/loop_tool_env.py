@@ -73,7 +73,7 @@ class Environment:
         ir = lt.deserialize(benchmark.program.contents)
         self.agent = lt.LoopTreeAgent(lt.LoopTree(ir))
         logging.info(self.agent)
-        self.action_had_effect = False
+        self.lt_changed = False
         self.actions = []
         self.agent_saved = None
         self.model = None
@@ -95,18 +95,22 @@ class Environment:
     def apply_action(self, action: str, save_state: bool) -> bool:
         agent_copy = lt.LoopTreeAgent(self.agent)
         self.agent.apply_action(action)
-
         if agent_copy.lt.dump() != self.agent.lt.dump():
-            self.action_had_effect = True
+            self.lt_changed = True
+            action_had_effect = True
         else:
-            self.action_had_effect = False
+            self.lt_changed = False
+            if agent_copy.cursor != self.agent.cursor:
+                action_had_effect = True
+            else:
+                action_had_effect = False
 
         if save_state == False:
             self.agent = lt.LoopTreeAgent(agent_copy)
         else:
             self.actions.append(action)
 
-        return self.action_had_effect
+        return action_had_effect
 
     ##############################################################
     # Get observations

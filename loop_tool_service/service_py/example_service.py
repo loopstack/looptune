@@ -60,6 +60,8 @@ import loop_tool as lt
 class LoopToolCompilationSession(CompilationSession):
     """Represents an instance of an interactive compilation session."""
 
+    max_loops: int = lt.LoopTreeAgent.max_loops()
+    num_loop_features: int = lt.LoopTreeAgent.num_loop_features()
     compiler_version: str = "1.0.0"
 
     # keep it simple for now: 1 variable, 1 nest
@@ -197,14 +199,14 @@ class LoopToolCompilationSession(CompilationSession):
             name="loops_tensor",
             space=Space(
                 float_box=FloatBox(
-                    low = FloatTensor(shape = [1, 60], value=[0] * 10 * 6),
-                    high = FloatTensor(shape = [1, 60], value=[256] * 10 * 6),
+                    low = FloatTensor(shape = [1, max_loops * num_loop_features], value=[0] * max_loops * num_loop_features),
+                    high = FloatTensor(shape = [1, max_loops * num_loop_features], value=([1] + [1] * max_loops + [int(1e6), int(1e6), 1, 1, 1] + [1] * 32) * max_loops),
                 )
             ),
             deterministic=False,
             platform_dependent=True,
             default_observation=Event(
-                float_tensor=FloatTensor(shape = [1, 60], value=[0] * 10 * 6),
+                float_tensor=FloatTensor(shape = [1, max_loops * num_loop_features], value=[0] * max_loops * num_loop_features),
             ),
         ),
         ObservationSpace( # Note: Be CAREFUL with dimensions, they need to be exactly the same like in perf.py
@@ -212,7 +214,7 @@ class LoopToolCompilationSession(CompilationSession):
             space=Space(
                 float_box=FloatBox(
                     low = FloatTensor(shape = [1, 32], value=[0] * 32),
-                    high = FloatTensor(shape = [1, 32], value=[float("inf")] * 32),
+                    high = FloatTensor(shape = [1, 32], value=[int(1e6)] * 32),
                 )
             ),
             deterministic=False,
@@ -257,7 +259,7 @@ class LoopToolCompilationSession(CompilationSession):
 
         os.chdir(str(working_directory))
         # logging.critical(f"\n\nWorking_dir = {str(working_directory)}\n")
-        # pdb.set_trace()
+        # breakpoint()
 
         self.save_state = save_state if save_state != None else True
         

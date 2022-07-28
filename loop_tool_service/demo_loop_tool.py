@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 from typing import Iterable
 import pdb
-from loop_tool_service.service_py.rewards import flops_loop_nest_reward
+
 # import gym
 import numpy as np
 import pickle
@@ -32,41 +32,48 @@ from compiler_gym.util.registration import register
 from compiler_gym.util.runfiles_path import runfiles_path, site_data_path
 from compiler_gym.service.connection import ServiceError
 
-from compiler_gym.envs.llvm.datasets import (
-    AnghaBenchDataset,
-    BlasDataset,
-    CBenchDataset,
-    CBenchLegacyDataset,
-    CBenchLegacyDataset2,
-    CHStoneDataset,
-    CsmithDataset,
-    NPBDataset,
-)
+
 
 import loop_tool_service
 
 
 from service_py.datasets import loop_tool_dataset
-from service_py.rewards import runtime_reward, flops_reward
+from service_py.rewards import runtime_reward, flops_reward, flops_loop_nest_reward
 
 
 
+# def register_env():
+#     register(
+#         id="loop_tool-v0",
+#         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
+#         kwargs={
+#             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
+#             "rewards": [
+#                 flops_loop_nest_reward.RewardScalar(),
+#                 # flops_loop_nest_reward.RewardScalar(),
+#                 ],
+#             "datasets": [
+#                 loop_tool_dataset.Dataset(),
+#                 CBenchDataset(site_data_path("llvm-v0"))],
+#         },
+#     )
 def register_env():
     register(
-        id="loop_tool-v0",
+        id="loop_tool_env-v0",
         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.RewardScalar(),
-                # flops_loop_nest_reward.RewardScalar(),
+                flops_loop_nest_reward.RewardTensor(),
+                # runtime_reward.RewardTensor(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
-                CBenchDataset(site_data_path("llvm-v0"))],
+            ],
         },
     )
 
+register_env()
 
 def main():
     # Use debug verbosity to print out extra logging information.
@@ -80,8 +87,9 @@ def main():
     #     actions = [a.strip() for a in actions]
         # pdb.set_trace()
     
-    with loop_tool_service.make_env("loop_tool-v0") as env:
+    with loop_tool_service.make_env("loop_tool_env-v0") as env:
         for bench in env.datasets["benchmark://loop_tool_simple-v0"]:
+            print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{bench}")
             try:
                 env.reset(benchmark=bench)
                 # env.send_param("timeout_sec", "1")
@@ -90,24 +98,23 @@ def main():
                 continue
 
             
-            env.send_param("print_looptree", "")
-            env.multistep(actions = ['down', 'down'], observation_spaces=["stride_tensor"],reward_spaces=["flops_loop_nest"], seek=True)
+            # env.send_param("print_looptree", "")
+            # env.multistep(actions = ['down', 'down'], observation_spaces=["loops_tensor"],reward_spaces=["flops_loop_nest_tensor"], seek=True)
             env.send_param("print_looptree", "")
 
 
-            for i in range(4):
+            for i in range(1):
                 available_actions = json.loads(env.send_param("available_actions", ""))
                 action = random.choice(available_actions)
                 print(f"**********************************************************")
                 print(f"Action = {action}\n")
                 env.send_param("print_looptree", "")
-                breakpoint()
 
                 try:
                     observation, reward, done, info = env.step(
                         action=env.action_space.from_string(action),
-                        observation_spaces=["stride_tensor"],
-                        reward_spaces=["flops_loop_nest"],
+                        observation_spaces=["loops_tensor"],
+                        reward_spaces=["flops_loop_nest_tensor"],
                     )
                 except ServiceError:
                     print("AGENT: Timeout Error Step")
@@ -126,7 +133,7 @@ def main():
                     print(f"{observation}\n")
 
 
-                breakpoint()
+            # breakpoint()
                 
                 
 

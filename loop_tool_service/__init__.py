@@ -215,20 +215,6 @@ import loop_tool_service
 from loop_tool_service.service_py.datasets import loop_tool_dataset
 from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward
 
-# def register_env():
-#     register(
-#         id="loop_tool_env-v0",
-#         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
-#         kwargs={
-#             "service": paths.LOOP_TOOL_SERVICE_PY,
-#             "rewards": [
-#                 flops_loop_nest_reward.RewardTensor(),
-#                 ],
-#             "datasets": [
-#                 loop_tool_dataset.Dataset(),
-#             ],
-#         },
-#     )
 
 def register_env():
     register(

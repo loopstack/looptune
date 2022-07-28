@@ -1,6 +1,7 @@
 # Print the versions of the libraries that we are using:
 import compiler_gym
 import ray
+import json
 
 from ray.rllib.agents.ppo import PPOTrainer
 from compiler_gym.wrappers import ConstrainedCommandline, TimeLimit
@@ -11,29 +12,33 @@ from compiler_gym.util.registration import register
 
 import loop_tool_service
 
-from service_py.datasets import loop_tool_dataset
-from service_py.rewards import flops_loop_nest_reward, flops_reward, runtime_reward
+from loop_tool_service.service_py.datasets import loop_tool_dataset
+from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward, runtime_reward
 
 import pdb
 
-# def register_env():
-#     register(
-#         id="loop_tool_env-v0",
-#         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
-#         kwargs={
-#             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
-#             "rewards": [
-#                 # flops_loop_nest_reward.RewardTensor(),
-#                 runtime_reward.RewardTensor(),
-#                 ],
-#             "datasets": [
-#                 loop_tool_dataset.Dataset(),
-#             ],
-#         },
-#     )
+import wandb
+# wandb.tensorboard.patch(root_logdir="...")
+wandb.init(project="loop_tool_agent", entity="dejang", sync_tensorboard=True)
 
-# register_env()
 
+
+def register_env():
+    register(
+        id="loop_tool_env-v0",
+        entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
+        kwargs={
+            "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
+            "rewards": [
+                flops_loop_nest_reward.RewardTensor(),
+                ],
+            "datasets": [
+                loop_tool_dataset.Dataset(),
+            ],
+        },
+    )
+
+register_env()
 
 def make_env() -> compiler_gym.envs.CompilerEnv:
     """Make the reinforcement learning environment for this experiment."""
@@ -41,7 +46,7 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
     env = loop_tool_service.make(
         "loop_tool_env-v0",
         observation_space="loops_tensor",
-        reward_space="flops_loop_nest",
+        reward_space="flops_loop_nest_tensor",
         # reward_space="runtime",
     )
 
@@ -55,6 +60,9 @@ with make_env() as env:
     print("Action space:", env.action_space)
     print("Observation space:", env.observation_space)
     print("Reward space:", env.reward_space)
+    env.reset()
+    reward_actions_str = env.send_param("search", f'{10}, {5}, {0}, {1000}')
+    print(f"Best reward = {reward_actions_str}")
 
 with make_env() as env:
     # The two datasets we will be using:
@@ -82,51 +90,52 @@ def make_training_env(*args) -> compiler_gym.envs.CompilerEnv:
     return CycleOverBenchmarks(make_env(), train_benchmarks)
 
 
-# tune.register_env("compiler_gym", make_training_env)
-
-# Lets cycle through a few calls to reset() to demonstrate that this environment
-# selects a new benchmark for each episode.
-# with make_training_env() as env:
-#     pdb.set_trace()
-#     env.reset()
-#     print(env.benchmark)
-#     env.reset()
-#     print(env.benchmark)
-#     env.reset()
-#     print(env.benchmark)
-
 # (Re)Start the ray runtime.
 if ray.is_initialized():
     ray.shutdown()
-ray.init(include_dashboard=False, ignore_reinit_error=True)
-
+ray.init(ignore_reinit_error=True)
 tune.register_env("compiler_gym", make_training_env)
 
 print("hack111:")
+# breakpoint()
 
 analysis = tune.run(
     PPOTrainer,
-    fail_fast="raise",
+    fail_fast=True,
+    reuse_actors=True,
     checkpoint_at_end=True,
     stop={
-        "episodes_total": 5,
+        "training_iteration": 10,
     },
+    # resources_per_trial={"cpu": 64, "gpu": 8},
+
     config={
         "seed": 0xCC,
-        "num_workers": 1,
+        "num_workers": 10,
+        "num_gpus": 1, # tf2: <= 1
         # Specify the environment to use, where "compiler_gym" is the name we
         # passed to tune.register_env().
         "env": "compiler_gym",
         # Reduce the size of the batch/trajectory lengths to match our short
         # training run.
         "framework":'tf2',
-        "disable_env_checking":True,
-        "rollout_fragment_length": 5,
-        "train_batch_size": 5,
-        "sgd_minibatch_size": 5,
+        "eager_tracing": True,
+        # 'log_level': 'DEBUG',
+        "train_batch_size": 1000, # train_batch_size -> sgd_minibatch_size -> max_seq_len (x num_sgd_iter)
+        "rollout_fragment_length": 10, # rollout_fragment_length < train_batch_size
+        "sgd_minibatch_size": 128, # sgd_minibatch_size < train_batch_size
+        "num_sgd_iter": 12,
+        "shuffle_sequences": True,
+        # "model": {'fcnet_hiddens': [200] * 5},
+        "gamma": 0.8, #tune.grid_search([0.5, 0.8, 0.9]), # def 0.99
+        "lr": 1e-4, #tune.grid_search([0.01, 0.001, 0.0001]), # def 1e-4
+        # "horizon": 5, # (None) maximum timesteps an episode can last
+
+        # "max_seq_len": 10 # Goes with LSTM max num steps
     }
 )
 print("hack222:")
+# breakpoint()
 
 agent = PPOTrainer(
     env="compiler_gym",
@@ -150,7 +159,7 @@ checkpoint = analysis.get_best_checkpoint(
 print("hack444:")
 # agent.restore(checkpoint)
 print("hack555:")
-breakpoint()
+# breakpoint()
 
 # Lets define a helper function to make it easy to evaluate the agent's
 # performance on a set of benchmarks.
@@ -161,10 +170,22 @@ def run_agent_on_benchmarks(benchmarks):
         rewards = []
         for i, benchmark in enumerate(benchmarks, start=1):
             observation, done = env.reset(benchmark=benchmark), False
+            step_count = 0
+
             while not done:
                 action = agent.compute_single_action(observation)
                 observation, _, done, _ = env.step(int(action))
-            rewards.append(env.episode_reward)
+                step_count += 1
+
+            walk_count = 10
+            search_depth=0
+            search_width = 10000
+            # breakpoint()
+            reward_actions_str = env.send_param("search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
+            print(reward_actions_str)
+            reward_actions = json.loads(reward_actions_str)
+            # breakpoint()
+            rewards.append(env.episode_reward / reward_actions[0])
             
             print(f"[{i}/{len(benchmarks)}] ")
 
@@ -199,7 +220,7 @@ import numpy as np
 
 # def plot_history(self):        
 
-pdb.set_trace()
+# breakpoint()
 fig, axs = plt.subplots(1, 2)
 
 axs[0].title.set_text('Train rewards')
@@ -214,3 +235,8 @@ plt.tight_layout()
 # plt.show()
 reward_file = "bench.png"
 plt.savefig(reward_file)
+
+
+# If running in a notebook, finish the wandb run to upload the tensorboard logs to W&B
+wandb.finish()
+ray.shutdown()

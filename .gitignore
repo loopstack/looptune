@@ -8,6 +8,7 @@ loop_tool_service/benchmarks/loop_tool_dataset/big
 *.pkl
 results
 tmp.png
-wandb
 weights
 *submitit_logs*
+*wandb*
+wandb_key.txt

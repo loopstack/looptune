@@ -31,7 +31,6 @@ from compiler_gym.service.proto import (
 from ctypes import util
 import logging
 import os
-import pdb
 import subprocess
 from copy import deepcopy as deepcopy
 from pathlib import Path
@@ -143,14 +142,14 @@ class Environment:
     def get_stride_tensor(self) -> Event:
         dim0, bucket_num = self.observation_spaces['stride_tensor'].float_box.high.shape
         stride_freq_vector = self.agent.get_stride_histogram()
-        assert(dim0 == 1)
-        assert(len(stride_freq_vector) == bucket_num)
+        assert(dim0 == 1), 'get_stride_tensor:dim0 == 1'
+        assert(len(stride_freq_vector) == bucket_num), 'get_stride_tensor:LoopTool dimension doesnt correspond to environment dimensions'
         return Event(float_tensor=FloatTensor(shape=[dim0, bucket_num], value=stride_freq_vector))
     
     def get_loops_tensor(self) -> Event:
         feature_vector = [x for loop_vector in self.agent.get_loops_tensor() for x in loop_vector]
         dim0, dim1 = self.observation_spaces['loops_tensor'].float_box.high.shape
-        assert(len(feature_vector) < dim1)
+        assert(len(feature_vector) < dim1), f'get_loops_tensor:LoopTool dimension doesnt correspond to environment dimensions {len(feature_vector)} !< {dim1}'
         feature_vector.extend([0] * (dim1 - len(feature_vector)))
         return Event(float_tensor=FloatTensor(shape=[dim0, dim1], value=feature_vector))
     
@@ -244,14 +243,14 @@ class Environment:
             best_df = max(rewards_actions, key=lambda x: x['predicted_reward'].iloc[-1]) 
             self.plot_search(best_df, 'red', linewidth=3)
             best_actions = best_df['action'].tolist()
-            predicted_reward, measures_reward = best_df[['predicted_reward', 'measured_reward']].iloc[-1]
-            print(f"Time = {episode_time}, GFLOPS: {start_flops} -> {measures_reward}, ({predicted_reward}) | Actions = {best_actions}---------")
+            predicted_reward, measured_reward = best_df[['predicted_reward', 'measured_reward']].iloc[-1]
+            print(f"Time = {episode_time}, GFLOPS: {start_flops} -> {measured_reward}, ({predicted_reward}) | Actions = {best_actions}---------")
 
 
         plt.tight_layout()
         plt.savefig(str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/tmp.png")
 
-        return predicted_reward, best_actions
+        return measured_reward, best_actions
 
     def walk(self, step_count: int, search_depth: int, search_width: int)-> list: 
         agent_copy = deepcopy(self.agent)

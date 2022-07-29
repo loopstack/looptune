@@ -20,19 +20,16 @@ import numpy as np
 import os
 import random
 import json
+from matplotlib import pyplot as plt
+
 
 import ray
 from ray import tune
 # from ray.rllib.algorithms import ppo
 from ray.rllib.env.env_context import EnvContext
 from ray.rllib.models import ModelCatalog
-from ray.rllib.models.tf.tf_modelv2 import TFModelV2
-from ray.rllib.models.tf.fcnet import FullyConnectedNetwork
-from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
-from ray.rllib.models.torch.fcnet import FullyConnectedNetwork as TorchFC
 from ray.rllib.utils.framework import try_import_tf, try_import_torch
 from ray.rllib.utils.test_utils import check_learning_achieved
-from ray.tune.logger import pretty_print
 
 import compiler_gym
 from compiler_gym.wrappers import CycleOverBenchmarks
@@ -43,18 +40,19 @@ import loop_tool_service
 
 from loop_tool_service.service_py.datasets import loop_tool_dataset
 from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward, runtime_reward
-
+import my_net_rl 
 
 
 import wandb
 from ray.tune.integration.wandb import WandbLoggerCallback
+from loop_tool_service.paths import LOOP_TOOL_ROOT
 
 # wandb.tensorboard.patch(root_logdir="...")
 # wandb.init(project="loop_tool_agent", entity="dejang")
 
 
 
-tf1, tf, tfv = try_import_tf()
+# tf1, tf, tfv = try_import_tf()
 torch, nn = try_import_torch()
 
 parser = argparse.ArgumentParser()
@@ -63,8 +61,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "--framework",
-    choices=["tf", "tf2", "tfe", "torch"],
     default="torch",
+    choices=["tf", "tf2", "tfe", "torch"],
     help="The DL framework specifier.",
 )
 parser.add_argument(
@@ -74,7 +72,7 @@ parser.add_argument(
     "be achieved within --stop-timesteps AND --stop-iters.",
 )
 parser.add_argument(
-    "--stop-iters", type=int, default=1, help="Number of iterations to train."
+    "--stop-iters", type=int, default=20, help="Number of iterations to train."
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=100, help="Number of timesteps to train."
@@ -91,6 +89,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--local-mode",
+    default=False,
     action="store_true",
     help="Init Ray in local mode for easier debugging.",
 )
@@ -103,7 +102,8 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.RewardTensor(),
+                # flops_loop_nest_reward.RewardTensor(),
+                flops_loop_nest_reward.AbsoluteRewardTensor(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
@@ -147,9 +147,9 @@ with make_env() as env:
     bench = ["benchmark://loop_tool_simple-v0/simple",
              "benchmark://loop_tool_simple-v0/mm128", 
              "benchmark://loop_tool_simple-v0/mm"] 
-    train_benchmarks = bench[0:1]
-    val_benchmarks = bench[0:1]
-    test_benchmarks = bench[0:1]
+    train_benchmarks = bench[0:]
+    val_benchmarks = bench[0:]
+    test_benchmarks = bench[0:]
 
 print("Number of benchmarks for training:", len(train_benchmarks))
 print("Number of benchmarks for validation:", len(val_benchmarks))
@@ -173,58 +173,17 @@ tune.register_env("compiler_gym", make_training_env)
 
 
 
-
-class CustomModel(TFModelV2):
-    """Example of a keras custom model that just delegates to an fc-net."""
-
-    def __init__(self, obs_space, action_space, num_outputs, model_config, name):
-        super(CustomModel, self).__init__(
-            obs_space, action_space, num_outputs, model_config, name
-        )
-        self.model = FullyConnectedNetwork(
-            obs_space, action_space, num_outputs, model_config, name
-        )
-
-    def forward(self, input_dict, state, seq_lens):
-        return self.model.forward(input_dict, state, seq_lens)
-
-    def value_function(self):
-        return self.model.value_function()
-
-
-class TorchCustomModel(TorchModelV2, nn.Module):
-    """Example of a PyTorch custom model that just delegates to a fc-net."""
-
-    def __init__(self, obs_space, action_space, num_outputs, model_config, name):
-        TorchModelV2.__init__(
-            self, obs_space, action_space, num_outputs, model_config, name
-        )
-        nn.Module.__init__(self)
-
-        self.torch_sub_model = TorchFC(
-            obs_space, action_space, num_outputs, model_config, name
-        )
-
-    def forward(self, input_dict, state, seq_lens):
-        input_dict["obs"] = input_dict["obs"].float()
-        fc_out, _ = self.torch_sub_model(input_dict, state, seq_lens)
-        return fc_out, []
-
-    def value_function(self):
-        return torch.reshape(self.torch_sub_model.value_function(), [-1])
-
-
 if __name__ == "__main__":
     args = parser.parse_args()
+    print(args)
     print(f"Running with following CLI options: {args}")
 
     # ray.init(local_mode=args.local_mode)
-    ray.init(ignore_reinit_error=True)
+    ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
-    # Can also register the env creator function explicitly with:
-    # register_env("corridor", lambda config: SimpleCorridor(config))
+    # # Can also register the env creator function explicitly with:
     ModelCatalog.register_custom_model(
-        "my_model", TorchCustomModel if args.framework == "torch" else CustomModel
+        "my_model", my_net_rl.TorchCustomModel# if args.framework == "torch" else my_net_rl.CustomModel
     )
 
     config = {
@@ -235,15 +194,21 @@ if __name__ == "__main__":
         "num_workers": 75,  # parallelism
         # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
         "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "1")),
+        # "model": {"fcnet_hiddens": [100] * 4},
+        
         "model": {
             "custom_model": "my_model",
             "vf_share_layers": True,
         },
         "framework": args.framework,
+        "train_batch_size": 1000,
+        "evaluation_interval": 5, # num of training iter between evaluations
+        "evaluation_duration": 10, # num of episodes run per evaluation period
         # define search space here
         # "parameter_1": tune.choice([1, 2, 3]),
         # "parameter_2": tune.choice([4, 5, 6]),
     }
+    device = 'cuda' if config['num_workers'] > 0 else 'cpu'
 
     stop = {
         "training_iteration": args.stop_iters,
@@ -276,6 +241,7 @@ if __name__ == "__main__":
     print("Training automatically with Ray Tune")
     from ray.rllib.agents.ppo import PPOTrainer
 
+    # breakpoint()    
     analysis = tune.run(
         # args.run, 
         PPOTrainer,
@@ -298,16 +264,10 @@ if __name__ == "__main__":
     print("hack222:")
     # breakpoint()
 
-
+    config['explore'] = False
     agent = PPOTrainer(
         env="compiler_gym",
-        config={
-            "num_workers": 1,
-            "seed": 0xCC,
-            # For inference we disable the stocastic exploration that is used during
-            # training.
-            "explore": False,
-        },
+        config=config
     )
     print("hack333:")
     # We only made a single checkpoint at the end of training, so restore that. In
@@ -319,36 +279,49 @@ if __name__ == "__main__":
         trial=analysis.trials[0]
     )
     print("hack444:")
-    # agent.restore(checkpoint)
+    agent.restore(checkpoint)
     print("hack555:")
-    # breakpoint()
-
+    
+    
+    import pandas as pd
     # Lets define a helper function to make it easy to evaluate the agent's
     # performance on a set of benchmarks.
-
     def run_agent_on_benchmarks(benchmarks):
         """Run agent on a list of benchmarks and return a list of cumulative rewards."""
         with make_env() as env:
-            rewards = []
+            df_gflops = pd.DataFrame(np.zeros((len(benchmarks), 4)), columns=['bench', 'base', 'network', 'search'])
+
             flops = 0
 
-            for i, benchmark in enumerate(benchmarks, start=1):
+            for i, benchmark in enumerate(benchmarks, start=0):
                 observation, done = env.reset(benchmark=benchmark), False
                 step_count = 0
+                policy = agent.get_policy()
+                print(policy.model.framework)
 
+                df_gflops.loc[i, 'bench'] = benchmark
+                df_gflops.loc[i, 'base'] = env.observation["flops_loop_nest_tensor"]/1e9
+
+                # breakpoint()
+                
                 while not done:
-                    action = agent.compute_single_action(observation)
-                    observation, _, done, info = env.step(int(action))
-                    if info['action_had_no_effect']:
-                        print('Network chose impossible action')
-                        available_actions = json.loads(env.send_param("available_actions", ""))
-                        action_str = random.choice(available_actions)
-                        observation, _, done, info = env.step(env.action_space.from_string(action_str))
+                    env.send_param("print_looptree", "")
+                    logits, _ = policy.model({"obs": torch.Tensor(observation).to(device)})
+                    sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
 
+                    assert (agent.compute_single_action(observation) == sorted_actions[0][0].item())
+                    for q, a in zip(sorted_actions_q.flatten().tolist(), sorted_actions.flatten().tolist()):
+                        print(env.action_space.to_string(a), q)
+                        
+                    for action in sorted_actions.flatten().tolist():
+                        observation, _, done, info = env.step(int(action))
+                        if not info['action_had_no_effect']:
+                            break
+                
                     flops = env.observation["flops_loop_nest_tensor"]
+                    df_gflops.loc[i, 'network'] = flops/1e9
                     step_count += 1
                     print(f'{step_count}. Flops = {flops}, Actions = {[ env.action_space.to_string(a) for a in env.actions]}')
-                    env.send_param("print_looptree", "")
 
                 walk_count = 10
                 search_depth=0
@@ -358,57 +331,26 @@ if __name__ == "__main__":
                 print(f'Search = {reward_actions_str}')
                 reward_actions = json.loads(reward_actions_str)
                 # breakpoint()
-                rewards.append(flops / reward_actions[0])
-                
+                df_gflops.loc[i, 'search'] = reward_actions[0]
+
                 print(f"[{i}/{len(benchmarks)}] ")
+        
+        return df_gflops
 
-        return rewards
 
-    breakpoint()
     # Evaluate agent performance on the validation set.
-    val_rewards = run_agent_on_benchmarks(val_benchmarks)
+    df_gflops_val = run_agent_on_benchmarks(val_benchmarks)
 
     # Evaluate agent performance on the holdout test set.
-    test_rewards = run_agent_on_benchmarks(test_benchmarks)
+    df_gflops_test = run_agent_on_benchmarks(test_benchmarks)
 
     print("hack888")
     # Finally lets plot our results to see how we did!
-    from matplotlib import pyplot as plt
-    import numpy as np
 
-    # def plot_results(x, y, name, ax):
-    #     plt.sca(ax)
-    #     plt.bar(range(len(y)), y)
-    #     plt.ylabel("Reward (higher is better)")
-    #     plt.xticks(range(len(x)), x, rotation=90)
-    #     plt.title(f"Performance on {name} set")
-
-
-    # fig, (ax1, ax2) = plt.subplots(1, 2)
-    # fig.set_size_inches(13, 3)
-    # plot_results(val_benchmarks, val_rewards, "val", ax1)
-    # plot_results(test_benchmarks, test_rewards, "test", ax2)
-    # # plt.show()
-    # plt.savefig('bench.png')
-
-    # def plot_history(self):        
-
-    # breakpoint()
     fig, axs = plt.subplots(1, 2)
-
-    axs[0].title.set_text('Train rewards')
-    axs[0].plot(val_rewards, color="red")
-    axs[0].plot(np.zeros_like(val_rewards), color="blue")
-
-    axs[1].title.set_text('Test rewards')
-    axs[1].plot(test_rewards, color="green")
-    axs[1].plot(np.zeros_like(test_rewards), color="blue")
-
-    plt.tight_layout()
-    # plt.show()
-    reward_file = "bench.png"
-    plt.savefig(reward_file)
+    axs[0] = df_gflops_val.plot(x='bench', y=['base', 'network', 'search'], kind='bar', figsize=(9, 8), ax=axs[0])
+    axs[1] = df_gflops_test.plot(x='bench', y=['base', 'network', 'search'], kind='bar', figsize=(9, 8), ax=axs[1])
+    fig.savefig(LOOP_TOOL_ROOT/"bench.png")
 
 
-    
     ray.shutdown()

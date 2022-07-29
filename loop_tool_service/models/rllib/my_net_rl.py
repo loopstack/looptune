@@ -48,6 +48,7 @@ class TorchCustomModel(TorchModelV2, nn.Module):
         TorchModelV2.__init__(
             self, obs_space, action_space, num_outputs, model_config, name
         )
+        # ray.util.pdb.set_trace()
         nn.Module.__init__(self)
 
         self.torch_sub_model = TorchFC(

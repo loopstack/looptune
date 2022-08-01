@@ -19,6 +19,7 @@ from gym.spaces import Discrete, Box
 import numpy as np
 import os
 import random
+import shutil
 import json
 from matplotlib import pyplot as plt
 
@@ -30,6 +31,7 @@ from ray.rllib.env.env_context import EnvContext
 from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_tf, try_import_torch
 from ray.rllib.utils.test_utils import check_learning_achieved
+from ray.rllib.agents.ppo import PPOTrainer
 
 import compiler_gym
 from compiler_gym.wrappers import CycleOverBenchmarks
@@ -51,13 +53,15 @@ from loop_tool_service.paths import LOOP_TOOL_ROOT
 # wandb.init(project="loop_tool_agent", entity="dejang")
 
 
-
 # tf1, tf, tfv = try_import_tf()
 torch, nn = try_import_torch()
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--run", type=str, default="PPO", help="The RLlib-registered algorithm to use."
+)
+parser.add_argument(
+    "--load-model", action='store_true', help="Load training checkpoint"
 )
 parser.add_argument(
     "--framework",
@@ -179,11 +183,11 @@ if __name__ == "__main__":
     print(f"Running with following CLI options: {args}")
 
     # ray.init(local_mode=args.local_mode)
-    ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
+    ray.init(ignore_reinit_error=True)
 
     # # Can also register the env creator function explicitly with:
     ModelCatalog.register_custom_model(
-        "my_model", my_net_rl.TorchCustomModel# if args.framework == "torch" else my_net_rl.CustomModel
+        "my_model", my_net_rl.TorchCustomModel
     )
 
     config = {
@@ -191,7 +195,7 @@ if __name__ == "__main__":
         "env_config": {
             "corridor_length": 5,
         },
-        "num_workers": 75,  # parallelism
+        "num_workers": 40,  # parallelism
         # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
         "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "1")),
         # "model": {"fcnet_hiddens": [100] * 4},
@@ -204,6 +208,7 @@ if __name__ == "__main__":
         "train_batch_size": 1000,
         "evaluation_interval": 5, # num of training iter between evaluations
         "evaluation_duration": 10, # num of episodes run per evaluation period
+        "explore": True,
         # define search space here
         # "parameter_1": tune.choice([1, 2, 3]),
         # "parameter_2": tune.choice([4, 5, 6]),
@@ -215,71 +220,53 @@ if __name__ == "__main__":
         # "timesteps_total": args.stop_timesteps,
         # "episode_reward_mean": args.stop_reward,
     }
+    best_checkpoint_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/best_checkpoint"
 
-    # if args.no_tune:
-        # # manual training with train loop using PPO and fixed learning rate
-        # if args.run != "PPO":
-        #     raise ValueError("Only support --run PPO with --no-tune.")
-        # print("Running manual train loop without Ray Tune.")
-        # ppo_config = ppo.DEFAULT_CONFIG.copy()
-        # ppo_config.update(config)
-        # # use fixed learning rate instead of grid search (needs tune)
-        # ppo_config["lr"] = 1e-3
-        # trainer = ppo.PPO(config=ppo_config, env="compiler_gym")
-        # # run manual training loop and print results after each iteration
-        # for _ in range(args.stop_iters):
-        #     result = trainer.train()
-        #     print(pretty_print(result))
-        #     # stop training of the target train steps or reward are reached
-        #     if (
-        #         result["timesteps_total"] >= args.stop_timesteps
-        #         or result["episode_reward_mean"] >= args.stop_reward
-        #     ):
-        #         break
-    # else:
-    # automated run with Tune and grid search and TensorBoard
+
     print("Training automatically with Ray Tune")
-    from ray.rllib.agents.ppo import PPOTrainer
 
-    # breakpoint()    
-    analysis = tune.run(
-        # args.run, 
-        PPOTrainer,
-        reuse_actors=True,
-        checkpoint_at_end=True,
-        config=config, 
-        stop=stop,         
-        callbacks=[ WandbLoggerCallback(
-                        project="loop_tool_agent",
-                        # save_checkpoints=True,
-                        api_key_file="/private/home/dejang/tools/loop_tool_env/loop_tool_service/models/rllib/wandb_key.txt",
-                        log_config=False) ])
+    if args.load_model:
+        checkpoint_path = best_checkpoint_path
+    else:
+        # breakpoint()    
+        analysis = tune.run(
+            # args.run, 
+            PPOTrainer,
+            reuse_actors=True,
+            checkpoint_at_end=True,
+            config=config, 
+            stop=stop,         
+            callbacks=[ WandbLoggerCallback(
+                            project="loop_tool_agent",
+                            # save_checkpoints=True,
+                            api_key_file="/private/home/dejang/tools/loop_tool_env/loop_tool_service/models/rllib/wandb_key.txt",
+                            log_config=False) ])
 
-    if args.as_test:
-        print("Checking if learning goals were achieved")
-        check_learning_achieved(analysis, args.stop_reward)
+        if args.as_test:
+            print("Checking if learning goals were achieved")
+            check_learning_achieved(analysis, args.stop_reward)
 
 
+        checkpoint_path = analysis.get_best_checkpoint(
+            metric="episode_reward_mean",
+            mode="max",
+            trial=analysis.trials[0]
+        )
 
-    print("hack222:")
-    # breakpoint()
+        if os.path.exists(best_checkpoint_path):
+            shutil.rmtree(best_checkpoint_path)
+        shutil.copytree(checkpoint_path.to_directory(),  best_checkpoint_path)
+
+
 
     config['explore'] = False
     agent = PPOTrainer(
         env="compiler_gym",
         config=config
     )
-    print("hack333:")
-    # We only made a single checkpoint at the end of training, so restore that. In
-    # practice we may have many checkpoints that we will select from using
-    # performance on the validation set.
-    checkpoint = analysis.get_best_checkpoint(
-        metric="episode_reward_mean",
-        mode="max",
-        trial=analysis.trials[0]
-    )
+
     print("hack444:")
-    agent.restore(checkpoint)
+    agent.restore(checkpoint_path)
     print("hack555:")
     
     
@@ -299,7 +286,7 @@ if __name__ == "__main__":
                 policy = agent.get_policy()
                 print(policy.model.framework)
 
-                df_gflops.loc[i, 'bench'] = benchmark
+                df_gflops.loc[i, 'bench'] = benchmark.split('/')[-1]
                 df_gflops.loc[i, 'base'] = env.observation["flops_loop_nest_tensor"]/1e9
 
                 # breakpoint()
@@ -347,10 +334,17 @@ if __name__ == "__main__":
     print("hack888")
     # Finally lets plot our results to see how we did!
 
+    breakpoint()
     fig, axs = plt.subplots(1, 2)
+    fig.suptitle(f'GFlops comparison for training and test benchmarks', fontsize=16)
     axs[0] = df_gflops_val.plot(x='bench', y=['base', 'network', 'search'], kind='bar', figsize=(9, 8), ax=axs[0])
     axs[1] = df_gflops_test.plot(x='bench', y=['base', 'network', 'search'], kind='bar', figsize=(9, 8), ax=axs[1])
+    for ax in axs: ax.tick_params(axis='x', labelrotation=45)
+
+    plt.tight_layout()
     fig.savefig(LOOP_TOOL_ROOT/"bench.png")
 
 
+
     ray.shutdown()
+

@@ -5,7 +5,7 @@ from typing import Iterable
 import logging
 
 import subprocess
-import pdb
+from datetime import datetime
 
 '''
 Purpose:
@@ -31,3 +31,11 @@ LOOP_TOOL_SERVICE_PY: Path = Path(
 logging.info(f"What is the path {LOOP_TOOL_SERVICE_PY}")
 logging.info(f"Is that file: {LOOP_TOOL_SERVICE_PY.is_file()}")
 assert LOOP_TOOL_SERVICE_PY.is_file(), "Service script not found"
+
+
+def create_log_dir(experiment_name):
+    timestamp = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
+    log_dir = "/".join([str(LOOP_TOOL_ROOT), "results", experiment_name, timestamp])
+    os.makedirs(log_dir)
+
+    return log_dir

@@ -15,6 +15,7 @@ $ python custom_env.py --help
 """
 import argparse
 import gym
+from itertools import islice
 from gym.spaces import Discrete, Box
 import numpy as np
 import os
@@ -22,7 +23,7 @@ import random
 import shutil
 import json
 from matplotlib import pyplot as plt
-
+from pathlib import Path
 
 import ray
 from ray import tune
@@ -39,8 +40,10 @@ from compiler_gym.util.registration import register
 from compiler_gym.wrappers import TimeLimit
 
 import loop_tool_service
+from loop_tool_service import paths
 
-from loop_tool_service.service_py.datasets import loop_tool_dataset
+from loop_tool_service.service_py.datasets import loop_tool_dataset, loop_tool_test_dataset
+
 from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward, runtime_reward
 import my_net_rl 
 
@@ -106,11 +109,12 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                # flops_loop_nest_reward.RewardTensor(),
-                flops_loop_nest_reward.AbsoluteRewardTensor(),
+                flops_loop_nest_reward.RewardTensor(),
+                # flops_loop_nest_reward.AbsoluteRewardTensor(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
+                loop_tool_test_dataset.Dataset()
             ],
         },
     )
@@ -131,33 +135,21 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
     return env
 
 
-# Let's create an environment and print a few attributes just to check that we
-# have everything set up the way that we would like.
-with make_env() as env:
-    print("Action space:", env.action_space)
-    print("Observation space:", env.observation_space)
-    print("Reward space:", env.reward_space)
-    env.reset()
-    reward_actions_str = env.send_param("search", f'{10}, {5}, {0}, {1000}')
-    print(f"Best reward = {reward_actions_str}")
-
 with make_env() as env:
     # The two datasets we will be using:
-    lt_dataset = env.datasets["loop_tool_simple-v0"]
-    # train_benchmarks = list(islice(lt_dataset.benchmarks(), 1))
-    # train_benchmarks, val_benchmarks = train_benchmarks[:2], train_benchmarks[2:]
-    # test_benchmarks = list(islice(lt_dataset.benchmarks(), 2))
+    lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
+    benchmarks = list(lt_dataset.benchmarks())
     
-    bench = ["benchmark://loop_tool_simple-v0/simple",
-             "benchmark://loop_tool_simple-v0/mm128", 
-             "benchmark://loop_tool_simple-v0/mm"] 
-    train_benchmarks = bench[0:]
-    val_benchmarks = bench[0:]
-    test_benchmarks = bench[0:]
+    train_perc = 0.8
+    train_size = int(train_perc * len(benchmarks))
+    test_size = len(benchmarks) - train_size
+    train_benchmarks, val_benchmarks = torch.utils.data.random_split(benchmarks, [train_size, test_size])
+    
+
+
 
 print("Number of benchmarks for training:", len(train_benchmarks))
 print("Number of benchmarks for validation:", len(val_benchmarks))
-print("Number of benchmarks for testing:", len(test_benchmarks))
 
 def make_training_env(*args) -> compiler_gym.envs.CompilerEnv:
     """Make a reinforcement learning environment that cycles over the
@@ -171,10 +163,7 @@ def make_training_env(*args) -> compiler_gym.envs.CompilerEnv:
 if ray.is_initialized():
     ray.shutdown()
 
-
 tune.register_env("compiler_gym", make_training_env)
-
-
 
 
 if __name__ == "__main__":
@@ -195,7 +184,7 @@ if __name__ == "__main__":
         "env_config": {
             "corridor_length": 5,
         },
-        "num_workers": 40,  # parallelism
+        "num_workers": 60,  # parallelism
         # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
         "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "1")),
         # "model": {"fcnet_hiddens": [100] * 4},
@@ -209,6 +198,7 @@ if __name__ == "__main__":
         "evaluation_interval": 5, # num of training iter between evaluations
         "evaluation_duration": 10, # num of episodes run per evaluation period
         "explore": True,
+        "lr": 1e-4
         # define search space here
         # "parameter_1": tune.choice([1, 2, 3]),
         # "parameter_2": tune.choice([4, 5, 6]),
@@ -220,13 +210,13 @@ if __name__ == "__main__":
         # "timesteps_total": args.stop_timesteps,
         # "episode_reward_mean": args.stop_reward,
     }
-    best_checkpoint_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/best_checkpoint"
+    last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/last_run"
 
 
     print("Training automatically with Ray Tune")
 
     if args.load_model:
-        checkpoint_path = best_checkpoint_path
+        checkpoint_path = last_run_path/"best_checkpoint"
     else:
         # breakpoint()    
         analysis = tune.run(
@@ -238,8 +228,8 @@ if __name__ == "__main__":
             stop=stop,         
             callbacks=[ WandbLoggerCallback(
                             project="loop_tool_agent",
-                            # save_checkpoints=True,
-                            api_key_file="/private/home/dejang/tools/loop_tool_env/loop_tool_service/models/rllib/wandb_key.txt",
+                            save_checkpoints=True,
+                            api_key_file=str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/rllib/wandb_key.txt",
                             log_config=False) ])
 
         if args.as_test:
@@ -253,10 +243,10 @@ if __name__ == "__main__":
             trial=analysis.trials[0]
         )
 
-        if os.path.exists(best_checkpoint_path):
-            shutil.rmtree(best_checkpoint_path)
-        shutil.copytree(checkpoint_path.to_directory(),  best_checkpoint_path)
-
+        if os.path.exists(last_run_path):
+            shutil.rmtree(last_run_path)
+        shutil.copytree(checkpoint_path.to_directory(),  last_run_path/"best_checkpoint")
+        with open(last_run_path/"config.json", "w") as f: json.dump(config, f)
 
 
     config['explore'] = False
@@ -285,8 +275,7 @@ if __name__ == "__main__":
                 step_count = 0
                 policy = agent.get_policy()
                 print(policy.model.framework)
-
-                df_gflops.loc[i, 'bench'] = benchmark.split('/')[-1]
+                df_gflops.loc[i, 'bench'] =  str(benchmark).split('/')[-1]
                 df_gflops.loc[i, 'base'] = env.observation["flops_loop_nest_tensor"]/1e9
 
                 # breakpoint()
@@ -325,26 +314,53 @@ if __name__ == "__main__":
         return df_gflops
 
 
+    # Evaluate agent performance on the train set.
+    df_gflops_train = run_agent_on_benchmarks(train_benchmarks)
+
     # Evaluate agent performance on the validation set.
     df_gflops_val = run_agent_on_benchmarks(val_benchmarks)
-
-    # Evaluate agent performance on the holdout test set.
-    df_gflops_test = run_agent_on_benchmarks(test_benchmarks)
 
     print("hack888")
     # Finally lets plot our results to see how we did!
 
     breakpoint()
-    fig, axs = plt.subplots(1, 2)
+    fig, axs = plt.subplots(1, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [5, 1]})
     fig.suptitle(f'GFlops comparison for training and test benchmarks', fontsize=16)
-    axs[0] = df_gflops_val.plot(x='bench', y=['base', 'network', 'search'], kind='bar', figsize=(9, 8), ax=axs[0])
-    axs[1] = df_gflops_test.plot(x='bench', y=['base', 'network', 'search'], kind='bar', figsize=(9, 8), ax=axs[1])
-    for ax in axs: ax.tick_params(axis='x', labelrotation=45)
-
+    axs[0] = df_gflops_train.plot(x='bench', y=['base', 'network', 'search'], kind='bar', ax=axs[0])
+    axs[1] = df_gflops_val.plot(x='bench', y=['base', 'network', 'search'], kind='bar', ax=axs[1])
+    fig.autofmt_xdate()
     plt.tight_layout()
-    fig.savefig(LOOP_TOOL_ROOT/"bench.png")
+    fig.savefig(last_run_path/"benchmarks_gflops.png")
+    
+    # Analyse results
+    fig, axs = plt.subplots()
+    axs.violinplot(dataset = [
+        df_gflops_train['search'] / df_gflops_train['base'],
+        df_gflops_val['search'] / df_gflops_val['base'],
+        df_gflops_train['network'] / df_gflops_train['base'],
+        df_gflops_val['network'] / df_gflops_val['base'],
+    ])
+    labels = ['search_train', 'search_test', 'network_train', 'network_val']
+    axs.set_xticks(np.arange(1, len(labels) + 1))
+    axs.set_xticklabels(labels)
+    axs.set_xlim(0.25, len(labels) + 0.75)
 
+    axs.set_title('Speedup distribution for greedy search and network approach')
+    axs.yaxis.grid(True)
+    axs.set_xlabel('Models')
+    fig.savefig(last_run_path/"speedup_violin.png")
 
+    # Save df
+    df_gflops_all = pd.concat([df_gflops_train, df_gflops_val])
+    df_gflops_all['search_speedup'] = df_gflops_all['search'] / df_gflops_all['base']
+    df_gflops_all['network_speedup'] = df_gflops_all['network'] / df_gflops_all['base']
+
+    df_gflops_all.to_csv(last_run_path/'benchmarks_gflops.csv')
+    
+    breakpoint()
+
+    wandb_file_path = list(Path(os.getcwd()).glob(f'**/files/'))[0]
+    shutil.copytree(last_run_path, str(wandb_file_path) + '/my_logs')
+    breakpoint()
 
     ray.shutdown()
-

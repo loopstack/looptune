@@ -208,73 +208,38 @@ class Environment:
     ##############################################################
     # Search functions
     ##############################################################
-    def plot_search(self, df, color, linewidth=1):
-        
-        plt.plot(df['time'], df['measured_reward'], color=color, linewidth=linewidth)
-        plt.plot(df['time'], df['predicted_reward'], color=color, linewidth=linewidth)
-
-        # axs[0].scatter(df['time'].iloc[-1], final_reward, c=color, marker='o')
-
-        # axs[1].title.set_text('Test rewards')
-        # axs[1].plot(test_rewards, color="green")
-        # axs[1].plot(np.zeros_like(test_rewards), color="blue")
-        # return axs
-
-
-    
 
     def explore_benchmark(self, walk_count, step_count, search_depth, search_width) -> None:
         rewards_actions = []
-        cycol = cycle('bgrcmk')
-        # fig, axs = plt.subplots(1, 2)
-        plt.cla()
-        plt.title('Benchmark performance')
+        start_flops = self.eval_ln_flops(self.agent) / 1e9
+        rewards_actions.append([start_flops, []])
 
-        with Timer() as episode_time:
-            start_flops = self.eval_ln_flops(self.agent) / 1e9
+        for self.walk_num in range(1, walk_count + 1):
+            reward, actions = self.walk(
+                step_count=step_count, 
+                search_depth=search_depth, 
+                search_width=search_width
+            )
+            rewards_actions.append([reward, actions])
 
-            for self.walk_num in range(1, walk_count + 1):
-                df = self.walk(
-                    step_count=step_count, 
-                    search_depth=search_depth, 
-                    search_width=search_width
-                )
-                rewards_actions.append(df)
-                self.plot_search(df, color = next(cycol))
+        return max(rewards_actions, key=lambda x: x[0]) 
 
-                # print(f'{start_flops} -> {rewards_actions[-1][0]} GFLOPs, Actions = {rewards_actions[-1][1]}')
-        
-            best_df = max(rewards_actions, key=lambda x: x['predicted_reward'].iloc[-1]) 
-            self.plot_search(best_df, 'red', linewidth=3)
-            best_actions = best_df['action'].tolist()
-            predicted_reward, measured_reward = best_df[['predicted_reward', 'measured_reward']].iloc[-1]
-            print(f"Time = {episode_time}, GFLOPS: {start_flops} -> {measured_reward}, ({predicted_reward}) | Actions = {best_actions}---------")
-
-
-        plt.tight_layout()
-        plt.savefig(str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/tmp.png")
-
-        return measured_reward, best_actions
+    
 
     def walk(self, step_count: int, search_depth: int, search_width: int)-> list: 
-        agent_copy = deepcopy(self.agent)
-        cur_reward = 0
-        
-        df_list = []
+        agent_copy = deepcopy(self.agent)        
+        actions = []
 
         with Timer() as step_time:
             for self.step_num in range(1, step_count + 1):
         
                 new_action_str, new_reward = self.get_best_next_action(agent_copy, search_depth, search_width)
-                # if new_reward >= cur_reward or True:
-                cur_reward = new_reward
                 agent_copy.apply_action(new_action_str)
-                df_list.append([step_time.time, new_action_str, new_reward, self.eval_ln_flops(agent_copy) / 1e9])
-
-                # else:
-                #     break
-
-        return pd.DataFrame(df_list, columns=['time','action', 'predicted_reward', 'measured_reward'])
+                actions.append(new_action_str)
+        flops = self.eval_ln_flops(agent_copy) / 1e9
+        print(agent_copy)
+        print(flops)
+        return flops, actions
 
 
     # Search
@@ -341,3 +306,71 @@ class Environment:
         state_tensor = torch.tensor(state_tensor).float().to(self.device)
         pred_flops = self.model(state_tensor)
         return pred_flops.item()
+
+
+    # Just for debugging
+
+    def plot_search(self, df, color, linewidth=1):
+        
+        plt.plot(df['time'], df['measured_reward'], color=color, linewidth=linewidth)
+        plt.plot(df['time'], df['predicted_reward'], color=color, linewidth=linewidth)
+
+        # axs[0].scatter(df['time'].iloc[-1], final_reward, c=color, marker='o')
+
+        # axs[1].title.set_text('Test rewards')
+        # axs[1].plot(test_rewards, color="green")
+        # axs[1].plot(np.zeros_like(test_rewards), color="blue")
+        # return axs
+
+    def explore_benchmark_dbg(self, walk_count, step_count, search_depth, search_width) -> None:
+        rewards_actions = []
+        cycol = cycle('bgrcmk')
+        # fig, axs = plt.subplots(1, 2)
+        plt.cla()
+        plt.title('Benchmark performance')
+
+        with Timer() as episode_time:
+            start_flops = self.eval_ln_flops(self.agent) / 1e9
+
+            for self.walk_num in range(1, walk_count + 1):
+                df = self.walk_dbg(
+                    step_count=step_count, 
+                    search_depth=search_depth, 
+                    search_width=search_width
+                )
+                rewards_actions.append(df)
+                self.plot_search(df, color = next(cycol))
+
+                # print(f'{start_flops} -> {rewards_actions[-1][0]} GFLOPs, Actions = {rewards_actions[-1][1]}')
+        
+            best_df = max(rewards_actions, key=lambda x: x['predicted_reward'].iloc[-1]) 
+            self.plot_search(best_df, 'red', linewidth=3)
+            best_actions = best_df['action'].tolist()
+            predicted_reward, measured_reward = best_df[['predicted_reward', 'measured_reward']].iloc[-1]
+            print(f"Time = {episode_time}, GFLOPS: {start_flops} -> {measured_reward}, ({predicted_reward}) | Actions = {best_actions}---------")
+
+
+        plt.tight_layout()
+        plt.savefig(str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/tmp.png")
+
+        return measured_reward, best_actions
+
+    def walk_dbg(self, step_count: int, search_depth: int, search_width: int)-> list: 
+        agent_copy = deepcopy(self.agent)
+        cur_reward = 0
+        
+        df_list = []
+
+        with Timer() as step_time:
+            for self.step_num in range(1, step_count + 1):
+        
+                new_action_str, new_reward = self.get_best_next_action(agent_copy, search_depth, search_width)
+                # if new_reward >= cur_reward or True:
+                cur_reward = new_reward
+                agent_copy.apply_action(new_action_str)
+                df_list.append([step_time.time, new_action_str, new_reward, self.eval_ln_flops(agent_copy) / 1e9])
+
+                # else:
+                #     break
+
+        return pd.DataFrame(df_list, columns=['time','action', 'predicted_reward', 'measured_reward'])

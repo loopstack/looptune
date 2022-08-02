@@ -12,3 +12,4 @@ weights
 *submitit_logs*
 *wandb*
 wandb_key.txt
+core

@@ -26,7 +26,7 @@ class RewardScalar(Reward):
         # print("Reward Runtime: update")
         del action
         del observation_view
-        new_runtime = observations[0] / 1e9
+        new_runtime = observations[0]
         reward = float(self.prev_runtime - new_runtime)
         self.prev_runtime = new_runtime
         return reward
@@ -58,7 +58,7 @@ class RewardTensor(Reward):
         del action
         del observation_view
         
-        new_runtime = observations[0] / 1e9
+        new_runtime = observations[0]
         reward = float(self.prev_runtime - new_runtime)
         self.prev_runtime = new_runtime        
         return reward

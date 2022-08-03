@@ -120,7 +120,7 @@ class Environment:
         return Event(float_value=mean_runtime)
 
     def get_flops(self) -> Event:
-        return Event(float_value=self.agent.eval("FLOPS"))
+        return Event(float_value=self.agent.eval("FLOPS") / 1e9)
 
     def get_flops_loop_nest(self) -> Event:
         flops = self.eval_ln_flops(self.agent)
@@ -129,7 +129,7 @@ class Environment:
     def get_flops_loop_nest_tensor(self) -> Event:
         flops = self.eval_ln_flops(self.agent)
         tensor = DoubleTensor(shape = [1], value=[flops])
-        logging.info(f'<<<<<<<<<<<<<<< Reward = {tensor.value[0] / 1e9} GFLOPS >>>>>>>>>>>>>>>')
+        logging.info(f'<<<<<<<<<<<<<<< Reward = {tensor.value[0]} GFLOPS >>>>>>>>>>>>>>>')
         return Event(double_tensor=tensor)
 
     def get_ir(self) -> Event:
@@ -211,7 +211,7 @@ class Environment:
 
     def explore_benchmark(self, walk_count, step_count, search_depth, search_width) -> None:
         rewards_actions = []
-        start_flops = self.eval_ln_flops(self.agent) / 1e9
+        start_flops = self.eval_ln_flops(self.agent)
         rewards_actions.append([start_flops, []])
 
         for self.walk_num in range(1, walk_count + 1):
@@ -236,7 +236,7 @@ class Environment:
                 new_action_str, new_reward = self.get_best_next_action(agent_copy, search_depth, search_width)
                 agent_copy.apply_action(new_action_str)
                 actions.append(new_action_str)
-        flops = self.eval_ln_flops(agent_copy) / 1e9
+        flops = self.eval_ln_flops(agent_copy)
         print(agent_copy)
         print(flops)
         return flops, actions
@@ -297,7 +297,7 @@ class Environment:
     def eval_ln_flops(self, agent):
         try:
             with lt.Backend("loop_nest"):
-                return agent.eval("FLOPS")
+                return agent.eval("FLOPS") / 1e9
         except:
             return 0
             
@@ -330,7 +330,7 @@ class Environment:
         plt.title('Benchmark performance')
 
         with Timer() as episode_time:
-            start_flops = self.eval_ln_flops(self.agent) / 1e9
+            start_flops = self.eval_ln_flops(self.agent)
 
             for self.walk_num in range(1, walk_count + 1):
                 df = self.walk_dbg(
@@ -368,7 +368,7 @@ class Environment:
                 # if new_reward >= cur_reward or True:
                 cur_reward = new_reward
                 agent_copy.apply_action(new_action_str)
-                df_list.append([step_time.time, new_action_str, new_reward, self.eval_ln_flops(agent_copy) / 1e9])
+                df_list.append([step_time.time, new_action_str, new_reward, self.eval_ln_flops(agent_copy)])
 
                 # else:
                 #     break

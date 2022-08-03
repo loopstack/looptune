@@ -82,13 +82,16 @@ def get_search_lt(
         actions = [ env.action_space.from_string(a_str) for a_str in reward_actions[1]]
         env.multistep(actions=actions)
         env.send_param("print_looptree", "")
-        print(f'Final = {env.observation["flops_loop_nest_tensor"]} Flops')
+        final_flops = env.observation["flops_loop_nest_tensor"]
+        print(f'Final = {final_flops} GFlops')
+
+        if abs(float(reward_actions[0]) - final_flops) > 0.15 * final_flops: breakpoint()
 
 
 
 def get_network_lt(target_uri, checkpoint_path, step_count=10):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/last_run"
+    last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
     with open(last_run_path/"config.json", 'r') as f: config = json.load(f)
 
     ModelCatalog.register_custom_model(
@@ -133,7 +136,7 @@ def handtune_benchmark(target_uri):
     print(tree)
 
     with lt.Backend("loop_nest"): 
-        print(tree.FLOPS())
+        print(f'Speed = {tree.FLOPS() / 1e9} GFLOPS')
 
     def mm(A, B):
         s = lt.SymbolGenerator()
@@ -160,7 +163,7 @@ if __name__ == '__main__':
         exit()
 
     target_uri = sys.argv[1]
-    checkpoint_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/last_run/best_checkpoint"
+    checkpoint_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts/best_checkpoint"
 
     register_env()
     tune.register_env("compiler_gym", make_training_env)

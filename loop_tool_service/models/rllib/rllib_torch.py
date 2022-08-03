@@ -24,6 +24,8 @@ import shutil
 import json
 from matplotlib import pyplot as plt
 from pathlib import Path
+from datetime import datetime
+
 
 import ray
 from ray import tune
@@ -138,7 +140,7 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
 with make_env() as env:
     # The two datasets we will be using:
     lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
-    benchmarks = list(lt_dataset.benchmarks())
+    benchmarks = list(lt_dataset.benchmarks())[:10]
     
     train_perc = 0.8
     train_size = int(train_perc * len(benchmarks))
@@ -174,31 +176,33 @@ if __name__ == "__main__":
     # ray.init(local_mode=args.local_mode)
     ray.init(ignore_reinit_error=True)
 
+    last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
+    wandb_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
     # # Can also register the env creator function explicitly with:
     ModelCatalog.register_custom_model(
         "my_model", my_net_rl.TorchCustomModel
     )
 
     config = {
-        "env": "compiler_gym",  # or "corridor" if registered above
-        "env_config": {
-            "corridor_length": 5,
-        },
-        "num_workers": 60,  # parallelism
-        # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
-        "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "1")),
+        "env": "compiler_gym", 
         # "model": {"fcnet_hiddens": [100] * 4},
-        
+        "framework": args.framework,
         "model": {
             "custom_model": "my_model",
             "vf_share_layers": True,
         },
-        "framework": args.framework,
-        "train_batch_size": 1000,
-        "evaluation_interval": 5, # num of training iter between evaluations
-        "evaluation_duration": 10, # num of episodes run per evaluation period
+        # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
+        "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "2")),
+        "num_workers": 60,  # parallelism
+        "rollout_fragment_length": 100, 
+        "train_batch_size": 6000, # train_batch_size == num_workers * rollout_fragment_length
+        "num_sgd_iter": 30,
+        # "evaluation_interval": 5, # num of training iter between evaluations
+        # "evaluation_duration": 10, # num of episodes run per evaluation period
         "explore": True,
-        "lr": 1e-4
+        # "gamma": 0.8, #tune.grid_search([0.5, 0.8, 0.9]), # def 0.99
+        # "lr": 1e-4
         # define search space here
         # "parameter_1": tune.choice([1, 2, 3]),
         # "parameter_2": tune.choice([4, 5, 6]),
@@ -210,8 +214,6 @@ if __name__ == "__main__":
         # "timesteps_total": args.stop_timesteps,
         # "episode_reward_mean": args.stop_reward,
     }
-    last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/last_run"
-
 
     print("Training automatically with Ray Tune")
 
@@ -225,12 +227,14 @@ if __name__ == "__main__":
             reuse_actors=True,
             checkpoint_at_end=True,
             config=config, 
-            stop=stop,         
+            stop=stop,    
             callbacks=[ WandbLoggerCallback(
                             project="loop_tool_agent",
                             save_checkpoints=True,
-                            api_key_file=str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/rllib/wandb_key.txt",
-                            log_config=False) ])
+                            api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
+                            log_config=False,
+                            id=wandb_run_id)
+                             ])
 
         if args.as_test:
             print("Checking if learning goals were achieved")
@@ -276,7 +280,7 @@ if __name__ == "__main__":
                 policy = agent.get_policy()
                 print(policy.model.framework)
                 df_gflops.loc[i, 'bench'] =  str(benchmark).split('/')[-1]
-                df_gflops.loc[i, 'base'] = env.observation["flops_loop_nest_tensor"]/1e9
+                df_gflops.loc[i, 'base'] = env.observation["flops_loop_nest_tensor"]
 
                 # breakpoint()
                 
@@ -295,7 +299,7 @@ if __name__ == "__main__":
                             break
                 
                     flops = env.observation["flops_loop_nest_tensor"]
-                    df_gflops.loc[i, 'network'] = flops/1e9
+                    df_gflops.loc[i, 'network'] = flops
                     step_count += 1
                     print(f'{step_count}. Flops = {flops}, Actions = {[ env.action_space.to_string(a) for a in env.actions]}')
 
@@ -322,8 +326,6 @@ if __name__ == "__main__":
 
     print("hack888")
     # Finally lets plot our results to see how we did!
-
-    breakpoint()
     fig, axs = plt.subplots(1, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [5, 1]})
     fig.suptitle(f'GFlops comparison for training and test benchmarks', fontsize=16)
     axs[0] = df_gflops_train.plot(x='bench', y=['base', 'network', 'search'], kind='bar', ax=axs[0])
@@ -361,6 +363,8 @@ if __name__ == "__main__":
 
     wandb_file_path = list(Path(os.getcwd()).glob(f'**/files/'))[0]
     shutil.copytree(last_run_path, str(wandb_file_path) + '/my_logs')
-    breakpoint()
 
     ray.shutdown()
+
+    os.system(f"python {LOOP_TOOL_ROOT/'wandb_send.py'} {wandb_run_id}")
+    

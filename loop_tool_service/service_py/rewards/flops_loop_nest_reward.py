@@ -20,13 +20,13 @@ class RewardScalar(Reward):
     def reset(self, benchmark: str, observation_view):
         # print("Reward flops_loop_nest: reset")
         del benchmark  # unused
-        self.prev_flops = observation_view["flops_loop_nest"] / 1e9
+        self.prev_flops = observation_view["flops_loop_nest"]
 
     def update(self, action, observations, observation_view):
         # print("Reward flops_loop_nest: update")
         del action
         del observation_view
-        new_flops = observations[0] / 1e9
+        new_flops = observations[0]
         reward = float(new_flops - self.prev_flops)
         self.prev_flops = new_flops
         print(f'Reward = {reward}')
@@ -52,14 +52,14 @@ class RewardTensor(Reward):
     def reset(self, benchmark: str, observation_view):
         # print("Reward flops_loop_nest_tensor: reset")
         del benchmark  # unused
-        self.prev_flops = observation_view["flops_loop_nest_tensor"] / 1e9
+        self.prev_flops = observation_view["flops_loop_nest_tensor"]
 
     def update(self, action, observations, observation_view):
         # print("Reward flops_loop_nest_tensor: update")
         del action
         del observation_view
         
-        new_flops = observations[0] / 1e9
+        new_flops = observations[0]
         reward = float(new_flops - self.prev_flops)
         self.prev_flops = new_flops        
         return reward
@@ -84,10 +84,10 @@ class AbsoluteRewardTensor(Reward):
     def reset(self, benchmark: str, observation_view):
         # print("Reward flops_loop_nest_tensor: reset")
         del benchmark  # unused
-        # self.prev_flops = observation_view["flops_loop_nest_tensor"] / 1e9
+        # self.prev_flops = observation_view["flops_loop_nest_tensor"]
 
     def update(self, action, observations, observation_view):
         # print("Reward flops_loop_nest_tensor: update")
         del action
         del observation_view     
-        return observations[0] / 1e9
+        return observations[0]

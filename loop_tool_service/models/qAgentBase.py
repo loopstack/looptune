@@ -165,7 +165,7 @@ class QAgentBase():
 
             if save_history:
                 flops = self.env.observation[self.reward]
-                self.test_history.append(flops/1e9)
+                self.test_history.append(flops)
                 self.plot_history()
 
 
@@ -174,7 +174,7 @@ class QAgentBase():
         #     # print(f'Rewards = {reward_history}')
         #     self.converged = True
 
-        self.epochs_history.append(self.env.observation[self.reward]/1e9)
+        self.epochs_history.append(self.env.observation[self.reward])
         # self.print_policy()
 
         print('#################################################')
@@ -247,9 +247,9 @@ class QAgentBase():
             self.update(state_prev, action, state, rewards[0])
 
             flops = self.env.observation[self.reward]
-            print(f'Flops = {flops/1e9}')
+            print(f'Flops = {flops}')
 
-            self.train_history.append(flops/1e9)
+            self.train_history.append(flops)
             self.plot_history()
 
 

@@ -134,12 +134,12 @@ class OptimizationTarget(str, Enum):
                     print("*************** FINAL REWARD 3******************\n\n")
                     print("*************** FINAL REWARD 4******************\n\n")
 
-                    base_gflops = new_env.observation.flops_loop_nest() / 1e9
+                    base_gflops = new_env.observation.flops_loop_nest()
                     print("*************** FINAL REWARD 5******************\n\n")
                     print(f"Env actions = {env.actions}")
                     new_env.multistep(env.actions)
 
-                    final_gflops = new_env.observation.flops_loop_nest() / 1e9
+                    final_gflops = new_env.observation.flops_loop_nest()
 
                     # assert len(final_runtimes) == runtime_count
                     print("*************** FINAL REWARD 6******************\n\n")

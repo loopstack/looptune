@@ -1,1 +1,1 @@
-{"env": "compiler_gym", "env_config": {"corridor_length": 5}, "num_workers": 60, "num_gpus": 1, "model": {"custom_model": "my_model", "vf_share_layers": true}, "framework": "torch", "train_batch_size": 1000, "evaluation_interval": 5, "evaluation_duration": 10, "explore": false, "lr": 0.0001}
+{"env": "compiler_gym", "framework": "torch", "model": {"custom_model": "my_model", "vf_share_layers": true}, "num_gpus": 1, "num_workers": 60, "rollout_fragment_length": 100, "train_batch_size": 6000, "num_sgd_iter": 30, "explore": true}

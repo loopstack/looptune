@@ -25,7 +25,8 @@ import json
 from matplotlib import pyplot as plt
 from pathlib import Path
 from datetime import datetime
-
+import pandas as pd
+from copy import deepcopy
 
 import ray
 from ray import tune
@@ -47,12 +48,17 @@ from loop_tool_service import paths
 from loop_tool_service.service_py.datasets import loop_tool_dataset, loop_tool_test_dataset
 
 from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward, runtime_reward
-import my_net_rl 
+import loop_tool_service.models.rllib.my_net_rl as my_net_rl
 
 
 import wandb
 from ray.tune.integration.wandb import WandbLoggerCallback
 from loop_tool_service.paths import LOOP_TOOL_ROOT
+
+
+# Run this with: 
+# python launcher/slurm_launch.py -e launcher/exp.yaml -n 1 -t 3:00   ### slurm_launch.py internaly calls rllib_torch.py
+# python
 
 # wandb.tensorboard.patch(root_logdir="...")
 # wandb.init(project="loop_tool_agent", entity="dejang")
@@ -61,12 +67,50 @@ from loop_tool_service.paths import LOOP_TOOL_ROOT
 # tf1, tf, tfv = try_import_tf()
 torch, nn = try_import_torch()
 
+
+
+last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+stop_criteria = {'training_iteration': 1}
+default_config = {
+    "env": "compiler_gym", 
+    # "model": {"fcnet_hiddens": [100] * 4},
+    "framework": 'torch',
+    "model": {
+        "custom_model": "my_model",
+        "vf_share_layers": True,
+        "fcnet_hiddens": [10] * 4,
+        # "post_fcnet_hiddens":
+        # "fcnet_activation": 
+        # "post_fcnet_activation":
+        # "no_final_linear":
+        # "free_log_std":
+    },
+    # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
+    "num_gpus": 1, #torch.cuda.device_count(),
+    "num_workers": 60,  # parallelism
+    "rollout_fragment_length": 100, 
+    "train_batch_size": 6000, # train_batch_size == num_workers * rollout_fragment_length
+    "num_sgd_iter": 30,
+    # "evaluation_interval": 5, # num of training iter between evaluations
+    # "evaluation_duration": 10, # num of episodes run per evaluation period
+    "explore": True,
+    "gamma": 0.9, #tune.grid_search([0.5, 0.8, 0.9]), # def 0.99
+    "lr": 1e-4,
+    # define search space here
+    # "parameter_1": tune.choice([1, 2, 3]),
+    # "parameter_2": tune.choice([4, 5, 6]),
+}
+wandb_log = {}
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--run", type=str, default="PPO", help="The RLlib-registered algorithm to use."
 )
 parser.add_argument(
-    "--load-model", action='store_true', help="Load training checkpoint"
+    "--load-model",  type=str, nargs='?', const=f'{last_run_path}/best_checkpoint', default='', help="Load training checkpoint."
 )
 parser.add_argument(
     "--framework",
@@ -75,13 +119,18 @@ parser.add_argument(
     help="The DL framework specifier.",
 )
 parser.add_argument(
-    "--as-test",
-    action="store_true",
-    help="Whether this script should be run as a test: --stop-reward must "
-    "be achieved within --stop-timesteps AND --stop-iters.",
+    "--sweep",  type=int, nargs='?', const=0, default=0, help="Run with wandb sweeps"
 )
+
 parser.add_argument(
-    "--stop-iters", type=int, default=20, help="Number of iterations to train."
+    "--slurm", 
+    default=False, 
+    action="store_true",
+    help="Run on slurm"
+)
+
+parser.add_argument(
+    "--stop-iters", type=int, default=2, help="Number of iterations to train."
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=100, help="Number of timesteps to train."
@@ -89,19 +138,17 @@ parser.add_argument(
 parser.add_argument(
     "--stop-reward", type=float, default=100, help="Reward at which we stop training."
 )
-parser.add_argument(
-    "--no-tune",
-    default=False,
-    action="store_true",
-    help="Run without Tune using a manual train loop instead. In this case,"
-    "use PPO without grid search and no TensorBoard.",
-)
+
 parser.add_argument(
     "--local-mode",
     default=False,
     action="store_true",
     help="Init Ray in local mode for easier debugging.",
 )
+
+
+
+
 
 
 def register_env():
@@ -121,7 +168,6 @@ def register_env():
         },
     )
 
-register_env()
 
 def make_env() -> compiler_gym.envs.CompilerEnv:
     """Make the reinforcement learning environment for this experiment."""
@@ -132,125 +178,65 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
         reward_space="flops_loop_nest_tensor",
         # reward_space="runtime",
     )
+    # env = compiler_gym.make("loop_tool_env-v0")
 
     env = TimeLimit(env, max_episode_steps=10)
     return env
 
 
-with make_env() as env:
-    # The two datasets we will be using:
-    lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
-    benchmarks = list(lt_dataset.benchmarks())[:10]
+def load_datasets():
+    with make_env() as env:
+        # The two datasets we will be using:
+        lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
+        benchmarks = list(lt_dataset.benchmarks())[:10]
+        
+        train_perc = 0.8
+        train_size = int(train_perc * len(benchmarks))
+        test_size = len(benchmarks) - train_size
+        train_benchmarks, val_benchmarks = torch.utils.data.random_split(benchmarks, [train_size, test_size])
+
+    print("Number of benchmarks for training:", len(train_benchmarks))
+    print("Number of benchmarks for validation:", len(val_benchmarks))    
+    return train_benchmarks, val_benchmarks
+
+
+def train_agent(config, stop_criteria, sweep_count=1, checkpoint_path=''):
+    wandb_run_id = None
     
-    train_perc = 0.8
-    train_size = int(train_perc * len(benchmarks))
-    test_size = len(benchmarks) - train_size
-    train_benchmarks, val_benchmarks = torch.utils.data.random_split(benchmarks, [train_size, test_size])
-    
-
-
-
-print("Number of benchmarks for training:", len(train_benchmarks))
-print("Number of benchmarks for validation:", len(val_benchmarks))
-
-def make_training_env(*args) -> compiler_gym.envs.CompilerEnv:
-    """Make a reinforcement learning environment that cycles over the
-    set of training benchmarks in use.
-    """
-    del args  # Unused env_config argument passed by ray
-    return CycleOverBenchmarks(make_env(), train_benchmarks)
-
-
-# (Re)Start the ray runtime.
-if ray.is_initialized():
-    ray.shutdown()
-
-tune.register_env("compiler_gym", make_training_env)
-
-
-if __name__ == "__main__":
-    args = parser.parse_args()
-    print(args)
-    print(f"Running with following CLI options: {args}")
-
-    # ray.init(local_mode=args.local_mode)
-    ray.init(ignore_reinit_error=True)
-
-    last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
-    wandb_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # # Can also register the env creator function explicitly with:
-    ModelCatalog.register_custom_model(
-        "my_model", my_net_rl.TorchCustomModel
-    )
-
-    config = {
-        "env": "compiler_gym", 
-        # "model": {"fcnet_hiddens": [100] * 4},
-        "framework": args.framework,
-        "model": {
-            "custom_model": "my_model",
-            "vf_share_layers": True,
-        },
-        # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
-        "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "2")),
-        "num_workers": 60,  # parallelism
-        "rollout_fragment_length": 100, 
-        "train_batch_size": 6000, # train_batch_size == num_workers * rollout_fragment_length
-        "num_sgd_iter": 30,
-        # "evaluation_interval": 5, # num of training iter between evaluations
-        # "evaluation_duration": 10, # num of episodes run per evaluation period
-        "explore": True,
-        # "gamma": 0.8, #tune.grid_search([0.5, 0.8, 0.9]), # def 0.99
-        # "lr": 1e-4
-        # define search space here
-        # "parameter_1": tune.choice([1, 2, 3]),
-        # "parameter_2": tune.choice([4, 5, 6]),
-    }
-    device = 'cuda' if config['num_workers'] > 0 else 'cpu'
-
-    stop = {
-        "training_iteration": args.stop_iters,
-        # "timesteps_total": args.stop_timesteps,
-        # "episode_reward_mean": args.stop_reward,
-    }
-
-    print("Training automatically with Ray Tune")
-
-    if args.load_model:
-        checkpoint_path = last_run_path/"best_checkpoint"
-    else:
-        # breakpoint()    
+    if checkpoint_path == '':
+        wandb_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         analysis = tune.run(
             # args.run, 
             PPOTrainer,
+            metric="episode_reward_mean", # "final_performance",
+            mode="max",
             reuse_actors=True,
             checkpoint_at_end=True,
             config=config, 
-            stop=stop,    
+            num_samples=sweep_count,
+            stop=stop_criteria,    
             callbacks=[ WandbLoggerCallback(
                             project="loop_tool_agent",
-                            save_checkpoints=True,
                             api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
                             log_config=False,
                             id=wandb_run_id)
-                             ])
+            ]
+        )
 
-        if args.as_test:
-            print("Checking if learning goals were achieved")
-            check_learning_achieved(analysis, args.stop_reward)
-
+        print("hhh2______________________")
 
         checkpoint_path = analysis.get_best_checkpoint(
             metric="episode_reward_mean",
             mode="max",
             trial=analysis.trials[0]
         )
+        print("hhh3______________________")
 
         if os.path.exists(last_run_path):
             shutil.rmtree(last_run_path)
         shutil.copytree(checkpoint_path.to_directory(),  last_run_path/"best_checkpoint")
-        with open(last_run_path/"config.json", "w") as f: json.dump(config, f)
+        with open(last_run_path/"config.json", "w") as f: json.dump(config, f, indent=4)
+        print("hhh4______________________")
 
 
     config['explore'] = False
@@ -262,68 +248,62 @@ if __name__ == "__main__":
     print("hack444:")
     agent.restore(checkpoint_path)
     print("hack555:")
+
+    return agent, wandb_run_id
+
+
+# Lets define a helper function to make it easy to evaluate the agent's
+# performance on a set of benchmarks.
+def run_agent_on_benchmarks(agent, benchmarks):
+    """Run agent on a list of benchmarks and return a list of cumulative rewards."""
+    with make_env() as env:
+        df_gflops = pd.DataFrame(np.zeros((len(benchmarks), 4)), columns=['bench', 'base', 'network', 'search'])
+
+        for i, benchmark in enumerate(benchmarks, start=0):
+            observation, done = env.reset(benchmark=benchmark), False
+            step_count = 0
+            policy = agent.get_policy()
+            print(policy.model.framework)
+            df_gflops.loc[i, 'bench'] =  str(benchmark).split('/')[-1]
+            df_gflops.loc[i, 'base'] = env.observation["flops_loop_nest_tensor"]
+
+            # breakpoint()
+            
+            while not done:
+                env.send_param("print_looptree", "")
+                logits, _ = policy.model({"obs": torch.Tensor(observation).to(device)})
+                sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
+
+                assert (agent.compute_single_action(observation) == sorted_actions[0][0].item())
+                for q, a in zip(sorted_actions_q.flatten().tolist(), sorted_actions.flatten().tolist()):
+                    print(env.action_space.to_string(a), q)
+                    
+                for action in sorted_actions.flatten().tolist():
+                    observation, _, done, info = env.step(int(action))
+                    if not info['action_had_no_effect']:
+                        break
+            
+                flops = env.observation["flops_loop_nest_tensor"]
+                df_gflops.loc[i, 'network'] = flops
+                step_count += 1
+                print(f'{step_count}. Flops = {flops}, Actions = {[ env.action_space.to_string(a) for a in env.actions]}')
+
+            walk_count = 10
+            search_depth=0
+            search_width = 10000
+            # breakpoint()
+            reward_actions_str = env.send_param("search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
+            print(f'Search = {reward_actions_str}')
+            reward_actions = json.loads(reward_actions_str)
+            # breakpoint()
+            df_gflops.loc[i, 'search'] = reward_actions[0]
+
+            print(f"[{i}/{len(benchmarks)}] ")
     
-    
-    import pandas as pd
-    # Lets define a helper function to make it easy to evaluate the agent's
-    # performance on a set of benchmarks.
-    def run_agent_on_benchmarks(benchmarks):
-        """Run agent on a list of benchmarks and return a list of cumulative rewards."""
-        with make_env() as env:
-            df_gflops = pd.DataFrame(np.zeros((len(benchmarks), 4)), columns=['bench', 'base', 'network', 'search'])
-
-            flops = 0
-
-            for i, benchmark in enumerate(benchmarks, start=0):
-                observation, done = env.reset(benchmark=benchmark), False
-                step_count = 0
-                policy = agent.get_policy()
-                print(policy.model.framework)
-                df_gflops.loc[i, 'bench'] =  str(benchmark).split('/')[-1]
-                df_gflops.loc[i, 'base'] = env.observation["flops_loop_nest_tensor"]
-
-                # breakpoint()
-                
-                while not done:
-                    env.send_param("print_looptree", "")
-                    logits, _ = policy.model({"obs": torch.Tensor(observation).to(device)})
-                    sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
-
-                    assert (agent.compute_single_action(observation) == sorted_actions[0][0].item())
-                    for q, a in zip(sorted_actions_q.flatten().tolist(), sorted_actions.flatten().tolist()):
-                        print(env.action_space.to_string(a), q)
-                        
-                    for action in sorted_actions.flatten().tolist():
-                        observation, _, done, info = env.step(int(action))
-                        if not info['action_had_no_effect']:
-                            break
-                
-                    flops = env.observation["flops_loop_nest_tensor"]
-                    df_gflops.loc[i, 'network'] = flops
-                    step_count += 1
-                    print(f'{step_count}. Flops = {flops}, Actions = {[ env.action_space.to_string(a) for a in env.actions]}')
-
-                walk_count = 10
-                search_depth=0
-                search_width = 10000
-                # breakpoint()
-                reward_actions_str = env.send_param("search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
-                print(f'Search = {reward_actions_str}')
-                reward_actions = json.loads(reward_actions_str)
-                # breakpoint()
-                df_gflops.loc[i, 'search'] = reward_actions[0]
-
-                print(f"[{i}/{len(benchmarks)}] ")
-        
-        return df_gflops
+    return df_gflops
 
 
-    # Evaluate agent performance on the train set.
-    df_gflops_train = run_agent_on_benchmarks(train_benchmarks)
-
-    # Evaluate agent performance on the validation set.
-    df_gflops_val = run_agent_on_benchmarks(val_benchmarks)
-
+def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
     print("hack888")
     # Finally lets plot our results to see how we did!
     fig, axs = plt.subplots(1, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [5, 1]})
@@ -358,13 +338,90 @@ if __name__ == "__main__":
     df_gflops_all['network_speedup'] = df_gflops_all['network'] / df_gflops_all['base']
 
     df_gflops_all.to_csv(last_run_path/'benchmarks_gflops.csv')
-    
-    breakpoint()
 
-    wandb_file_path = list(Path(os.getcwd()).glob(f'**/files/'))[0]
-    shutil.copytree(last_run_path, str(wandb_file_path) + '/my_logs')
+    wandb_log['run_id'] = wandb_run_id
+    wandb_log['final_performance'] = np.mean(df_gflops_val['network'] / df_gflops_val['search'])
+    wandb_log['avg_search_base_speedup'] = np.mean(df_gflops_val['search'] / df_gflops_val['base'])
+    wandb_log['avg_network_base_speedup'] = np.mean(df_gflops_val['network'] / df_gflops_val['base'])
+
+    wandb_log_path = last_run_path/"wandb_log.json"
+    with open(wandb_log_path, "w") as f: json.dump(wandb_log, f)
+
+    # Send results to wandb server
+    if wandb_run_id:
+        os.system(f"python {LOOP_TOOL_ROOT/'wandb_send.py'} {wandb_log_path}")
+
+
+
+
+def train(config, stop_criteria, sweep_count=1, checkpoint_path=''):
+    print(config, stop_criteria, checkpoint_path)
+
+    # register_env()
+    train_benchmarks, val_benchmarks = load_datasets()
+
+    def make_training_env(*args): 
+        del args
+        return CycleOverBenchmarks(make_env(), train_benchmarks)
+
+    tune.register_env("compiler_gym", make_training_env)
+    if ray.is_initialized(): ray.shutdown()
+    # ray.init(local_mode=True, ignore_reinit_error=True) # for slurm (maybe some day)
+    ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
+    ModelCatalog.register_custom_model(
+        "my_model", my_net_rl.TorchCustomModel
+    )
+
+    print("hhh1______________________")
+    agent, wandb_run_id = train_agent(config, stop_criteria, sweep_count, checkpoint_path)
+    
+    # Evaluate agent performance on the train and validation set.
+    df_gflops_train = run_agent_on_benchmarks(agent, train_benchmarks)
+    df_gflops_val = run_agent_on_benchmarks(agent, val_benchmarks)
+
+    plot_results(df_gflops_train, df_gflops_val, wandb_run_id)
 
     ray.shutdown()
 
-    os.system(f"python {LOOP_TOOL_ROOT/'wandb_send.py'} {wandb_run_id}")
-    
+
+
+
+def config_and_run(sweep_config, sweep_count):
+    config = deepcopy(default_config)
+    sweep_count_global = 1
+    for _ in range(sweep_count_global):
+        for key, value in sweep_config.items():
+            config[key] = value.sample()
+
+        train(config=config, stop_criteria=stop_criteria, sweep_count=sweep_count)
+
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    print(f"Running with following CLI options: {args}")
+
+    stop_criteria['training_iteration'] = args.stop_iters
+
+    if args.slurm:
+        ray_address = os.environ["RAY_ADDRESS"] if "RAY_ADDRESS" in os.environ else "auto"
+        head_node_ip = os.environ["HEAD_NODE_IP"] if "HEAD_NODE_IP" in os.environ else "127.0.0.1"
+        redis_password = os.environ["REDIS_PASSWORD"] if "REDIS_PASSWORD" in os.environ else "5241590000000000"
+        print('SLURM options: ', ray_address, head_node_ip, redis_password)
+
+        #   ray.init(address='auto', _node_ip_address=os.environ["ip_head"].split(":")[0], _redis_password=os.environ["redis_password"])
+        ray.init(address=ray_address, _node_ip_address=head_node_ip, _redis_password=redis_password)
+        
+
+    if args.sweep:
+        # sweep_count = 20
+        sweep_config = {
+            'lr': tune.uniform(1e-3, 1e-6),
+            "gamma": tune.uniform(0.5, 0.99),
+            "horizon": tune.choice([None, 5, 20]),
+        }
+
+        # sweep_id = wandb.sweep(sweep_config, project="loop_tool")
+        # wandb.agent(sweep_id=sweep_id, function=config_and_run, count=sweep_count)
+        config_and_run(sweep_config=sweep_config, sweep_count=args.sweep)
+    else:
+        train(config=default_config, stop_criteria=stop_criteria, checkpoint_path=args.load_model)

@@ -212,7 +212,7 @@ from compiler_gym.envs.llvm.datasets import (
 from compiler_gym.util.runfiles_path import site_data_path
 
 import loop_tool_service
-from loop_tool_service.service_py.datasets import loop_tool_dataset
+from loop_tool_service.service_py.datasets import loop_tool_dataset, loop_tool_test_dataset
 from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward
 
 
@@ -228,7 +228,8 @@ def register_env():
                 # runtime_reward.RewardScalar(),
                 ],
             "datasets": [
-                loop_tool_dataset.Dataset(),
+                # loop_tool_dataset.Dataset(),
+                loop_tool_test_dataset.Dataset()
             ],
         },
     )

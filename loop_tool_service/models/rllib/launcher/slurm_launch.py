@@ -99,6 +99,13 @@ if __name__ == "__main__":
         type=str,
         help="User to receive email notification of state changes.",
     )
+    parser.add_argument(
+        "--load-env",
+        "-l",
+        type=str,
+        default="source launcher/prepare.sh",
+        help="The script to load your environment ('module load cuda/10.1')",
+    )
 
     args = parser.parse_args()
     runner_file = DEFAULT_RUNNER_RESUME if args.resume else DEFAULT_RUNNER
@@ -113,7 +120,7 @@ if __name__ == "__main__":
         log_dir = repo_dir / Path("results") / exp_file.parent.name / "runs"
 
         log_dir.mkdir(parents=True, exist_ok=True)
-        command = f"python -u rllib_torch.py"
+        command = f"python -u rllib_torch.py --slurm --sweep=5" 
         # command = f"python -u {repo_dir}/main.py -e {exp_file} -r {runner_file}"
 
 

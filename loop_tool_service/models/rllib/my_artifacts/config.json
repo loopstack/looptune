@@ -1,1 +1,23 @@
-{"env": "compiler_gym", "framework": "torch", "model": {"custom_model": "my_model", "vf_share_layers": true}, "num_gpus": 2, "num_workers": 60, "rollout_fragment_length": 100, "train_batch_size": 6000, "num_sgd_iter": 30, "explore": true}
+{
+    "env": "compiler_gym",
+    "framework": "torch",
+    "model": {
+        "custom_model": "my_model",
+        "vf_share_layers": true,
+        "fcnet_hiddens": [
+            10,
+            10,
+            10,
+            10
+        ]
+    },
+    "num_gpus": 1,
+    "num_workers": 60,
+    "rollout_fragment_length": 100,
+    "train_batch_size": 6000,
+    "num_sgd_iter": 30,
+    "explore": true,
+    "gamma": 0.8951673593255824,
+    "lr": 0.0007721833962474001,
+    "horizon": 20
+}

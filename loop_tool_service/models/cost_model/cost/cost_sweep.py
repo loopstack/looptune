@@ -145,8 +145,6 @@ def train(config=None):
     train_loss = []
     test_loss = []
 
-    # out = Output()
-    # display.display(out)
     with wandb.init(
         project="loop_tool", 
         entity="dejang", 

@@ -34,7 +34,7 @@ sweep_config = {
 
 
 
-from loop_tool_service.models.rllib.rllib_torch_sweep import train, default_config, stop_criteria
+from loop_tool_service.models.rllib.rllib_torch import train, default_config, stop_criteria
 
 def submit_job():
     config = deepcopy(default_config)    

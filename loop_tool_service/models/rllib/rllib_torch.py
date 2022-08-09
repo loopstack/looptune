@@ -78,7 +78,7 @@ default_config = {
     # "model": {"fcnet_hiddens": [100] * 4},
     "framework": 'torch',
     "model": {
-        "custom_model": "my_model",
+        # "custom_model": "my_model",
         "vf_share_layers": True,
         "fcnet_hiddens": [10] * 4,
         # "post_fcnet_hiddens":
@@ -226,57 +226,57 @@ def load_datasets():
 #         print('on trial complete')
 
 
-def train_agent(config, stop_criteria, sweep_count=1, wandb_run_id=None, checkpoint_path=''):
-    if checkpoint_path == '':
-        analysis = tune.run(
-            # args.run, 
-            PPOTrainer,
-            metric="episode_reward_mean", # "final_performance",
-            mode="max",
-            reuse_actors=False,
-            checkpoint_freq=1,
-            checkpoint_at_end=True,
-            config=config, 
-            num_samples=sweep_count,
-            stop=stop_criteria,    
-            callbacks=[ 
-                # MyCallback(),
-                WandbLoggerCallback(
-                    project="loop_tool_agent",
-                    api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
-                    log_config=True,
-                    id=wandb_run_id)
-            ]
-        )
-
-        print("hhh2______________________")
-
-        checkpoint_path = analysis.get_best_checkpoint(
-            metric="episode_reward_mean",
-            mode="max",
-            trial=analysis.trials[0]
-        )
-        print("hhh3______________________")
-
-        if os.path.exists(last_run_path):
-            shutil.rmtree(last_run_path)
-        shutil.copytree(checkpoint_path.to_directory(),  last_run_path/"best_checkpoint")
-        best_config = analysis.get_best_config()
-        with open(last_run_path/"config.json", "w") as f: json.dump(best_config, f, indent=4)
-        print("hhh4______________________")
 
 
-    best_config['explore'] = False
-    agent = PPOTrainer(
-        env="compiler_gym",
-        config=best_config
+def train_agent(config, stop_criteria, sweep_count=1):
+    checkpoints = []
+    configs = []
+    wandb_ids = []
+    
+
+    analysis = tune.run(
+        # args.run, 
+        PPOTrainer,
+        metric="episode_reward_mean", # "final_performance",
+        mode="max",
+        reuse_actors=False,
+        # checkpoint_freq=1,
+        checkpoint_at_end=True,
+        config=config, 
+        num_samples=sweep_count,
+        stop=stop_criteria,    
+        callbacks=[ 
+            # MyCallback(),
+            WandbLoggerCallback(
+                project="loop_tool_agent",
+                api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
+                log_config=False,
+                )
+        ]
     )
+    # breakpoint()
+    print("hhh2______________________")
 
-    print("hack444:")
-    agent.restore(checkpoint_path)
-    print("hack555:")
+    # breakpoint()
+    if os.path.exists(last_run_path):
+        shutil.rmtree(last_run_path)
+    shutil.copytree(analysis.best_checkpoint.to_directory(),  last_run_path/"best_checkpoint")
 
-    return agent
+    with open(last_run_path/"config.json", "w") as f: 
+        json.dump(analysis.get_best_config(), f, indent=4)
+    print("hhh4______________________")
+
+    # for trial in analysis.trials:
+    #     checkpoints.append(analysis.get_best_checkpoint(
+    #             metric="episode_reward_mean",
+    #             mode="max",
+    #             trial=trial
+    #         )
+    #     )
+    #     wandb_ids.append(f'dejang/loop_tool_agent/{trial.trial_id}')
+    #     configs.append(trial.config)
+    
+    return analysis.best_checkpoint, analysis.best_config, analysis.best_trial.trial_id
 
 
 # Lets define a helper function to make it easy to evaluate the agent's
@@ -387,8 +387,8 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
 
 
 
-def train(config, stop_criteria, sweep_count=1, wandb_run_id=None, checkpoint_path=''):
-    print(config, stop_criteria, checkpoint_path)
+def train(config, stop_criteria, sweep_count=1, wandb_run_id=None, checkpoint=''):
+    print(config, stop_criteria, checkpoint)
 
     # register_env()
     train_benchmarks, val_benchmarks = load_datasets()
@@ -401,40 +401,55 @@ def train(config, stop_criteria, sweep_count=1, wandb_run_id=None, checkpoint_pa
     if ray.is_initialized(): ray.shutdown()
     # ray.init(local_mode=True, ignore_reinit_error=True) # for slurm (maybe some day)
     ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
-    ModelCatalog.register_custom_model(
-        "my_model", my_net_rl.TorchCustomModel
-    )
+    # ModelCatalog.register_custom_model(
+    #     "my_model", my_net_rl.TorchCustomModel
+    # )
 
     print("hhh1______________________")
-    agent = train_agent(
-        config=config, 
-        stop_criteria=stop_criteria, 
-        sweep_count=sweep_count, 
-        wandb_run_id=wandb_run_id, 
-        checkpoint_path=checkpoint_path
+    if checkpoint == '':
+        checkpoint, config, wandb_id = train_agent(
+            config=config, 
+            stop_criteria=stop_criteria, 
+            sweep_count=sweep_count, 
+        )
+    else:
+        wandb_id = None
+
+    print(f'Wandb_id: {wandb_id}')
+    print(f'Checkpoint:\n{checkpoint}')
+    print(f'\nConfig:\n{config}')
+
+    config["explore"] = False
+    agent = PPOTrainer(
+        env="compiler_gym",
+        config=config
     )
 
+    agent.restore(checkpoint)
+    
     # Evaluate agent performance on the train and validation set.
     df_gflops_train = run_agent_on_benchmarks(agent, train_benchmarks)
     df_gflops_val = run_agent_on_benchmarks(agent, val_benchmarks)
 
-    plot_results(df_gflops_train, df_gflops_val, wandb_run_id)
+    plot_results(df_gflops_train, df_gflops_val, wandb_id)
 
     ray.shutdown()
-    breakpoint()
     print("Return from train...")
 
 
 def config_and_run(sweep_config=None, sweep_count=1):
     config = deepcopy(default_config)
-    for key in config.keys():
+    for key, val in config.items():
         if key in sweep_config:
-            config[key] = sweep_config[key]
+            if type(val) == dict:
+                val.update(sweep_config[key])
+            else:
+                config[key] = sweep_config[key]
 
     wandb_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     train(config=config, stop_criteria=stop_criteria, wandb_run_id=wandb_run_id, sweep_count=sweep_count)
     
-
+import itertools
 
 if __name__ == '__main__':
     print(f"Running with following CLI options: {args}")
@@ -451,16 +466,21 @@ if __name__ == '__main__':
         
 
     elif args.sweep:
+        hiddens_layers = [3, 10, 20]
+        hiddens_width = [50, 100, 500]
         sweep_config = {
             'lr': tune.uniform(1e-3, 1e-6),
             "gamma": tune.uniform(0.5, 0.99),
             "horizon": tune.choice([None, 5, 20]),
-            # 'model' "fcnet_hiddens": [10] * 4,
+            'model': {
+                "fcnet_hiddens": tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]),
+            },
 
         }
+
         config_and_run(sweep_config=sweep_config, sweep_count=args.sweep)
 
             
 
     else:
-        train(config=default_config, stop_criteria=stop_criteria, checkpoint_path=args.load_model)
+        train(config=default_config, stop_criteria=stop_criteria, checkpoint=args.load_model)

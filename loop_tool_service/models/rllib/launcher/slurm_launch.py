@@ -57,6 +57,9 @@ parser.add_argument(
     "--num-nodes", "-n", type=int, default=1, help="Number of nodes to use."
 )
 parser.add_argument(
+    "--jobs", "-j", type=int, default=1, help="Number of nodes to use."
+)
+parser.add_argument(
     "--node",
     "-w",
     type=str,
@@ -125,7 +128,7 @@ def submit_job():
     log_dir = repo_dir / Path("results") / "runs"
 
     log_dir.mkdir(parents=True, exist_ok=True)
-    command = f"python -u rllib_torch.py --slurm" 
+    command = f"python -u rllib_torch.py --slurm --sweep={args.sweep}" 
     # command = f"python -u {repo_dir}/main.py -e {exp_file} -r {runner_file}"
 
     exp_name = f"run_{datetime.now():%m_%d_%H_%M}"
@@ -186,7 +189,7 @@ def submit_job():
 
 
 if __name__ == "__main__":
-    for i in range(3):
+    for i in range(args.jobs):
         submit_job()
 
 

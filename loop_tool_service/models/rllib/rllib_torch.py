@@ -88,7 +88,7 @@ default_config = {
         # "free_log_std":
     },
     # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
-    "num_gpus": 1, #torch.cuda.device_count(),
+    "num_gpus": torch.cuda.device_count(),
     "num_workers": 60,  # parallelism
     "rollout_fragment_length": 100, 
     "train_batch_size": 6000, # train_batch_size == num_workers * rollout_fragment_length
@@ -113,32 +113,29 @@ parser.add_argument(
     "--load-model",  type=str, nargs='?', const=f'{last_run_path}/best_checkpoint', default='', help="Load training checkpoint."
 )
 parser.add_argument(
-    "--framework",
-    default="torch",
-    choices=["tf", "tf2", "tfe", "torch"],
-    help="The DL framework specifier.",
+    "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps"
 )
-parser.add_argument(
-    "--sweep",  type=int, nargs='?', const=0, default=0, help="Run with wandb sweeps"
-)
-
 parser.add_argument(
     "--slurm", 
     default=False, 
     action="store_true",
     help="Run on slurm"
 )
-
 parser.add_argument(
-    "--stop-iters", type=int, default=2, help="Number of iterations to train."
+    "--stop-iters", type=int, default=100, help="Number of iterations to train."
 )
+# parser.add_argument(
+#     "--stop-timesteps", type=int, default=100, help="Number of timesteps to train."
+# )
+# parser.add_argument(
+#     "--stop-reward", type=float, default=100, help="Reward at which we stop training."
+# )
 parser.add_argument(
-    "--stop-timesteps", type=int, default=100, help="Number of timesteps to train."
+    "--debug",
+    default=False,
+    action="store_true",
+    help="Debuging",
 )
-parser.add_argument(
-    "--stop-reward", type=float, default=100, help="Reward at which we stop training."
-)
-
 parser.add_argument(
     "--local-mode",
     default=False,
@@ -146,7 +143,7 @@ parser.add_argument(
     help="Init Ray in local mode for easier debugging.",
 )
 
-
+args = parser.parse_args()
 
 
 
@@ -188,7 +185,8 @@ def load_datasets():
     with make_env() as env:
         # The two datasets we will be using:
         lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
-        benchmarks = list(lt_dataset.benchmarks())[:10]
+        data_size = 10 if args.debug else len(lt_dataset)
+        benchmarks = list(lt_dataset.benchmarks())[:data_size]
         
         train_perc = 0.8
         train_size = int(train_perc * len(benchmarks))
@@ -200,26 +198,54 @@ def load_datasets():
     return train_benchmarks, val_benchmarks
 
 
-def train_agent(config, stop_criteria, sweep_count=1, checkpoint_path=''):
-    wandb_run_id = None
-    
+# from ray.tune import Callback
+# class MyCallback(Callback):
+#     # def on_trial_result(self, iteration, trials, trial, result, **info):
+#     #     # print(f"Got result: {result['metric']}")
+#     #     breakpoint()
+#     #     print('on trial result')
+
+
+#     # def on_trial_complete(self, iteration, trials, trial, **info):
+#     #     breakpoint()
+#     #     print('on trial complete')
+
+#     def on_checkpoint(
+#         self,
+#         iteration,
+#         trials,
+#         trial,
+#         checkpoint,
+#         **info,
+#     ):
+#         breakpoint()
+#         print('on checkpoint ')
+
+#     def on_experiment_end(self, trials, **info):
+#         breakpoint()
+#         print('on trial complete')
+
+
+def train_agent(config, stop_criteria, sweep_count=1, wandb_run_id=None, checkpoint_path=''):
     if checkpoint_path == '':
-        wandb_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         analysis = tune.run(
             # args.run, 
             PPOTrainer,
             metric="episode_reward_mean", # "final_performance",
             mode="max",
-            reuse_actors=True,
+            reuse_actors=False,
+            checkpoint_freq=1,
             checkpoint_at_end=True,
             config=config, 
             num_samples=sweep_count,
             stop=stop_criteria,    
-            callbacks=[ WandbLoggerCallback(
-                            project="loop_tool_agent",
-                            api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
-                            log_config=False,
-                            id=wandb_run_id)
+            callbacks=[ 
+                # MyCallback(),
+                WandbLoggerCallback(
+                    project="loop_tool_agent",
+                    api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
+                    log_config=True,
+                    id=wandb_run_id)
             ]
         )
 
@@ -235,21 +261,22 @@ def train_agent(config, stop_criteria, sweep_count=1, checkpoint_path=''):
         if os.path.exists(last_run_path):
             shutil.rmtree(last_run_path)
         shutil.copytree(checkpoint_path.to_directory(),  last_run_path/"best_checkpoint")
-        with open(last_run_path/"config.json", "w") as f: json.dump(config, f, indent=4)
+        best_config = analysis.get_best_config()
+        with open(last_run_path/"config.json", "w") as f: json.dump(best_config, f, indent=4)
         print("hhh4______________________")
 
 
-    config['explore'] = False
+    best_config['explore'] = False
     agent = PPOTrainer(
         env="compiler_gym",
-        config=config
+        config=best_config
     )
 
     print("hack444:")
     agent.restore(checkpoint_path)
     print("hack555:")
 
-    return agent, wandb_run_id
+    return agent
 
 
 # Lets define a helper function to make it easy to evaluate the agent's
@@ -274,7 +301,13 @@ def run_agent_on_benchmarks(agent, benchmarks):
                 logits, _ = policy.model({"obs": torch.Tensor(observation).to(device)})
                 sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
 
-                assert (agent.compute_single_action(observation) == sorted_actions[0][0].item())
+                try:
+                    assert (agent.compute_single_action(observation) == sorted_actions[0][0].item())
+                except AssertionError:
+                    print(f'Compute single action = {agent.compute_single_action(observation)}')
+                    print(f'Sorted logits = {logits}')
+                    breakpoint()
+
                 for q, a in zip(sorted_actions_q.flatten().tolist(), sorted_actions.flatten().tolist()):
                     print(env.action_space.to_string(a), q)
                     
@@ -354,7 +387,7 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
 
 
 
-def train(config, stop_criteria, sweep_count=1, checkpoint_path=''):
+def train(config, stop_criteria, sweep_count=1, wandb_run_id=None, checkpoint_path=''):
     print(config, stop_criteria, checkpoint_path)
 
     # register_env()
@@ -373,8 +406,14 @@ def train(config, stop_criteria, sweep_count=1, checkpoint_path=''):
     )
 
     print("hhh1______________________")
-    agent, wandb_run_id = train_agent(config, stop_criteria, sweep_count, checkpoint_path)
-    
+    agent = train_agent(
+        config=config, 
+        stop_criteria=stop_criteria, 
+        sweep_count=sweep_count, 
+        wandb_run_id=wandb_run_id, 
+        checkpoint_path=checkpoint_path
+    )
+
     # Evaluate agent performance on the train and validation set.
     df_gflops_train = run_agent_on_benchmarks(agent, train_benchmarks)
     df_gflops_val = run_agent_on_benchmarks(agent, val_benchmarks)
@@ -382,46 +421,46 @@ def train(config, stop_criteria, sweep_count=1, checkpoint_path=''):
     plot_results(df_gflops_train, df_gflops_val, wandb_run_id)
 
     ray.shutdown()
+    breakpoint()
+    print("Return from train...")
 
 
-
-
-def config_and_run(sweep_config, sweep_count):
+def config_and_run(sweep_config=None, sweep_count=1):
     config = deepcopy(default_config)
-    sweep_count_global = 1
-    for _ in range(sweep_count_global):
-        for key, value in sweep_config.items():
-            config[key] = value.sample()
+    for key in config.keys():
+        if key in sweep_config:
+            config[key] = sweep_config[key]
 
-        train(config=config, stop_criteria=stop_criteria, sweep_count=sweep_count)
+    wandb_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    train(config=config, stop_criteria=stop_criteria, wandb_run_id=wandb_run_id, sweep_count=sweep_count)
+    
 
 
 if __name__ == '__main__':
-    args = parser.parse_args()
     print(f"Running with following CLI options: {args}")
 
-    stop_criteria['training_iteration'] = args.stop_iters
+    stop_criteria['training_iteration'] = 2 if args.debug else args.stop_iters
+    args.sweep = 2 if args.debug else args.sweep
 
     if args.slurm:
         ray_address = os.environ["RAY_ADDRESS"] if "RAY_ADDRESS" in os.environ else "auto"
         head_node_ip = os.environ["HEAD_NODE_IP"] if "HEAD_NODE_IP" in os.environ else "127.0.0.1"
         redis_password = os.environ["REDIS_PASSWORD"] if "REDIS_PASSWORD" in os.environ else "5241590000000000"
         print('SLURM options: ', ray_address, head_node_ip, redis_password)
-
-        #   ray.init(address='auto', _node_ip_address=os.environ["ip_head"].split(":")[0], _redis_password=os.environ["redis_password"])
-        ray.init(address=ray_address, _node_ip_address=head_node_ip, _redis_password=redis_password)
+        ray.init(address=ray_address, _node_ip_address=head_node_ip, _redis_password=redis_password)    
         
 
-    if args.sweep:
-        # sweep_count = 20
+    elif args.sweep:
         sweep_config = {
             'lr': tune.uniform(1e-3, 1e-6),
             "gamma": tune.uniform(0.5, 0.99),
             "horizon": tune.choice([None, 5, 20]),
-        }
+            # 'model' "fcnet_hiddens": [10] * 4,
 
-        # sweep_id = wandb.sweep(sweep_config, project="loop_tool")
-        # wandb.agent(sweep_id=sweep_id, function=config_and_run, count=sweep_count)
+        }
         config_and_run(sweep_config=sweep_config, sweep_count=args.sweep)
+
+            
+
     else:
         train(config=default_config, stop_criteria=stop_criteria, checkpoint_path=args.load_model)

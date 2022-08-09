@@ -1,1 +1,0 @@
-{"env": "compiler_gym", "framework": "torch", "model": {"custom_model": "my_model", "vf_share_layers": true}, "num_gpus": 1, "num_workers": 60, "rollout_fragment_length": 100, "train_batch_size": 6000, "num_sgd_iter": 30, "explore": true}

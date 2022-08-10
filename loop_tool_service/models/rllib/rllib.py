@@ -82,7 +82,7 @@ with make_env() as env:
     print("Observation space:", env.observation_space)
     print("Reward space:", env.reward_space)
     env.reset()
-    reward_actions_str = env.send_param("search", f'{10}, {5}, {0}, {1000}')
+    reward_actions_str = env.send_param("greedy_search", f'{10}, {5}, {0}, {1000}')
     print(f"Best reward = {reward_actions_str}")
 
 with make_env() as env:
@@ -217,7 +217,7 @@ def run_agent_on_benchmarks(benchmarks):
             search_depth=0
             search_width = 10000
             # breakpoint()
-            reward_actions_str = env.send_param("search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
+            reward_actions_str = env.send_param("greedy_search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
             print(reward_actions_str)
             reward_actions = json.loads(reward_actions_str)
             # breakpoint()

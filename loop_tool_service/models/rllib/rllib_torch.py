@@ -74,11 +74,12 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 stop_criteria = {'training_iteration': 1}
 default_config = {
+    "log_level": "ERROR",
     "env": "compiler_gym", 
     # "model": {"fcnet_hiddens": [100] * 4},
     "framework": 'torch',
     "model": {
-        # "custom_model": "my_model",
+        "custom_model": "my_model",
         "vf_share_layers": True,
         "fcnet_hiddens": [10] * 4,
         # "post_fcnet_hiddens":
@@ -110,7 +111,7 @@ parser.add_argument(
     "--run", type=str, default="PPO", help="The RLlib-registered algorithm to use."
 )
 parser.add_argument(
-    "--load-model",  type=str, nargs='?', const=f'{last_run_path}/best_checkpoint', default='', help="Load training checkpoint."
+    "--policy-model",  type=str, nargs='?', const=f'{last_run_path}/policy_model.pt', default='', help="Load policy network."
 )
 parser.add_argument(
     "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps"
@@ -181,7 +182,8 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
     return env
 
 
-def load_datasets():
+def load_datasets(env=None):
+
     with make_env() as env:
         # The two datasets we will be using:
         lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
@@ -193,39 +195,9 @@ def load_datasets():
         test_size = len(benchmarks) - train_size
         train_benchmarks, val_benchmarks = torch.utils.data.random_split(benchmarks, [train_size, test_size])
 
-    print("Number of benchmarks for training:", len(train_benchmarks))
-    print("Number of benchmarks for validation:", len(val_benchmarks))    
-    return train_benchmarks, val_benchmarks
-
-
-# from ray.tune import Callback
-# class MyCallback(Callback):
-#     # def on_trial_result(self, iteration, trials, trial, result, **info):
-#     #     # print(f"Got result: {result['metric']}")
-#     #     breakpoint()
-#     #     print('on trial result')
-
-
-#     # def on_trial_complete(self, iteration, trials, trial, **info):
-#     #     breakpoint()
-#     #     print('on trial complete')
-
-#     def on_checkpoint(
-#         self,
-#         iteration,
-#         trials,
-#         trial,
-#         checkpoint,
-#         **info,
-#     ):
-#         breakpoint()
-#         print('on checkpoint ')
-
-#     def on_experiment_end(self, trials, **info):
-#         breakpoint()
-#         print('on trial complete')
-
-
+        print("Number of benchmarks for training:", len(train_benchmarks))
+        print("Number of benchmarks for validation:", len(val_benchmarks))    
+        return train_benchmarks, val_benchmarks
 
 
 def train_agent(config, stop_criteria, sweep_count=1):
@@ -240,13 +212,12 @@ def train_agent(config, stop_criteria, sweep_count=1):
         metric="episode_reward_mean", # "final_performance",
         mode="max",
         reuse_actors=False,
-        # checkpoint_freq=1,
+        checkpoint_freq=10,
         checkpoint_at_end=True,
         config=config, 
         num_samples=sweep_count,
         stop=stop_criteria,    
         callbacks=[ 
-            # MyCallback(),
             WandbLoggerCallback(
                 project="loop_tool_agent",
                 api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
@@ -254,34 +225,37 @@ def train_agent(config, stop_criteria, sweep_count=1):
                 )
         ]
     )
-    # breakpoint()
     print("hhh2______________________")
 
     # breakpoint()
     if os.path.exists(last_run_path):
         shutil.rmtree(last_run_path)
-    shutil.copytree(analysis.best_checkpoint.to_directory(),  last_run_path/"best_checkpoint")
+    else:
+        os.makedirs(last_run_path)
 
-    with open(last_run_path/"config.json", "w") as f: 
-        json.dump(analysis.get_best_config(), f, indent=4)
-    print("hhh4______________________")
+    # shutil.copytree(analysis.best_checkpoint.to_directory(),  last_run_path/"best_checkpoint")
 
-    # for trial in analysis.trials:
-    #     checkpoints.append(analysis.get_best_checkpoint(
-    #             metric="episode_reward_mean",
-    #             mode="max",
-    #             trial=trial
-    #         )
-    #     )
-    #     wandb_ids.append(f'dejang/loop_tool_agent/{trial.trial_id}')
-    #     configs.append(trial.config)
-    
-    return analysis.best_checkpoint, analysis.best_config, analysis.best_trial.trial_id
+    # with open(last_run_path/"best_checkpoint/config.json", "w") as f: 
+    #     json.dump(analysis.get_best_config(), f, indent=4)
+    # print("hhh4______________________")
+
+    config = analysis.best_config
+    config["explore"] = False
+    agent = PPOTrainer(
+        env="compiler_gym",
+        config=config
+    )
+
+    agent.restore(analysis.best_checkpoint)
+    policy = agent.get_policy()
+    torch.save(policy.model, last_run_path/'policy_model.pt')
+
+    return policy.model, analysis.best_trial.trial_id
 
 
 # Lets define a helper function to make it easy to evaluate the agent's
 # performance on a set of benchmarks.
-def run_agent_on_benchmarks(agent, benchmarks):
+def run_agent_on_benchmarks(policy_model, benchmarks):
     """Run agent on a list of benchmarks and return a list of cumulative rewards."""
     with make_env() as env:
         df_gflops = pd.DataFrame(np.zeros((len(benchmarks), 4)), columns=['bench', 'base', 'network', 'search'])
@@ -289,8 +263,6 @@ def run_agent_on_benchmarks(agent, benchmarks):
         for i, benchmark in enumerate(benchmarks, start=0):
             observation, done = env.reset(benchmark=benchmark), False
             step_count = 0
-            policy = agent.get_policy()
-            print(policy.model.framework)
             df_gflops.loc[i, 'bench'] =  str(benchmark).split('/')[-1]
             df_gflops.loc[i, 'base'] = env.observation["flops_loop_nest_tensor"]
 
@@ -298,15 +270,9 @@ def run_agent_on_benchmarks(agent, benchmarks):
             
             while not done:
                 env.send_param("print_looptree", "")
-                logits, _ = policy.model({"obs": torch.Tensor(observation).to(device)})
+                breakpoint()
+                logits, _ = policy_model({"obs": torch.Tensor(observation).to(device)})
                 sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
-
-                try:
-                    assert (agent.compute_single_action(observation) == sorted_actions[0][0].item())
-                except AssertionError:
-                    print(f'Compute single action = {agent.compute_single_action(observation)}')
-                    print(f'Sorted logits = {logits}')
-                    breakpoint()
 
                 for q, a in zip(sorted_actions_q.flatten().tolist(), sorted_actions.flatten().tolist()):
                     print(env.action_space.to_string(a), q)
@@ -325,7 +291,7 @@ def run_agent_on_benchmarks(agent, benchmarks):
             search_depth=0
             search_width = 10000
             # breakpoint()
-            reward_actions_str = env.send_param("search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
+            reward_actions_str = env.send_param("greedy_search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
             print(f'Search = {reward_actions_str}')
             reward_actions = json.loads(reward_actions_str)
             # breakpoint()
@@ -387,8 +353,8 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
 
 
 
-def train(config, stop_criteria, sweep_count=1, wandb_run_id=None, checkpoint=''):
-    print(config, stop_criteria, checkpoint)
+def train(config, stop_criteria, sweep_count=1, policy_model_path=''):
+    print(f'Train params: ', config, stop_criteria, policy_model_path)
 
     # register_env()
     train_benchmarks, val_benchmarks = load_datasets()
@@ -398,38 +364,26 @@ def train(config, stop_criteria, sweep_count=1, wandb_run_id=None, checkpoint=''
         return CycleOverBenchmarks(make_env(), train_benchmarks)
 
     tune.register_env("compiler_gym", make_training_env)
-    if ray.is_initialized(): ray.shutdown()
-    # ray.init(local_mode=True, ignore_reinit_error=True) # for slurm (maybe some day)
-    ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
-    # ModelCatalog.register_custom_model(
-    #     "my_model", my_net_rl.TorchCustomModel
-    # )
+
+    ModelCatalog.register_custom_model(
+        "my_model", my_net_rl.TorchCustomModel
+    )
 
     print("hhh1______________________")
-    if checkpoint == '':
-        checkpoint, config, wandb_id = train_agent(
+    if policy_model_path == '':
+        policy_model, wandb_id = train_agent(
             config=config, 
             stop_criteria=stop_criteria, 
             sweep_count=sweep_count, 
         )
     else:
+        policy_model = torch.load(policy_model_path)
         wandb_id = None
 
-    print(f'Wandb_id: {wandb_id}')
-    print(f'Checkpoint:\n{checkpoint}')
-    print(f'\nConfig:\n{config}')
 
-    config["explore"] = False
-    agent = PPOTrainer(
-        env="compiler_gym",
-        config=config
-    )
-
-    agent.restore(checkpoint)
-    
     # Evaluate agent performance on the train and validation set.
-    df_gflops_train = run_agent_on_benchmarks(agent, train_benchmarks)
-    df_gflops_val = run_agent_on_benchmarks(agent, val_benchmarks)
+    df_gflops_train = run_agent_on_benchmarks(policy_model, train_benchmarks)
+    df_gflops_val = run_agent_on_benchmarks(policy_model, val_benchmarks)
 
     plot_results(df_gflops_train, df_gflops_val, wandb_id)
 
@@ -437,35 +391,37 @@ def train(config, stop_criteria, sweep_count=1, wandb_run_id=None, checkpoint=''
     print("Return from train...")
 
 
-def config_and_run(sweep_config=None, sweep_count=1):
-    config = deepcopy(default_config)
-    for key, val in config.items():
+def update_default_config(sweep_config=None):
+    for key, val in default_config.items():
         if key in sweep_config:
             if type(val) == dict:
                 val.update(sweep_config[key])
             else:
-                config[key] = sweep_config[key]
+                default_config[key] = sweep_config[key]
 
-    wandb_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    train(config=config, stop_criteria=stop_criteria, wandb_run_id=wandb_run_id, sweep_count=sweep_count)
+    return default_config
     
-import itertools
 
 if __name__ == '__main__':
+    if ray.is_initialized(): ray.shutdown()
+
     print(f"Running with following CLI options: {args}")
 
-    stop_criteria['training_iteration'] = 2 if args.debug else args.stop_iters
-    args.sweep = 2 if args.debug else args.sweep
+    stop_criteria['training_iteration'] = 1 if args.debug else args.stop_iters
+    sweep_count = 1 if args.debug else args.sweep
 
+    
     if args.slurm:
         ray_address = os.environ["RAY_ADDRESS"] if "RAY_ADDRESS" in os.environ else "auto"
         head_node_ip = os.environ["HEAD_NODE_IP"] if "HEAD_NODE_IP" in os.environ else "127.0.0.1"
         redis_password = os.environ["REDIS_PASSWORD"] if "REDIS_PASSWORD" in os.environ else "5241590000000000"
         print('SLURM options: ', ray_address, head_node_ip, redis_password)
         ray.init(address=ray_address, _node_ip_address=head_node_ip, _redis_password=redis_password)    
-        
+    else:
+        ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
-    elif args.sweep:
+
+    if sweep_count:
         hiddens_layers = [3, 10, 20]
         hiddens_width = [50, 100, 500]
         sweep_config = {
@@ -477,10 +433,7 @@ if __name__ == '__main__':
             },
 
         }
-
-        config_and_run(sweep_config=sweep_config, sweep_count=args.sweep)
+        default_config = update_default_config(sweep_config)
 
             
-
-    else:
-        train(config=default_config, stop_criteria=stop_criteria, checkpoint=args.load_model)
+    train(config=default_config, stop_criteria=stop_criteria, sweep_count=sweep_count, policy_model_path=args.policy_model)

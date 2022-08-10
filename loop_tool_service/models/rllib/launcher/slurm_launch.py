@@ -12,6 +12,7 @@ from pathlib import Path
 TEMPLATE_FILE = Path(__file__).parent / "slurm_template.sh"
 JOB_NAME = "${JOB_NAME}"
 OUTPUT_FILE = "${OUTPUT_FILE}"
+ERROR_FILE = "${ERROR_FILE}"
 NUM_NODES = "${NUM_NODES}"
 GPUS_PER_NODE_OPTION = "${GPUS_PER_NODE_OPTION}"
 CPUS_PER_NODE_OPTION = "${CPUS_PER_NODE_OPTION}"
@@ -39,6 +40,12 @@ parser = argparse.ArgumentParser(description="Slurm launcher")
 # )
 parser.add_argument(
     "--sweep",  type=int, nargs='?', const=0, default=0, help="Run with wandb sweeps"
+)
+parser.add_argument(
+    "--debug",
+    default=False,
+    action="store_true",
+    help="Debuging",
 )
 
 parser.add_argument(
@@ -102,7 +109,7 @@ parser.add_argument(
 parser.add_argument(
     "--mail",
     "-m",
-    default="",
+    default="dgrubisic03@gmail.com",
     type=str,
     help="User to receive email notification of state changes.",
 )
@@ -124,17 +131,17 @@ repo_dir = (
 
 
 def submit_job():
-# for exp_file in args.exp_files:
     log_dir = repo_dir / Path("results") / "runs"
 
     log_dir.mkdir(parents=True, exist_ok=True)
-    command = f"python -u rllib_torch.py --slurm --sweep={args.sweep}" 
-    # command = f"python -u {repo_dir}/main.py -e {exp_file} -r {runner_file}"
+    command = f"python -u rllib_torch.py --slurm {'--debug' if args.debug else ''} --sweep={args.sweep}" 
 
     exp_name = f"run_{datetime.now():%m_%d_%H_%M}"
     job_name = f"job_{exp_name}"
 
     output_file = log_dir / f"{exp_name}.log"
+    error_file = log_dir / f"{exp_name}.err"
+
     partition_option = (
         f"#SBATCH --partition={args.partition}" if args.partition else ""
     )
@@ -156,6 +163,7 @@ def submit_job():
         text = f.read()
     text = text.replace(JOB_NAME, job_name)
     text = text.replace(OUTPUT_FILE, str(output_file))
+    text = text.replace(ERROR_FILE, str(error_file))
     text = text.replace(NUM_NODES, str(args.num_nodes))
     text = text.replace(GPUS_PER_NODE_OPTION, gpus_option)
     text = text.replace(CPUS_PER_NODE_OPTION, cpus_option)
@@ -181,9 +189,10 @@ def submit_job():
     # ===== Submit the job =====
     print("Starting to submit job!")
     subprocess.Popen(["sbatch", "-D", str(repo_dir), str(script_file)])
-    print(
-        f"Job submitted! Script file is at: {script_file} . Log file is at: {output_file}"
-    )
+    print(f'Job submitted!')
+    print(f'SLURM file is at: {script_file}')
+    print(f'Log file is at: {output_file}')
+    print(f'Err file is at: {error_file}')
 
 
 

@@ -289,11 +289,15 @@ class LoopToolCompilationSession(CompilationSession):
                 self.env.agent = deepcopy(self.env.agent_saved)
             return "Succeeded"
         
-        elif key == "load_model":
-            self.env.load_model(value)
+        elif key == "load_cost_model":
+            self.env.load_cost_model(value)
+            return ""
+        
+        elif key == "load_policy_model":
+            self.env.load_policy_model(value)
             return ""
 
-        elif key == "search": # value = "walk_count, step_count, search_depth, search_width"
+        elif key == "greedy_search": # value = "walk_count, step_count, search_depth, search_width"
             walk_count, step_count, search_depth, search_width = value.split(',')
 
             # import cProfile
@@ -302,7 +306,7 @@ class LoopToolCompilationSession(CompilationSession):
             # breakpoint()
             # profiler.enable()
 
-            reward_actions = self.env.explore_benchmark(
+            reward_actions = self.env.greedy_search(
                 int(walk_count), 
                 int(step_count),
                 search_depth=int(search_depth), 
@@ -317,6 +321,27 @@ class LoopToolCompilationSession(CompilationSession):
 
             return json.dumps(reward_actions)
 
+        elif key == "policy_search": # value = "num_strategies"
+            # import cProfile
+            # import cProfile, pstats
+            # profiler = cProfile.Profile()
+            # breakpoint()
+            # profiler.enable()
+
+            reward_actions = self.env.policy_search(
+                policy_model=self.env.policy_model,
+                cost_model=self.env.cost_model,
+                num_strategies= 1 if value == '' else int(value)
+            )
+
+            # profiler.disable()
+        
+            # stats = pstats.Stats(profiler).sort_stats('cumtime')
+            # stats.print_stats()
+            # breakpoint()
+
+            return json.dumps(reward_actions)
+        
 
         elif key == "available_actions":
             return json.dumps(self.env.get_available_actions())

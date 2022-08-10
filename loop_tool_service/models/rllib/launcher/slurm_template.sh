@@ -7,6 +7,8 @@ ${PARTITION_OPTION}
 ${QOS_OPTION}
 #SBATCH --job-name=${JOB_NAME}
 #SBATCH --output=${OUTPUT_FILE}
+#SBATCH --error=${ERROR_FILE}
+
 ${GIVEN_NODE}
 ### This script works for any number of nodes, Ray will find and manage all resources
 #SBATCH --nodes=${NUM_NODES}

@@ -82,9 +82,9 @@ def main(argv):
             env.reset()
 
             if FLAGS.model_path != '':
-                env.send_param('load_model', FLAGS.model_path)
+                env.send_param('load_cost_model', FLAGS.model_path)
 
-            env.send_param("search", f'{FLAGS.walk_count}, {FLAGS.step_count}, {FLAGS.search_depth}, {FLAGS.search_width}')
+            env.send_param("greedy_search", f'{FLAGS.walk_count}, {FLAGS.step_count}, {FLAGS.search_depth}, {FLAGS.search_width}')
             i += 1
 
 

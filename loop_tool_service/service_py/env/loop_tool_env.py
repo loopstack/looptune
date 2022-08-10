@@ -76,8 +76,9 @@ class Environment:
         self.lt_changed = False
         self.actions = []
         self.agent_saved = None
-        self.model = None
-        self.device = 'cpu'
+        self.cost_model = None
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        
 
     def get_available_actions(self, agent=None):
         def intersection(l1, l2):
@@ -193,36 +194,71 @@ class Environment:
 
 
 
-
-
-    def load_model(self, model_path_str):
+    def load_cost_model(self, model_path_str):
         if model_path_str == '':
-            self.model = None
+            self.cost_model = None
         else:
-            self.model = torch.jit.load(model_path_str).to(self.device)
-            self.model.eval()
-            # self.model = SmallNet.load_model(model_path_str)
-            # self.model.load_state_dict(torch.load(model_path_str))
+            self.cost_model = torch.jit.load(model_path_str).to(self.device)
+            self.cost_model.eval()
+
+    def load_policy_model(self, model_path_str):
+        if model_path_str == '':
+            self.policy_model = None
+        else:
+            self.policy_model = torch.load(model_path_str)
+            self.policy_model.eval()
+
 
 
     ##############################################################
     # Search functions
     ##############################################################
 
-    def explore_benchmark(self, walk_count, step_count, search_depth, search_width) -> None:
+    def policy_search(self, policy_model, cost_model, num_strategies=1):
+        breakpoint()
+        if policy_model == None:
+            print('env.send_param("load_policy_model", policy_model_path)')
+            return
+
+        best_strategies = self.get_best_actions_helper(self.agent, num_strategies=num_strategies)
+        breakpoint()
+        print(best_strategies)
+
+        return max(best_strategies, key=lambda x: x[1]) 
+
+        
+    def get_best_actions_helper(self, agent, best_strategies=[], num_strategies=1):
+        sorted_actions_q, sorted_actions = self.eval_policy_model(self.agent)
+
+        if all(sorted_actions_q < 0):
+            return agent.actions, self.eval_cost_model(self, agent)
+
+        available_actions = self.get_available_actions(agent=agent)
+        # print(chosen_actions)
+        for action_str in sorted_actions:
+            if action_str in available_actions and len(best_strategies) < num_strategies: 
+                agent_copy = deepcopy(agent)
+                agent_copy.apply_action(action_str)
+                best_strategies.append( self.get_best_actions_helper(agent_copy, best_strategies, num_strategies) )
+
+        return best_strategies
+
+
+
+    def greedy_search(self, walk_count, step_count, search_depth, search_width) -> None:
         rewards_actions = []
         start_flops = self.eval_ln_flops(self.agent)
         rewards_actions.append([start_flops, []])
 
         for self.walk_num in range(1, walk_count + 1):
-            reward, actions = self.walk(
+            actions, reward = self.walk(
                 step_count=step_count, 
                 search_depth=search_depth, 
                 search_width=search_width
             )
-            rewards_actions.append([reward, actions])
+            rewards_actions.append([actions, reward])
 
-        return max(rewards_actions, key=lambda x: x[0]) 
+        return max(rewards_actions, key=lambda x: x[1]) 
 
     
 
@@ -239,13 +275,18 @@ class Environment:
         flops = self.eval_ln_flops(agent_copy)
         print(agent_copy)
         print(flops)
-        return flops, actions
+        return actions, flops 
+
+
+    # Policy search
+    def get_best_next_action_policy(self, agent_copy, search_depth, search_width):
+        pass
 
 
     # Search
     def get_best_next_action(self, agent_copy, search_depth, search_width):
-        if self.model != None:
-            eval_fn = self.eval_state_model
+        if self.cost_model != None:
+            eval_fn = self.eval_cost_model
         else:
             eval_fn = self.eval_ln_flops
 
@@ -268,29 +309,20 @@ class Environment:
         best_action = None
 
         if search_depth == 0:
-            # self.env.send_param("undo_action", "")
             return best_action, eval_fn(agent)
-
 
         available_actions = self.get_available_actions(agent=agent)
         search_width_real = min(len(available_actions), search_width)
         chosen_actions = random.sample(available_actions, search_width_real)
         # print(chosen_actions)
         for action_str in chosen_actions:
-
             agent_copy = deepcopy(agent)
-
-            # print(f'search_depth = {search_depth}')
-            # print(agent.actions)
-            # print(agent)
             next_action, new_reward =  self.get_best_action_helper(agent_copy, search_depth - 1, search_width, eval_fn)
 
             if new_reward > best_reward:
                 best_reward = new_reward 
                 best_action = action_str
 
-        # env_fork.send_param("undo_action", "")
-        # print(best_action, best_reward)
         return best_action, best_reward
 
 
@@ -301,76 +333,19 @@ class Environment:
         except:
             return 0
             
-    def eval_state_model(self, agent):
+    def eval_cost_model(self, agent):
         state_tensor = [ np.log2(x + 1) for x in agent.get_stride_histogram() ]
         state_tensor = torch.tensor(state_tensor).float().to(self.device)
-        pred_flops = self.model(state_tensor)
+        pred_flops = self.cost_model(state_tensor)
         return pred_flops.item()
 
 
-    # Just for debugging
-
-    def plot_search(self, df, color, linewidth=1):
-        
-        plt.plot(df['time'], df['measured_reward'], color=color, linewidth=linewidth)
-        plt.plot(df['time'], df['predicted_reward'], color=color, linewidth=linewidth)
-
-        # axs[0].scatter(df['time'].iloc[-1], final_reward, c=color, marker='o')
-
-        # axs[1].title.set_text('Test rewards')
-        # axs[1].plot(test_rewards, color="green")
-        # axs[1].plot(np.zeros_like(test_rewards), color="blue")
-        # return axs
-
-    def explore_benchmark_dbg(self, walk_count, step_count, search_depth, search_width) -> None:
-        rewards_actions = []
-        cycol = cycle('bgrcmk')
-        # fig, axs = plt.subplots(1, 2)
-        plt.cla()
-        plt.title('Benchmark performance')
-
-        with Timer() as episode_time:
-            start_flops = self.eval_ln_flops(self.agent)
-
-            for self.walk_num in range(1, walk_count + 1):
-                df = self.walk_dbg(
-                    step_count=step_count, 
-                    search_depth=search_depth, 
-                    search_width=search_width
-                )
-                rewards_actions.append(df)
-                self.plot_search(df, color = next(cycol))
-
-                # print(f'{start_flops} -> {rewards_actions[-1][0]} GFLOPs, Actions = {rewards_actions[-1][1]}')
-        
-            best_df = max(rewards_actions, key=lambda x: x['predicted_reward'].iloc[-1]) 
-            self.plot_search(best_df, 'red', linewidth=3)
-            best_actions = best_df['action'].tolist()
-            predicted_reward, measured_reward = best_df[['predicted_reward', 'measured_reward']].iloc[-1]
-            print(f"Time = {episode_time}, GFLOPS: {start_flops} -> {measured_reward}, ({predicted_reward}) | Actions = {best_actions}---------")
-
-
-        plt.tight_layout()
-        plt.savefig(str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/tmp.png")
-
-        return measured_reward, best_actions
-
-    def walk_dbg(self, step_count: int, search_depth: int, search_width: int)-> list: 
-        agent_copy = deepcopy(self.agent)
-        cur_reward = 0
-        
-        df_list = []
-
-        with Timer() as step_time:
-            for self.step_num in range(1, step_count + 1):
-        
-                new_action_str, new_reward = self.get_best_next_action(agent_copy, search_depth, search_width)
-                # if new_reward >= cur_reward or True:
-                cur_reward = new_reward
-                agent_copy.apply_action(new_action_str)
-                df_list.append([step_time.time, new_action_str, new_reward, self.eval_ln_flops(agent_copy)])
-
-                # else:
-                #     break
-
-        return pd.DataFrame(df_list, columns=['time','action', 'predicted_reward', 'measured_reward'])
+    def eval_policy_model(self, agent):
+        feature_vector = [x for loop_vector in agent.get_loops_tensor() for x in loop_vector]
+        dim0, dim1 = self.observation_spaces['loops_tensor'].float_box.high.shape
+        feature_vector.extend([0] * (dim1 - len(feature_vector)))
+        state_tensor = torch.Tensor(feature_vector).to(self.device)
+        breakpoint()
+        logits, _ = self.policy_model({"obs": state_tensor})
+        sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
+        return sorted_actions_q, sorted_actions

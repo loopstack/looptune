@@ -75,7 +75,7 @@ def get_search_lt(
 
 
         env.reset(benchmark=full_target_uri)
-        reward_actions_str = env.send_param("search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
+        reward_actions_str = env.send_param("greedy_search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
         print(f'Search = {reward_actions_str}')
         reward_actions = json.loads(reward_actions_str)
 

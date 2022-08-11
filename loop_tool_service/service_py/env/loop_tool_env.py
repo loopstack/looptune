@@ -66,7 +66,7 @@ class Environment:
         timeout_sec: float):
 
         self.name = "loop_tool_env"
-        self.action_space = action_space
+        self.action_space_str = action_space.space.named_discrete.name
         self.observation_spaces = { v.name: v.space for v in observation_spaces }
         self.timeout_sec = timeout_sec        
 
@@ -78,7 +78,8 @@ class Environment:
         self.agent_saved = None
         self.cost_model = None
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        
+        self.eval_cost_fn = self.eval_ln_flops
+
 
     def get_available_actions(self, agent=None):
         def intersection(l1, l2):
@@ -87,7 +88,7 @@ class Environment:
         if agent == None:
             agent = self.agent
         available_actions = intersection(agent.get_available_actions(), 
-                                         self.action_space.space.named_discrete.name)
+                                         self.action_space_str)
         return available_actions
 
     ##############################################################
@@ -151,8 +152,9 @@ class Environment:
         assert(len(stride_freq_vector) == bucket_num), 'get_stride_tensor:LoopTool dimension doesnt correspond to environment dimensions'
         return Event(float_tensor=FloatTensor(shape=[dim0, bucket_num], value=stride_freq_vector))
     
-    def get_loops_tensor(self) -> Event:
-        feature_vector = [x for loop_vector in self.agent.get_loops_tensor() for x in loop_vector]
+    def get_loops_tensor(self, agent=None) -> Event:
+        if agent == None: agent = self.agent
+        feature_vector = [x for loop_vector in agent.get_loops_tensor() for x in loop_vector]
         dim0, dim1 = self.observation_spaces['loops_tensor'].float_box.high.shape
         assert(len(feature_vector) < dim1), f'get_loops_tensor:LoopTool dimension doesnt correspond to environment dimensions {len(feature_vector)} !< {dim1}'
         feature_vector.extend([0] * (dim1 - len(feature_vector)))
@@ -165,7 +167,7 @@ class Environment:
         dim0, dim1 = self.observation_spaces['5_prev_actions_tensor'].float_box.high.shape
         last_actions_vector = []
         for action in reversed(self.actions[-5:]):
-            one_hot_action = [ a == action for a in self.action_space.space.named_discrete.name ]
+            one_hot_action = [ a == action for a in self.action_space_str ]
             last_actions_vector.extend(one_hot_action)
 
         last_actions_vector.extend([0] * (dim1 - len(last_actions_vector)))
@@ -197,9 +199,11 @@ class Environment:
     def load_cost_model(self, model_path_str):
         if model_path_str == '':
             self.cost_model = None
+            self.eval_cost_fn = self.eval_ln_flops
         else:
             self.cost_model = torch.jit.load(model_path_str).to(self.device)
             self.cost_model.eval()
+            self.eval_cost_fn = self.eval_cost_model
 
     def load_policy_model(self, model_path_str):
         if model_path_str == '':
@@ -214,32 +218,46 @@ class Environment:
     # Search functions
     ##############################################################
 
-    def policy_search(self, policy_model, cost_model, num_strategies=1):
-        breakpoint()
-        if policy_model == None:
-            print('env.send_param("load_policy_model", policy_model_path)')
-            return
+    def policy_search(self, search_depth=5, num_strategies=1):
+        if self.policy_model == None:
+            print('Instantiate policy model with: env.send_param("load_policy_model", policy_model_path)')
+            return []
 
-        best_strategies = self.get_best_actions_helper(self.agent, num_strategies=num_strategies)
-        breakpoint()
+        best_strategies = self.get_best_actions_helper(self.agent, search_depth=search_depth, num_strategies=num_strategies)
         print(best_strategies)
 
-        return max(best_strategies, key=lambda x: x[1]) 
-
+        if len(best_strategies):
+            return max(best_strategies, key=lambda x: x[1]) 
+        else:
+            return []
         
-    def get_best_actions_helper(self, agent, best_strategies=[], num_strategies=1):
-        sorted_actions_q, sorted_actions = self.eval_policy_model(self.agent)
+    def get_best_actions_helper(self, agent, best_strategies=[], search_depth=10, num_strategies=1):
+        sorted_actions_q, sorted_actions = self.eval_policy_model(agent)
 
-        if all(sorted_actions_q < 0):
-            return agent.actions, self.eval_cost_model(self, agent)
+        # print(f'Strategies = {best_strategies}')
+        # print(search_depth)
+        # print(agent.actions)
+        # print(agent)
+        print(sorted_actions_q)
+        print(sorted_actions)
+        # breakpoint()
+        if torch.all(sorted_actions_q < 0):
+            return agent.actions, self.eval_cost_fn(agent)
+        if search_depth == 0:
+            return []
 
-        available_actions = self.get_available_actions(agent=agent)
+        available_actions_str = self.get_available_actions(agent=agent)
+        sorted_actions_str = [ self.action_space_str[a.item()] for a in sorted_actions.squeeze() ]
         # print(chosen_actions)
-        for action_str in sorted_actions:
-            if action_str in available_actions and len(best_strategies) < num_strategies: 
-                agent_copy = deepcopy(agent)
+        for action_str in sorted_actions_str:
+            if action_str in available_actions_str and len(best_strategies) < num_strategies: 
+                agent_copy = agent.copy()
                 agent_copy.apply_action(action_str)
-                best_strategies.append( self.get_best_actions_helper(agent_copy, best_strategies, num_strategies) )
+                
+                best_actions = self.get_best_actions_helper(agent_copy, best_strategies, search_depth-1, num_strategies)
+                print(best_actions)
+                if best_actions != []:
+                    best_strategies.append(best_actions)
 
         return best_strategies
 
@@ -263,7 +281,7 @@ class Environment:
     
 
     def walk(self, step_count: int, search_depth: int, search_width: int)-> list: 
-        agent_copy = deepcopy(self.agent)        
+        agent_copy = self.agent.copy() #deepcopy(self.agent)        
         actions = []
 
         with Timer() as step_time:
@@ -285,12 +303,6 @@ class Environment:
 
     # Search
     def get_best_next_action(self, agent_copy, search_depth, search_width):
-        if self.cost_model != None:
-            eval_fn = self.eval_cost_model
-        else:
-            eval_fn = self.eval_ln_flops
-
-
         if search_depth == 0:
             next_action = random.choice(self.get_available_actions(agent=agent_copy))
             new_reward = 0
@@ -299,25 +311,24 @@ class Environment:
                 agent=agent_copy, 
                 search_depth=search_depth, 
                 search_width=search_width,
-                eval_fn=eval_fn
             )
 
         return next_action, new_reward
         
-    def get_best_action_helper(self, agent, search_depth, search_width, eval_fn):
+    def get_best_action_helper(self, agent, search_depth, search_width):
         best_reward = -1
         best_action = None
 
         if search_depth == 0:
-            return best_action, eval_fn(agent)
+            return best_action, self.eval_cost_fn(agent)
 
         available_actions = self.get_available_actions(agent=agent)
         search_width_real = min(len(available_actions), search_width)
         chosen_actions = random.sample(available_actions, search_width_real)
         # print(chosen_actions)
         for action_str in chosen_actions:
-            agent_copy = deepcopy(agent)
-            next_action, new_reward =  self.get_best_action_helper(agent_copy, search_depth - 1, search_width, eval_fn)
+            agent_copy = agent.copy() #deepcopy(agent)
+            next_action, new_reward =  self.get_best_action_helper(agent_copy, search_depth - 1, search_width)
 
             if new_reward > best_reward:
                 best_reward = new_reward 
@@ -341,11 +352,11 @@ class Environment:
 
 
     def eval_policy_model(self, agent):
-        feature_vector = [x for loop_vector in agent.get_loops_tensor() for x in loop_vector]
-        dim0, dim1 = self.observation_spaces['loops_tensor'].float_box.high.shape
-        feature_vector.extend([0] * (dim1 - len(feature_vector)))
-        state_tensor = torch.Tensor(feature_vector).to(self.device)
-        breakpoint()
-        logits, _ = self.policy_model({"obs": state_tensor})
+        feature_vector = self.get_loops_tensor(agent=agent).float_tensor.value
+        feature_vector = torch.Tensor(feature_vector).unsqueeze(0).to(self.device)
+        logits, _ = self.policy_model({"obs": feature_vector})
         sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
         return sorted_actions_q, sorted_actions
+        
+        
+        

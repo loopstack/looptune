@@ -112,8 +112,6 @@ def predict_optimal_actions(env, benchmark, policy, value_network):
     
 
 
-    value_network
-
 
 
 
@@ -135,7 +133,8 @@ if __name__ == '__main__':
                 env.send_param('load_cost_model', args.cost_model)
             if args.policy_model != '':
                 env.send_param('load_policy_model', args.policy_model)
-            env.send_param("policy_search", '5')
+            best_actions_reward = json.loads(env.send_param("policy_search", '5, 3'))
+            print(best_actions_reward)
             i += 1
             breakpoint()
 

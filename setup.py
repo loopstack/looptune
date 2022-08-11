@@ -30,7 +30,7 @@ setuptools.setup(
         "loop_tool_service.service_py.rewards",        
         "loop_tool_service.benchmarks",
         "loop_tool_service.models",
-        "loop_tool_service.models.autotuners",        
+        "loop_tool_service.models.search",        
         "loop_tool_service.models.rllib",        
         # "loop_tool_service.models.llvm_autotuning.autotuners",        
     ],

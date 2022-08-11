@@ -284,9 +284,9 @@ class LoopToolCompilationSession(CompilationSession):
         
         elif key == "save_restore":
             if value == '0': # save
-                self.env.agent_saved = deepcopy(self.env.agent)
+                self.env.agent_saved = self.env.agent.copy() #deepcopy()
             else: # restore
-                self.env.agent = deepcopy(self.env.agent_saved)
+                self.env.agent = self.env.agent_saved.copy() #deepcopy(self.env.agent_saved)
             return "Succeeded"
         
         elif key == "load_cost_model":
@@ -321,26 +321,15 @@ class LoopToolCompilationSession(CompilationSession):
 
             return json.dumps(reward_actions)
 
-        elif key == "policy_search": # value = "num_strategies"
-            # import cProfile
-            # import cProfile, pstats
-            # profiler = cProfile.Profile()
-            # breakpoint()
-            # profiler.enable()
+        elif key == "policy_search": # value = "search_depth, num_strategies"
+            search_depth, num_strategies = value.split(',')
 
-            reward_actions = self.env.policy_search(
-                policy_model=self.env.policy_model,
-                cost_model=self.env.cost_model,
-                num_strategies= 1 if value == '' else int(value)
+            best_actions_reward = self.env.policy_search(   # Must initialize policy, (and cost) model first
+                search_depth=int(search_depth),
+                num_strategies= int(num_strategies)
             )
 
-            # profiler.disable()
-        
-            # stats = pstats.Stats(profiler).sort_stats('cumtime')
-            # stats.print_stats()
-            # breakpoint()
-
-            return json.dumps(reward_actions)
+            return json.dumps(best_actions_reward)
         
 
         elif key == "available_actions":

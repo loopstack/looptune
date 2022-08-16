@@ -135,6 +135,7 @@ def submit_job():
 
     log_dir.mkdir(parents=True, exist_ok=True)
     command = f"python -u rllib_torch.py --slurm {'--debug' if args.debug else ''} --sweep={args.sweep}" 
+    # command = f"python -u main.py" 
 
     exp_name = f"run_{datetime.now():%m_%d_%H_%M}"
     job_name = f"job_{exp_name}"
@@ -201,6 +202,3 @@ if __name__ == "__main__":
     for i in range(args.jobs):
         submit_job()
 
-
-
-    sys.exit(0)

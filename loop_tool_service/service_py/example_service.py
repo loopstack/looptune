@@ -305,8 +305,8 @@ class LoopToolCompilationSession(CompilationSession):
             # profiler = cProfile.Profile()
             # breakpoint()
             # profiler.enable()
-
-            reward_actions = self.env.greedy_search(
+            # breakpoint()
+            best_actions_reward = self.env.greedy_search(
                 int(walk_count), 
                 int(step_count),
                 search_depth=int(search_depth), 
@@ -319,7 +319,7 @@ class LoopToolCompilationSession(CompilationSession):
             # stats.print_stats()
             # breakpoint()
 
-            return json.dumps(reward_actions)
+            return json.dumps(best_actions_reward)
 
         elif key == "policy_search": # value = "search_depth, num_strategies"
             search_depth, num_strategies = value.split(',')

@@ -223,15 +223,15 @@ class Environment:
             print('Instantiate policy model with: env.send_param("load_policy_model", policy_model_path)')
             return []
 
-        best_strategies = self.get_best_actions_helper(self.agent, search_depth=search_depth, num_strategies=num_strategies)
-        print(best_strategies)
+        actions_reward_pairs = self.get_best_actions_helper(self.agent, search_depth=search_depth, num_strategies=num_strategies)
+        print(actions_reward_pairs)
 
-        if len(best_strategies):
-            return max(best_strategies, key=lambda x: x[1]) 
+        if len(actions_reward_pairs):
+            return max(actions_reward_pairs, key=lambda x: x[1]) 
         else:
             return []
         
-    def get_best_actions_helper(self, agent, best_strategies=[], search_depth=10, num_strategies=1):
+    def get_best_actions_helper(self, agent, actions_reward_pairs=[], search_depth=10, num_strategies=1):
         sorted_actions_q, sorted_actions = self.eval_policy_model(agent)
 
         # print(f'Strategies = {best_strategies}')
@@ -250,23 +250,23 @@ class Environment:
         sorted_actions_str = [ self.action_space_str[a.item()] for a in sorted_actions.squeeze() ]
         # print(chosen_actions)
         for action_str in sorted_actions_str:
-            if action_str in available_actions_str and len(best_strategies) < num_strategies: 
+            if action_str in available_actions_str and len(actions_reward_pairs) < num_strategies: 
                 agent_copy = agent.copy()
                 agent_copy.apply_action(action_str)
                 
-                best_actions = self.get_best_actions_helper(agent_copy, best_strategies, search_depth-1, num_strategies)
-                print(best_actions)
-                if best_actions != []:
-                    best_strategies.append(best_actions)
+                actions_reward_pairs_local = self.get_best_actions_helper(agent_copy, actions_reward_pairs, search_depth-1, num_strategies)
+                print(actions_reward_pairs_local)
+                if actions_reward_pairs_local != []:
+                    actions_reward_pairs.append(actions_reward_pairs_local)
 
-        return best_strategies
+        return actions_reward_pairs
 
 
 
     def greedy_search(self, walk_count, step_count, search_depth, search_width) -> None:
-        rewards_actions = []
+        actions_reward_pairs = []
         start_flops = self.eval_ln_flops(self.agent)
-        rewards_actions.append([start_flops, []])
+        actions_reward_pairs.append([[], start_flops])
 
         for self.walk_num in range(1, walk_count + 1):
             actions, reward = self.walk(
@@ -274,16 +274,15 @@ class Environment:
                 search_depth=search_depth, 
                 search_width=search_width
             )
-            rewards_actions.append([actions, reward])
+            actions_reward_pairs.append([actions, reward])
 
-        return max(rewards_actions, key=lambda x: x[1]) 
+        return max(actions_reward_pairs, key=lambda x: x[1]) 
 
     
 
     def walk(self, step_count: int, search_depth: int, search_width: int)-> list: 
         agent_copy = self.agent.copy() #deepcopy(self.agent)        
         actions = []
-
         with Timer() as step_time:
             for self.step_num in range(1, step_count + 1):
         
@@ -294,11 +293,6 @@ class Environment:
         print(agent_copy)
         print(flops)
         return actions, flops 
-
-
-    # Policy search
-    def get_best_next_action_policy(self, agent_copy, search_depth, search_width):
-        pass
 
 
     # Search

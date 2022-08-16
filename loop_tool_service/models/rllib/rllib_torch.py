@@ -76,7 +76,6 @@ stop_criteria = {'training_iteration': 1}
 default_config = {
     "log_level": "ERROR",
     "env": "compiler_gym", 
-    # "model": {"fcnet_hiddens": [100] * 4},
     "framework": 'torch',
     "model": {
         "custom_model": "my_model",
@@ -91,6 +90,7 @@ default_config = {
     # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
     "num_gpus": torch.cuda.device_count(),
     "num_workers": 60,  # parallelism
+    "recreate_failed_workers": False,
     "rollout_fragment_length": 100, 
     "train_batch_size": 6000, # train_batch_size == num_workers * rollout_fragment_length
     "num_sgd_iter": 30,
@@ -174,7 +174,6 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
         "loop_tool_env-v0",
         observation_space="loops_tensor",
         reward_space="flops_loop_nest_tensor",
-        # reward_space="runtime",
     )
     # env = compiler_gym.make("loop_tool_env-v0")
 
@@ -201,11 +200,6 @@ def load_datasets(env=None):
 
 
 def train_agent(config, stop_criteria, sweep_count=1):
-    checkpoints = []
-    configs = []
-    wandb_ids = []
-    
-
     analysis = tune.run(
         # args.run, 
         PPOTrainer,
@@ -227,11 +221,10 @@ def train_agent(config, stop_criteria, sweep_count=1):
     )
     print("hhh2______________________")
 
-    # breakpoint()
     if os.path.exists(last_run_path):
         shutil.rmtree(last_run_path)
-    else:
-        os.makedirs(last_run_path)
+
+    os.makedirs(last_run_path)
 
     # shutil.copytree(analysis.best_checkpoint.to_directory(),  last_run_path/"best_checkpoint")
 
@@ -270,7 +263,6 @@ def run_agent_on_benchmarks(policy_model, benchmarks):
             
             while not done:
                 env.send_param("print_looptree", "")
-                breakpoint()
                 logits, _ = policy_model({"obs": torch.Tensor(observation).to(device)})
                 sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
 
@@ -291,11 +283,10 @@ def run_agent_on_benchmarks(policy_model, benchmarks):
             search_depth=0
             search_width = 10000
             # breakpoint()
-            reward_actions_str = env.send_param("greedy_search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
-            print(f'Search = {reward_actions_str}')
-            reward_actions = json.loads(reward_actions_str)
-            # breakpoint()
-            df_gflops.loc[i, 'search'] = reward_actions[0]
+            best_actions_reward_str = env.send_param("greedy_search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
+            print(f'Search = {best_actions_reward_str}')
+            best_actions_reward = json.loads(best_actions_reward_str)
+            df_gflops.loc[i, 'search'] = best_actions_reward[1]
 
             print(f"[{i}/{len(benchmarks)}] ")
     
@@ -356,7 +347,7 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
 def train(config, stop_criteria, sweep_count=1, policy_model_path=''):
     print(f'Train params: ', config, stop_criteria, policy_model_path)
 
-    # register_env()
+    register_env()
     train_benchmarks, val_benchmarks = load_datasets()
 
     def make_training_env(*args): 

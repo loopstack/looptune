@@ -70,30 +70,29 @@ if __name__ == "__main__":
   redis_password = os.environ["REDIS_PASSWORD"] if "REDIS_PASSWORD" in os.environ else "5241590000000000"
   print(ray_address, head_node_ip, redis_password)
 
-#   ray.init(address='auto', _node_ip_address=os.environ["ip_head"].split(":")[0], _redis_password=os.environ["redis_password"])
   ray.init(address=ray_address, _node_ip_address=head_node_ip, _redis_password=redis_password)
-  
+  # ray.init()
+
   sched = ASHAScheduler(metric="mean_accuracy", mode="max")
-  wandb_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
   analysis = tune.run(TrainMNIST,
                       scheduler=sched,
                       stop={"mean_accuracy": 0.99,
-                            "training_iteration": 100},
+                            "training_iteration": 10},
                       resources_per_trial={"cpu":10, "gpu": 1},
                       # num_samples=4,
                       # metric="episode_reward_mean", # "final_performance",
                       # mode="max",
                       checkpoint_at_end=True,
                       config={
+                        'num_workers': 60,
+                        "num_gpus": 2,
                         # "lr": tune.uniform(0.001, 1.0),
                         # "momentum": tune.uniform(0.1, 0.9),
                         "use_gpu": True
                       },
                       callbacks=[ WandbLoggerCallback(
                             project="loop_tool_agent",
-                            save_checkpoints=True,
                             api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
-                            log_config=False,
-                            id=wandb_run_id)]
+                            log_config=False)]
 )
   print("Best config is:", analysis.get_best_config(metric="mean_accuracy", mode="max"))

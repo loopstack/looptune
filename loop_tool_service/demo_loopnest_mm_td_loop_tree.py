@@ -61,7 +61,7 @@ def main():
     bench = "benchmark://loop_tool_simple-v0/simple"
 
     with loop_tool_service.make_env("loop_tool-v0") as env:
-        pdb.set_trace()
+        breakpoint()
         agent = q_agents.QAgentLoopTree(
             env=env,
             bench=bench,

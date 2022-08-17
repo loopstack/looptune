@@ -89,7 +89,7 @@ default_config = {
     },
     # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
     "num_gpus": torch.cuda.device_count(),
-    "num_workers": 60,  # parallelism
+    "num_workers": 79,  # parallelism
     "recreate_failed_workers": False,
     "rollout_fragment_length": 100, 
     "train_batch_size": 6000, # train_batch_size == num_workers * rollout_fragment_length
@@ -177,7 +177,7 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
     )
     # env = compiler_gym.make("loop_tool_env-v0")
 
-    env = TimeLimit(env, max_episode_steps=10)
+    env = TimeLimit(env, max_episode_steps=10) # <<<< Must be here
     return env
 
 
@@ -214,6 +214,7 @@ def train_agent(config, stop_criteria, sweep_count=1):
         callbacks=[ 
             WandbLoggerCallback(
                 project="loop_tool_agent",
+                group=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
                 api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
                 log_config=False,
                 )
@@ -226,19 +227,12 @@ def train_agent(config, stop_criteria, sweep_count=1):
 
     os.makedirs(last_run_path)
 
-    # shutil.copytree(analysis.best_checkpoint.to_directory(),  last_run_path/"best_checkpoint")
-
-    # with open(last_run_path/"best_checkpoint/config.json", "w") as f: 
-    #     json.dump(analysis.get_best_config(), f, indent=4)
-    # print("hhh4______________________")
-
     config = analysis.best_config
     config["explore"] = False
     agent = PPOTrainer(
         env="compiler_gym",
         config=config
     )
-
     agent.restore(analysis.best_checkpoint)
     policy = agent.get_policy()
     torch.save(policy.model, last_run_path/'policy_model.pt')
@@ -293,8 +287,26 @@ def run_agent_on_benchmarks(policy_model, benchmarks):
     return df_gflops
 
 
+def send_to_wandb(last_run_path, wandb_log):
+    os.chdir(last_run_path)
+
+    wandb_uri = f'dejang/loop_tool_agent/{wandb_log["run_id"]}'
+    print(f'Wandb page = https://wandb.ai/{wandb_uri}')
+    api = wandb.Api()
+    wandb_run = api.run(wandb_uri)
+    wandb_run.upload_file('benchmarks_gflops.png')
+    wandb_run.upload_file('benchmarks_gflops.csv')
+    wandb_run.upload_file('speedup_violin.png')
+    wandb_run.upload_file('policy_model.pt')
+
+    for key, value in wandb_log.items(): 
+        wandb_run.summary[key] = value
+    wandb_run.summary.update()
+    
+
 def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
     print("hack888")
+    global last_run_path, wandb_log
     # Finally lets plot our results to see how we did!
     fig, axs = plt.subplots(1, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [5, 1]})
     fig.suptitle(f'GFlops comparison for training and test benchmarks', fontsize=16)
@@ -339,9 +351,7 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
 
     # Send results to wandb server
     if wandb_run_id:
-        os.system(f"python {LOOP_TOOL_ROOT/'wandb_send.py'} {wandb_log_path}")
-
-
+        send_to_wandb(last_run_path, wandb_log)
 
 
 def train(config, stop_criteria, sweep_count=1, policy_model_path=''):
@@ -398,8 +408,8 @@ if __name__ == '__main__':
 
     print(f"Running with following CLI options: {args}")
 
-    stop_criteria['training_iteration'] = 1 if args.debug else args.stop_iters
-    sweep_count = 1 if args.debug else args.sweep
+    stop_criteria['training_iteration'] = 2 if args.debug else args.stop_iters
+    sweep_count = 2 if args.debug else args.sweep
 
     
     if args.slurm:
@@ -418,7 +428,6 @@ if __name__ == '__main__':
         sweep_config = {
             'lr': tune.uniform(1e-3, 1e-6),
             "gamma": tune.uniform(0.5, 0.99),
-            "horizon": tune.choice([None, 5, 20]),
             'model': {
                 "fcnet_hiddens": tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]),
             },

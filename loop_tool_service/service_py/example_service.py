@@ -87,18 +87,16 @@ class LoopToolCompilationSession(CompilationSession):
                         # "split_256", 
                         # "split_512", 
                         # "split_1024", 
-                        # "split_2048", 
-                        # "split_4096", 
-                        # "split_8192", 
                         # "merge", 
                         # "unroll", 
                         # "vectorize", 
-                        # "copy_input_0", #TODO: Copy input should be parametric action 0,1,...n is id of variable
-                        # "copy_input_1",
-                        # "copy_input_1",
-                        # "copy_input_3",
                         # "increase_reuse",
                         # "decrease_reuse"
+
+                        # "copy_input_0", #TODO: Copy input should be parametric action 0,1,...n is id of variable
+                        # "copy_input_1",
+                        # "copy_input_2",
+                        # "copy_input_3",
                         ],
                 ),
             ),
@@ -326,7 +324,7 @@ class LoopToolCompilationSession(CompilationSession):
 
             best_actions_reward = self.env.policy_search(   # Must initialize policy, (and cost) model first
                 search_depth=int(search_depth),
-                num_strategies= int(num_strategies)
+                num_strategies=int(num_strategies)
             )
 
             return json.dumps(best_actions_reward)

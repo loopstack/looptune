@@ -209,18 +209,7 @@ class QAgentBase():
                 state = State(obs, self.hashState(obs))
 
 
-            # if i % 4 == 0:
-            #     breakpoint()
-
-            my_actions = (my_actions + 1) % 8
-            if my_actions < 4 or True:
-                action = actions[i % 4]
-                available_actions = self.getAvailableActions(state.hash)
-                self.Q_counts[state.hash][action] += 1
-            else:
-                action = self.getAction(state=state, exploration=self.exploration)
-
-            # breakpoint()
+            action = self.getAction(state=state, exploration=self.exploration)
             state_prev = state
             self.print_state(state)
 

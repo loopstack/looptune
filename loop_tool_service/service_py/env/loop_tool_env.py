@@ -1,5 +1,6 @@
 from lib2to3.refactor import get_all_fix_names
 from statistics import mean
+from sys import float_repr_style
 from tokenize import Double
 import numpy as np
 import pdb
@@ -55,6 +56,7 @@ from compiler_gym.service.proto import (
 from loop_tool_service.service_py.utils import run_command, proto_buff_container_to_list, print_list, run_command_stdout_redirect
 
 import torch 
+import networkx as nx
 
 
 class Environment:
@@ -218,12 +220,15 @@ class Environment:
     # Search functions
     ##############################################################
 
-    def policy_search(self, search_depth=5, num_strategies=1):
+    def policy_search(self, search_depth=10, num_strategies=1):
         if self.policy_model == None:
             print('Instantiate policy model with: env.send_param("load_policy_model", policy_model_path)')
             return []
 
-        actions_reward_pairs = self.get_best_actions_helper(self.agent, search_depth=search_depth, num_strategies=num_strategies)
+        graph = nx.DiGraph()
+        actions_reward_pairs = []
+        self.get_best_actions_helper(self.agent, actions_reward_pairs, search_depth=search_depth, num_strategies=num_strategies, graph=graph)
+        print(nx.nx_pydot.to_pydot(graph))
         print(actions_reward_pairs)
 
         if len(actions_reward_pairs):
@@ -231,35 +236,50 @@ class Environment:
         else:
             return []
         
-    def get_best_actions_helper(self, agent, actions_reward_pairs=[], search_depth=10, num_strategies=1):
-        sorted_actions_q, sorted_actions = self.eval_policy_model(agent)
-
-        # print(f'Strategies = {best_strategies}')
-        # print(search_depth)
-        # print(agent.actions)
-        # print(agent)
-        print(sorted_actions_q)
-        print(sorted_actions)
-        # breakpoint()
-        if torch.all(sorted_actions_q < 0):
-            return agent.actions, self.eval_cost_fn(agent)
+    def get_best_actions_helper(self, agent, actions_reward_pairs, search_depth=10, num_strategies=1, graph=nx.DiGraph()):
         if search_depth == 0:
-            return []
-
+            return
+            
+        sorted_actions_q, sorted_actions = self.eval_policy_model(agent)
         available_actions_str = self.get_available_actions(agent=agent)
-        sorted_actions_str = [ self.action_space_str[a.item()] for a in sorted_actions.squeeze() ]
-        # print(chosen_actions)
-        for action_str in sorted_actions_str:
-            if action_str in available_actions_str and len(actions_reward_pairs) < num_strategies: 
-                agent_copy = agent.copy()
-                agent_copy.apply_action(action_str)
-                
-                actions_reward_pairs_local = self.get_best_actions_helper(agent_copy, actions_reward_pairs, search_depth-1, num_strategies)
-                print(actions_reward_pairs_local)
-                if actions_reward_pairs_local != []:
-                    actions_reward_pairs.append(actions_reward_pairs_local)
 
-        return actions_reward_pairs
+        avail_sorted_aq = []
+        for a, q in zip(sorted_actions.squeeze(), sorted_actions_q.squeeze()):
+            a_str = self.action_space_str[a.item()]
+            if a_str in available_actions_str:
+                avail_sorted_aq.append((a_str, q.item()))
+
+
+        print(avail_sorted_aq)
+        node_key = hash(agent.dump())
+        real_flops = self.eval_ln_flops(agent)
+        predicted_flops = self.eval_cost_model(agent) if self.cost_model else None
+        graph.add_node(
+            node_key, 
+            label=f'FLOPS = {real_flops:9.4f}\nPRED = {predicted_flops:9.4f}\n' + agent.dump().replace(':', ';')
+            )
+
+        if all([x[1] < 0 for x in avail_sorted_aq]):
+            graph.nodes[node_key]['color'] = 'lightblue1'
+            graph.nodes[node_key]['style'] = 'filled'
+            actions_reward_pairs.append((agent.actions, self.eval_cost_fn(agent)))
+            return
+
+
+        # print(chosen_actions)
+        for action_str, action_q in avail_sorted_aq:
+            if len(actions_reward_pairs) == num_strategies: return
+
+            agent_copy = agent.copy()
+            agent_copy.apply_action(action_str)
+            
+            loop_detetcted = hash(agent_copy.dump()) in graph
+            graph.add_edge(hash(agent.dump()), hash(agent_copy.dump()), label=f'{action_str}\n{action_q:9.4f}', color='black')
+            if loop_detetcted: 
+                continue
+
+            self.get_best_actions_helper(agent_copy, actions_reward_pairs, search_depth-1, num_strategies, graph)                
+
 
 
 

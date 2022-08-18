@@ -4,7 +4,7 @@ from networkx.drawing.nx_pydot import to_pydot
 from cgi import test
 from re import S
 from turtle import title
-from loop_tool_service.models.qAgentBase import QAgentBase
+from loop_tool_service.models.q_agents.qAgentBase import QAgentBase
 from matplotlib import pyplot as plt
 
 import random, math
@@ -80,7 +80,7 @@ class QAgentTensor(QAgentBase):
         self.target_net.eval()
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=self.learning_rate)
         # self.optimizer = torch.optim.RMSProp(self.policy_net.parameters(), lr=0.1)
-        breakpoint()
+        # breakpoint()
         self.scheduler = torch.optim.lr_scheduler.LinearLR(self.optimizer, total_iters=self.numTraining)
 
     def hashState(self, state):

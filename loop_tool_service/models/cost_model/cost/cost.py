@@ -35,7 +35,7 @@ sweep_config = {
   "layers": 10,
   'lr': 3.8e-4,
   "epochs": int(1e4),
-  "batch_size": 100,
+  "batch_size": 500,
   "dropout": 0.2,
 }
 
@@ -80,7 +80,6 @@ def load_dataset(config):
 
 
 def load_model(config):
-    model_path = "model_weights.pt"
     model = my_net.SmallNet(
         in_size=config['size_in'], 
         out_size=config['size_out'], 
@@ -188,7 +187,7 @@ train_loss, test_loss = train(config, model, trainLoad, testLoad)
 
 
 from loop_tool_service.paths import LOOP_TOOL_ROOT
-breakpoint()
+# breakpoint()
 model_path = str(LOOP_TOOL_ROOT) + '/loop_tool_service/models/weights/model_cost_final.pth'
 model_scripted = torch.jit.script(model) # Export to TorchScript
 model_scripted.save(model_path) # Save

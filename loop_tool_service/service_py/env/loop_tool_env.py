@@ -144,7 +144,7 @@ class Environment:
         return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
 
     def get_ir_graph_networkx(self) -> Event:
-        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot_graph()))
+        pickled = pickle.dumps(self.ir_to_networkx(self.agent.dot_graph()))        
         return Event(byte_tensor=ByteTensor(shape=[len(pickled)], value=pickled))
 
     def get_stride_tensor(self) -> Event:
@@ -230,7 +230,6 @@ class Environment:
         self.get_best_actions_helper(self.agent, actions_reward_pairs, search_depth=search_depth, num_strategies=num_strategies, graph=graph)
         print(nx.nx_pydot.to_pydot(graph))
         print(actions_reward_pairs)
-
         if len(actions_reward_pairs):
             return max(actions_reward_pairs, key=lambda x: x[1]) 
         else:
@@ -253,7 +252,7 @@ class Environment:
         print(avail_sorted_aq)
         node_key = hash(agent.dump())
         real_flops = self.eval_ln_flops(agent)
-        predicted_flops = self.eval_cost_model(agent) if self.cost_model else None
+        predicted_flops = self.eval_cost_model(agent) if self.cost_model else -1
         graph.add_node(
             node_key, 
             label=f'FLOPS = {real_flops:9.4f}\nPRED = {predicted_flops:9.4f}\n' + agent.dump().replace(':', ';')

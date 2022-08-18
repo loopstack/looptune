@@ -13,6 +13,7 @@ import logging
 from pathlib import Path
 from typing import Iterable
 import pdb
+
 # import gym
 import numpy as np
 import pickle
@@ -21,6 +22,7 @@ import sys
 import loop_tool as lt
 import csv
 import json
+import random
 
 from compiler_gym.datasets import Benchmark, Dataset
 from compiler_gym.datasets.uri import BenchmarkUri
@@ -31,20 +33,21 @@ from compiler_gym.util.runfiles_path import runfiles_path, site_data_path
 from compiler_gym.service.connection import ServiceError
 
 
+
 import loop_tool_service
 from loop_tool_service.service_py.datasets import loop_tool_dataset
-from loop_tool_service.service_py.rewards import flops_loop_nest_reward
+from loop_tool_service.service_py.rewards import  flops_loop_nest_reward
 
-import loop_tool_service.models.qAgentsDict as q_agents
+
 
 def register_env():
     register(
-        id="loop_tool-v0",
+        id="loop_tool_env-v0",
         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.RewardScalar(),
+                flops_loop_nest_reward.RewardTensor(),
                 ],
             "datasets": [
                 loop_tool_dataset.Dataset(),
@@ -52,30 +55,50 @@ def register_env():
         },
     )
 
+register_env()
 
 def main():
     # Use debug verbosity to print out extra logging information.
     init_logging(level=logging.CRITICAL)
     register_env()
 
-    bench = "benchmark://loop_tool_simple-v0/simple"
+    
+    with loop_tool_service.make_env("loop_tool_env-v0") as env:
+        for bench in env.datasets["benchmark://loop_tool_simple-v0"]:
+            print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{bench}")
+            try:
+                env.reset(benchmark=bench)
+                # env.send_param("timeout_sec", "1")
+            except ServiceError:
+                print("AGENT: Timeout Error Reset")
+                continue
 
-    with loop_tool_service.make_env("loop_tool-v0") as env:
-        breakpoint()
-        agent = q_agents.QAgentLoopTree(
-            env=env,
-            bench=bench,
-            observation = "5_prev_actions_tensor",
-            reward="flops_loop_nest",
-            numTraining=1000, 
-            numTest=4,
-            exploration=0.7, 
-            learning_rate=0.8, 
-            discount=0.9,
-        )
-        agent.train()
-        agent.test()
+            
+            env.send_param("print_looptree", "")
 
+
+            for i in range(4):
+                available_actions = json.loads(env.send_param("available_actions", ""))
+                action = random.choice(available_actions)
+                print(f"**********************************************************")
+                print(f"Action = {action}\n")
+                env.send_param("print_looptree", "")
+
+                try:
+                    observation, reward, done, info = env.step(
+                        action=env.action_space.from_string(action),
+                        observation_spaces=["loops_tensor"],
+                        reward_spaces=["flops_loop_nest_tensor"],
+                    )
+                except ServiceError:
+                    print("AGENT: Timeout Error Step")
+                    continue
+                
+                print(f"{observation}\n")
+                print(f"{reward}\n")
+                print(f"{info}\n")
+                
+                
 
 if __name__ == "__main__":
     main()

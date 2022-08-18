@@ -1,4 +1,0 @@
----
-algorithm: greedy
-optimization_target: flops_loop_nest
-search_time_seconds: 3600

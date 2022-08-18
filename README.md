@@ -54,6 +54,20 @@ We defined several observation spaces including:
 * 5_prev_actions_tensor - 1d tensor of 1 hot encoding of 5 previous actions
 
 
-
+___
 ## Traditional temporal difference learning
 
+
+
+
+
+___
+## Cost and comparison models
+
+
+___
+## Policy model
+
+
+___
+## Search algorithm

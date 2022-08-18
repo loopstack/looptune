@@ -38,7 +38,7 @@ class QAgentBase():
             exploration=0.5, 
             learning_rate=0.5, 
             discount=1,
-            save_file_path = "rewards.png"
+            save_file_path = "demo.png"
         ):
 
         self.env = env
@@ -59,7 +59,7 @@ class QAgentBase():
         self.epochs_history = []
         self.loss_history = []
         self.converged = False
-        self.save_file_path = Path(os.getenv('LOOP_TOOL_ROOT')) / Path('results') / Path(save_file_path)
+        self.save_file_path = Path(os.getenv('LOOP_TOOL_ROOT')) / f'loop_tool_service/demos/{save_file_path}' 
 
     ####################################
     #    Override These Functions      #
@@ -132,6 +132,9 @@ class QAgentBase():
         
         print(f"Chosen Action = {self.env.action_space.to_string(chosen_action)}\n")
 
+        print(chosen_action, available_actions)
+        assert(chosen_action in available_actions), 'getAction must give the action from available_actions'
+        
         return chosen_action
 
 
@@ -148,11 +151,10 @@ class QAgentBase():
             self.print_state(state)
             action = self.getAction(state=state, exploration=0)
 
-            if self.getQValue(state, action) <= 0:
-                print("Stop! This action doesn't help")
-                break # There is no known action that improves state
+            # if self.getQValue(state, action) <= 0:
+            #     print("Stop! This action doesn't help")
+            #     break # There is no known action that improves state
 
-            # breakpoint()
             observation, reward, done, info = self.env.step(
                 action=action,
                 observation_spaces=[self.observation],
@@ -191,9 +193,8 @@ class QAgentBase():
         self.evalPolicy(save_history=True)
 
 
-    def train(self, iterations=None):
-        actions = [1, 3, 0, 0]
-        my_actions = -1
+    def train(self):
+        actions = []
 
         for i in range(self.numTraining):
             print(f"**************************** {i} ******************************")
@@ -207,9 +208,12 @@ class QAgentBase():
                 self.env.reset(benchmark=self.bench)
                 obs = self.env.observation[self.observation]
                 state = State(obs, self.hashState(obs))
+                actions = []
+
 
 
             action = self.getAction(state=state, exploration=self.exploration)
+            actions.append(action)
             state_prev = state
             self.print_state(state)
 

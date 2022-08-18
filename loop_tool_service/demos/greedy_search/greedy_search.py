@@ -16,16 +16,14 @@ import pdb
 import uuid
 import os
 import sys
+import json
 
 from loop_tool_service.paths import LOOP_TOOL_ROOT
 
 
 from compiler_gym.util.registration import register
-
-
 from absl import app, flags
 from tqdm import tqdm
-from joblib import Parallel, delayed
 
 flags.DEFINE_integer("bench_count", 2, "The number of benchmarks.")
 flags.DEFINE_integer("search_depth", 1, "How deep you go in search before you decide.")
@@ -84,7 +82,10 @@ def main(argv):
             if FLAGS.model_path != '':
                 env.send_param('load_cost_model', FLAGS.model_path)
 
-            env.send_param("greedy_search", f'{FLAGS.walk_count}, {FLAGS.step_count}, {FLAGS.search_depth}, {FLAGS.search_width}')
+            best_actions_reward = json.loads(env.send_param("greedy_search", 
+                f'{FLAGS.walk_count}, {FLAGS.step_count}, {FLAGS.search_depth}, {FLAGS.search_width}')
+            )
+            print(best_actions_reward)
             i += 1
 
 

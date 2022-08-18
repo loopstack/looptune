@@ -24,7 +24,7 @@ last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
 
 # Training settings
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
-parser.add_argument("--policy-model", type=str, help="Path to the RLlib optimized network.")
+parser.add_argument("--policy-model", type=str, default=f"{last_run_path}/policy_model.pt", help="Path to the RLlib optimized network.")
 parser.add_argument("--cost-model", type=str, help="Path to the cost model network.")
 parser.add_argument(
     "--debug",
@@ -51,8 +51,6 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
     return env
     
 def load_datasets(env):
-    
-    # The two datasets we will be using:
     lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
     data_size = 10 if args.debug else len(lt_dataset)
     benchmarks = list(lt_dataset.benchmarks())[:data_size]
@@ -111,10 +109,6 @@ def predict_optimal_actions(env, benchmark, policy, value_network):
 
     
 
-
-
-
-
 if __name__ == '__main__':
     
     print(args)
@@ -136,5 +130,5 @@ if __name__ == '__main__':
             best_actions_reward = json.loads(env.send_param("policy_search", '100, 3'))
             print(best_actions_reward)
             i += 1
-            breakpoint()
+            # breakpoint()
 

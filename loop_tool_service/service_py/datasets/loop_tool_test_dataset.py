@@ -45,7 +45,7 @@ class Dataset(Dataset):
 
         example_files = os.listdir(BENCHMARKS_PATH)
         for i, example_filename in enumerate(example_files):
-            if i == 100: break
+            # if i == 100: break
             example_uri = benchmark_prefix + '/' + example_filename.rstrip('.txt')
             self._benchmarks[example_uri] = \
                 benchmark_from_file_contents(

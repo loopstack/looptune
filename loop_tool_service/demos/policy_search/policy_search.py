@@ -119,7 +119,7 @@ if __name__ == '__main__':
         train_benchmarks, val_benchmarks = load_datasets(env)
         i = 0
         for bench in tqdm(train_benchmarks, total=min(len(train_benchmarks), 10)):
-            if i == 10: break
+            # if i == 10: break
             print(bench)
             env.reset(benchmark=bench)
 
@@ -129,6 +129,6 @@ if __name__ == '__main__':
                 env.send_param('load_policy_model', args.policy_model)
             best_actions_reward = json.loads(env.send_param("policy_search", '100, 3'))
             print(best_actions_reward)
-            i += 1
+            # i += 1
             # breakpoint()
 

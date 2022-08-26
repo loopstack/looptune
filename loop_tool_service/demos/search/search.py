@@ -20,14 +20,18 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 
+from loop_tool_service.paths import BENCHMARKS_PATH, LOOP_TOOL_ROOT
+import loop_tool as lt
 
-last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
+import re
 
+
+weights_path = LOOP_TOOL_ROOT/"loop_tool_service/models/weights"
 
 # Training settings
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
-parser.add_argument("--policy-model", type=str, default=f"{last_run_path}/policy_model.pt", help="Path to the RLlib optimized network.")
-parser.add_argument("--cost-model", type=str, help="Path to the cost model network.")
+parser.add_argument("--policy", type=str, nargs='?', const=f"{weights_path}/policy.pt", default='', help="Path to the RLlib optimized network.")
+parser.add_argument("--cost", type=str, nargs='?', const=f"{weights_path}/cost.pt", default='', help="Path to the cost model network.")
 parser.add_argument("--benchmark", type=str, nargs='?', const='benchmark://loop_tool_test-v0/mm_127x127x127_36_40_20', default='benchmark://loop_tool_test-v0', help="Benchmark to run the search")
 parser.add_argument(
     "--debug",
@@ -126,23 +130,34 @@ def greedy_search(
     print(f'Greedy Search = {actions_reward}')
     return actions_reward[1]
 
-
+def cost_search(env, benchmark):
+    if args.cost == '': return 0
+    env.send_param('load_cost_model', args.cost)
+    reward_greedy = greedy_search(env, benchmark)
+    env.send_param('load_cost_model', '')
+    return reward_greedy
+     
 def policy_search(env, benchmark, search_depth=100, solutions=3):
-    env.reset(benchmark=benchmark)
-
-    if args.cost_model != '':
-        env.send_param('load_cost_model', args.cost_model)
-    if args.policy_model != '':
-        env.send_param('load_policy_model', args.policy_model)
+    if args.policy == '': return 0
+    env.reset(benchmark=benchmark)    
+    env.send_param('load_policy_model', args.policy)
     actions_reward = json.loads(env.send_param("policy_search", f'{search_depth}, {solutions}'))
+    env.send_param('load_policy_model', '')
     print(f'Policy Search = {actions_reward}')
     return actions_reward[1]
 
 
-from loop_tool_service.paths import BENCHMARKS_PATH, LOOP_TOOL_ROOT
-import loop_tool as lt
+def cost_policy_search(env, benchmark, search_depth=100, solutions=3):
+    if args.cost == '' or args.policy == '': return 0
+    env.reset(benchmark=benchmark)
+    env.send_param('load_cost_model', args.cost)
+    env.send_param('load_policy_model', args.policy)
+    actions_reward = json.loads(env.send_param("policy_search", f'{search_depth}, {solutions}'))
+    env.send_param('load_cost_model', '')
+    env.send_param('load_policy_model', '')
+    print(f'Cost Policy Search = {actions_reward}')
+    return actions_reward[1]
 
-import re
 
 def handtune_benchmark(benchmark):
     bench_name = benchmark.split('/')[-1]
@@ -175,8 +190,8 @@ def handtune_benchmark(benchmark):
 
 
 def plot_results(df_gflops_list):
-    breakpoint()
     if len(df_gflops_list) == 1:
+        df_gflops = df_gflops_list[0]
         fig, ax = plt.subplots(1, 1)
         ax = df_gflops.plot(x=df_gflops.columns[0], y=df_gflops.columns[1:], kind='bar', ax=ax)
     else:    
@@ -189,19 +204,20 @@ def plot_results(df_gflops_list):
     fig.autofmt_xdate()
     plt.tight_layout()
     fig.savefig(f'{LOOP_TOOL_ROOT}/loop_tool_service/demos/demo.png')
-    
-
+       
 
 def eval_benchmark(env, benchmark):
     print(benchmark)
 
     reward_base = base_performance(env, benchmark)
     reward_greedy = greedy_search(env, benchmark)
+    reward_cost = cost_search(env, benchmark)
     reward_policy = policy_search(env, benchmark)
+    reward_cost_policy = cost_policy_search(env, benchmark)
     reward_handtune = handtune_benchmark(benchmark)
-    df_gflops = pd.DataFrame([[benchmark, reward_base, reward_greedy, reward_policy, reward_handtune]], columns=['bench', 'base', 'greedy', 'policy', 'handtune'])
+    df_gflops = pd.DataFrame([[benchmark, reward_base, reward_greedy, reward_cost, reward_policy, reward_cost_policy, reward_handtune]], \
+                      columns=['bench', 'base', 'greedy', 'cost', 'policy', 'cost_policy', 'handtune'])
     plot_results([df_gflops])
-    #plot()
 
 
 def eval_benchmarks(env, dataset):
@@ -230,8 +246,6 @@ if __name__ == '__main__':
     benchmark = str(args.benchmark)
 
     with make_env() as env:
-        breakpoint()
-
         if benchmark in env.datasets.datasets():
             eval_benchmarks(env, benchmark)
         elif benchmark in env.datasets.benchmarks():

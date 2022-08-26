@@ -79,6 +79,7 @@ class Environment:
         self.actions = []
         self.agent_saved = None
         self.cost_model = None
+        self.policy_model = None
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.eval_cost_fn = self.eval_ln_flops
 
@@ -223,7 +224,7 @@ class Environment:
     def policy_search(self, search_depth=10, num_strategies=1):
         if self.policy_model == None:
             print('Instantiate policy model with: env.send_param("load_policy_model", policy_model_path)')
-            return []
+            return ["", 0]
 
         graph = nx.DiGraph()
         actions_reward_pairs = []
@@ -233,7 +234,7 @@ class Environment:
         if len(actions_reward_pairs):
             return max(actions_reward_pairs, key=lambda x: x[1]) 
         else:
-            return []
+            return ["", 0]
         
     def get_best_actions_helper(self, agent, actions_reward_pairs, search_depth=10, num_strategies=1, graph=nx.DiGraph()):
         if search_depth == 0:

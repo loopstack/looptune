@@ -1,5 +1,5 @@
-from os import listdir
-from os.path import isfile, join
+import os
+from pathlib import Path
 
 import loop_tool as lt
 import numpy as np
@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 
 from tqdm import tqdm
 import loop_tool_service.models.my_net as my_net
+from loop_tool_service.paths import LOOP_TOOL_ROOT
 
 import torch
 import torch.nn as nn
@@ -34,7 +35,7 @@ sweep_config = {
   "hidden_size" : 300,
   "layers": 10,
   'lr': 3.8e-4,
-  "epochs": int(1e4),
+  "epochs": int(1e0),
   "batch_size": 500,
   "dropout": 0.2,
 }
@@ -185,14 +186,13 @@ model = load_model(config)
 
 train_loss, test_loss = train(config, model, trainLoad, testLoad)
 
+model_path = Path(os.path.dirname(os.path.realpath(__file__))+'/my_artifacts/cost.pt')
+model_path.parent.mkdir(exist_ok=True, parents=True)
 
-from loop_tool_service.paths import LOOP_TOOL_ROOT
-# breakpoint()
-model_path = str(LOOP_TOOL_ROOT) + '/loop_tool_service/models/weights/model_cost_final.pth'
 model_scripted = torch.jit.script(model) # Export to TorchScript
-model_scripted.save(model_path) # Save
+model_scripted.save(str(model_path)) # Save
+os.symlink(model_path, LOOP_TOOL_ROOT/'loop_tool_service/models/weights/cost.pt')
 
-# torch.save(model, "./weights/model.pth")
 
 from loop_tool_service.paths import LOOP_TOOL_ROOT
 data_path = str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/datasets/tensor_dataset_noanot.pkl"

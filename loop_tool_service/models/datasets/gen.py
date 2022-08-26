@@ -202,6 +202,7 @@ def generate_loop_trees(has_annotations=True):
 df = generate_loop_trees(has_annotations=False)
 df.head()
 
-breakpoint()
-df.to_pickle("tensor_dataset_noanot.pkl")  
+from loop_tool_service.paths import LOOP_TOOL_ROOT
+dataset_path = str(LOOP_TOOL_ROOT/"loop_tool_service/models/datasets/tensor_dataset_noanot.pkl")
+df.to_pickle(dataset_path)  
 

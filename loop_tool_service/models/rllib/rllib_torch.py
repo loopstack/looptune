@@ -89,8 +89,7 @@ default_config = {
     },
     # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
     "num_gpus": torch.cuda.device_count(),
-    "num_workers": 79,  # parallelism
-    "recreate_failed_workers": False,
+    # "num_workers": -1,  # parallelism
     "rollout_fragment_length": 100, 
     "train_batch_size": 6000, # train_batch_size == num_workers * rollout_fragment_length
     "num_sgd_iter": 30,
@@ -114,7 +113,7 @@ parser.add_argument(
     "--policy-model",  type=str, nargs='?', const=f'{last_run_path}/policy_model.pt', default='', help="Load policy network."
 )
 parser.add_argument(
-    "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps"
+    "--sweep",  type=int, nargs='?', const=2, default=1, help="Run with wandb sweeps"
 )
 parser.add_argument(
     "--slurm", 
@@ -236,6 +235,7 @@ def train_agent(config, stop_criteria, sweep_count=1):
     agent.restore(analysis.best_checkpoint)
     policy = agent.get_policy()
     torch.save(policy.model, last_run_path/'policy_model.pt')
+    os.symlink(last_run_path/'policy_model.pt', LOOP_TOOL_ROOT/'loop_tool_service/models/weights/policy.pt')
 
     return policy.model, analysis.best_trial.trial_id
 
@@ -409,7 +409,7 @@ if __name__ == '__main__':
     print(f"Running with following CLI options: {args}")
 
     stop_criteria['training_iteration'] = 2 if args.debug else args.stop_iters
-    sweep_count = 2 if args.debug else args.sweep
+    sweep_count = args.sweep
 
     
     if args.slurm:
@@ -421,6 +421,9 @@ if __name__ == '__main__':
     else:
         ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
+
+    if 'num_workers' not in default_config: 
+        default_config['num_workers'] = ray.cluster_resources()['CPU'] - 1
 
     if sweep_count:
         hiddens_layers = [3, 10, 20]

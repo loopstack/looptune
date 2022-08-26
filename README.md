@@ -57,7 +57,7 @@ We defined several observation spaces including:
 ___
 ## Traditional temporal difference learning
 
-
+Temporal difference learning is online model free approach of reinforcement learning that can learn from raw experience like Monte Carlo methods, and update estimates of q values without waiting for the final outcome similar to dynamic programing.
 
 
 
@@ -71,3 +71,34 @@ ___
 
 ___
 ## Search algorithm
+
+
+___
+## How to run
+
+### 1. Generate dateset:
+```
+python loop_tool_service/models/datasets/gen.py
+```
+
+### 2. Train cost model:
+```
+python loop_tool_service/models/cost_model/cost/cost.py
+```
+This saves trained model to 
+/home/dejang/loop_tool_env/loop_tool_service/models/weights/cost.pt
+
+
+### 3. Train policy model:
+```
+python loop_tool_service/models/rllib/rllib_torch.py
+```
+This trains policy network analyse benchmark and save policy.pt to weights directory.
+
+
+### 4. Search:
+This combines cost and policy models and compares them to greedy and handtune.
+```
+python loop_tool_service/demos/search/search.py --cost --policy --benchmark
+```
+

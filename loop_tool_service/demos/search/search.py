@@ -222,7 +222,7 @@ def eval_benchmark(env, benchmark):
 
 def eval_benchmarks(env, dataset):
     df_gflops_list = []
-    df_gflops = pd.DataFrame(columns=['bench', 'base', 'greedy', 'policy'])
+    df_gflops = pd.DataFrame(columns=['bench', 'base', 'greedy', 'policy', 'cost-policy'])
     train_benchmarks, val_benchmarks = load_datasets(env, dataset)
     for benchmarks in [train_benchmarks, val_benchmarks]:
         for benchmark in tqdm(benchmarks):
@@ -230,7 +230,8 @@ def eval_benchmarks(env, dataset):
             reward_base = base_performance(env, benchmark)
             reward_greedy = greedy_search(env, benchmark)
             reward_policy = policy_search(env, benchmark)
-            df_gflops.loc[len(df_gflops)] = [benchmark, reward_base, reward_greedy, reward_policy]
+            reward_cost_policy = cost_policy_search(env, benchmark)
+            df_gflops.loc[len(df_gflops)] = [benchmark, reward_base, reward_greedy, reward_policy, reward_cost_policy]
 
         df_gflops_list.append(df_gflops)
         

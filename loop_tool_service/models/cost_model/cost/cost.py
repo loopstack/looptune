@@ -191,7 +191,10 @@ model_path.parent.mkdir(exist_ok=True, parents=True)
 
 model_scripted = torch.jit.script(model) # Export to TorchScript
 model_scripted.save(str(model_path)) # Save
-os.symlink(model_path, LOOP_TOOL_ROOT/'loop_tool_service/models/weights/cost.pt')
+
+weights_path = LOOP_TOOL_ROOT/'loop_tool_service/models/weights/cost.pt'
+if os.path.exists(weights_path): os.remove(weights_path)
+os.symlink(model_path, weights_path)
 
 
 from loop_tool_service.paths import LOOP_TOOL_ROOT

@@ -89,7 +89,7 @@ default_config = {
     },
     # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
     "num_gpus": torch.cuda.device_count(),
-    # "num_workers": -1,  # parallelism
+    "num_workers": 6,  # parallelism
     "rollout_fragment_length": 100, 
     "train_batch_size": 6000, # train_batch_size == num_workers * rollout_fragment_length
     "num_sgd_iter": 30,
@@ -423,7 +423,7 @@ if __name__ == '__main__':
 
 
     if 'num_workers' not in default_config: 
-        default_config['num_workers'] = ray.cluster_resources()['CPU'] - 1
+        default_config['num_workers'] = int(ray.cluster_resources()['CPU']) - 1
 
     if sweep_count:
         hiddens_layers = [3, 10, 20]

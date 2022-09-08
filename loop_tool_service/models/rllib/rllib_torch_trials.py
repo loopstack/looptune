@@ -125,6 +125,8 @@ parser.add_argument(
 parser.add_argument(
     "--iter", type=int, default=20, help="Number of iterations to train."
 )
+parser.add_argument("--size", type=int, nargs='?', default=1000000, help="Size of benchmarks to evaluate")
+
 # parser.add_argument(
 #     "--stop-timesteps", type=int, default=100, help="Number of timesteps to train."
 # )
@@ -186,9 +188,8 @@ def load_datasets(env=None):
     with make_env() as env:
         # The two datasets we will be using:
         lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
-        data_size = 10 if args.debug else len(lt_dataset)
-        benchmarks = list(lt_dataset.benchmarks())[:data_size]
-        
+        benchmarks = random.sample(list(lt_dataset.benchmarks()), min(len(lt_dataset), args.size) )
+
         train_perc = 0.8
         train_size = int(train_perc * len(benchmarks))
         test_size = len(benchmarks) - train_size
@@ -325,10 +326,10 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id, config):
     print("hack888")
     global last_run_path, wandb_log
     # Finally lets plot our results to see how we did!
-    fig, axs = plt.subplots(1, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [5, 1]})
+    fig, axs = plt.subplots(1, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [1, 1]})
     fig.suptitle(f'GFlops comparison for training and test benchmarks', fontsize=16)
-    axs[0] = df_gflops_train.plot(x='bench', y=['base', 'network', 'search'], kind='bar', ax=axs[0])
-    axs[1] = df_gflops_val.plot(x='bench', y=['base', 'network', 'search'], kind='bar', ax=axs[1])
+    axs[0] = df_gflops_train.sample(n = 40).plot(x='bench', y=['base', 'network', 'search'], kind='bar', ax=axs[0])
+    axs[1] = df_gflops_val.sample(n = 40).plot(x='bench', y=['base', 'network', 'search'], kind='bar', ax=axs[1])
     fig.autofmt_xdate()
     plt.tight_layout()
     fig.savefig(last_run_path/wandb_run_id/"benchmarks_gflops.png")
@@ -355,7 +356,7 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id, config):
     df_gflops_all = pd.concat([df_gflops_train, df_gflops_val])
     df_gflops_all['search_speedup'] = df_gflops_all['search'] / df_gflops_all['base']
     df_gflops_all['network_speedup'] = df_gflops_all['network'] / df_gflops_all['base']
-    df_gflops_all['final_performance'] = df_gflops_val['network'] / df_gflops_val['search']
+    df_gflops_all['final_performance'] = df_gflops_all['network'] / df_gflops_all['search']
 
     df_gflops_all.to_csv(last_run_path/wandb_run_id/'benchmarks_gflops.csv')
 
@@ -365,7 +366,7 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id, config):
     if 'fcnet_hiddens' in config['model']:
         wandb_log['layers_num'] = len(config['model']['fcnet_hiddens'])
         wandb_log['layers_width'] = config['model']['fcnet_hiddens'][0]
-    wandb_log['final_performance'] = np.mean(df_gflops_all['final_performance'])
+    wandb_log['final_performance'] = np.mean(df_gflops_val['network'] / df_gflops_val['search'])
     wandb_log['avg_search_base_speedup'] = np.mean(df_gflops_val['search'] / df_gflops_val['base'])
     wandb_log['avg_network_base_speedup'] = np.mean(df_gflops_val['network'] / df_gflops_val['base'])
 

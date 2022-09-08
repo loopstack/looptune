@@ -11,6 +11,7 @@ import ray
 from ray import tune
 from ray.rllib.agents.ppo import PPOTrainer
 from ray.rllib.models import ModelCatalog
+import random
 
 import loop_tool_service
 # from loop_tool_service.models.rllib.rllib_torch import load_datasets, make_env
@@ -19,11 +20,14 @@ from loop_tool_service.paths import LOOP_TOOL_ROOT
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
+import shutil
 
 from loop_tool_service.paths import BENCHMARKS_PATH, LOOP_TOOL_ROOT
 import loop_tool as lt
 
+from os.path import exists
 import re
+import wandb
 
 
 weights_path = LOOP_TOOL_ROOT/"loop_tool_service/models/weights"
@@ -33,12 +37,8 @@ parser = argparse.ArgumentParser(description="LoopTool Optimizer")
 parser.add_argument("--policy", type=str, nargs='?', const=f"{weights_path}/policy.pt", default='', help="Path to the RLlib optimized network.")
 parser.add_argument("--cost", type=str, nargs='?', const=f"{weights_path}/cost.pt", default='', help="Path to the cost model network.")
 parser.add_argument("--benchmark", type=str, nargs='?', const='benchmark://loop_tool_test-v0/mm_127x127x127_36_40_20', default='benchmark://loop_tool_test-v0', help="Benchmark to run the search")
-parser.add_argument(
-    "--debug",
-    default=False,
-    action="store_true",
-    help="Debuging",
-)
+parser.add_argument("--size", type=int, nargs='?', default=40, help="Size of benchmarks to evaluate")
+
 args = parser.parse_args()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -56,8 +56,7 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
     
 def load_datasets(env, benchmark):
     lt_dataset = env.datasets[benchmark]
-    data_size = 10 if args.debug else len(lt_dataset)
-    benchmarks = list(lt_dataset.benchmarks())[:data_size]
+    benchmarks = random.sample(list(lt_dataset.benchmarks()), min(len(lt_dataset), args.size) )
     
     train_perc = 0.8
     train_size = int(train_perc * len(benchmarks))
@@ -130,28 +129,28 @@ def greedy_search(
     print(f'Greedy Search = {actions_reward}')
     return actions_reward[1]
 
-def cost_search(env, benchmark):
-    if args.cost == '': return 0
-    env.send_param('load_cost_model', args.cost)
+def cost_search(env, benchmark, cost_path):
+    if cost_path == '': return 0
+    env.send_param('load_cost_model', cost_path)
     reward_greedy = greedy_search(env, benchmark)
     env.send_param('load_cost_model', '')
     return reward_greedy
      
-def policy_search(env, benchmark, search_depth=100, solutions=3):
-    if args.policy == '': return 0
+def policy_search(env, benchmark, policy_path, search_depth=100, solutions=3):
+    if policy_path == '': return 0
     env.reset(benchmark=benchmark)    
-    env.send_param('load_policy_model', args.policy)
+    env.send_param('load_policy_model', policy_path)
     actions_reward = json.loads(env.send_param("policy_search", f'{search_depth}, {solutions}'))
     env.send_param('load_policy_model', '')
     print(f'Policy Search = {actions_reward}')
     return actions_reward[1]
 
 
-def cost_policy_search(env, benchmark, search_depth=100, solutions=3):
-    if args.cost == '' or args.policy == '': return 0
+def cost_policy_search(env, benchmark, policy_path, cost_path, search_depth=100, solutions=3):
+    if cost_path == '' or policy_path == '': return 0
     env.reset(benchmark=benchmark)
-    env.send_param('load_cost_model', args.cost)
-    env.send_param('load_policy_model', args.policy)
+    env.send_param('load_cost_model', cost_path)
+    env.send_param('load_policy_model', policy_path)
     actions_reward = json.loads(env.send_param("policy_search", f'{search_depth}, {solutions}'))
     env.send_param('load_cost_model', '')
     env.send_param('load_policy_model', '')
@@ -206,51 +205,76 @@ def plot_results(df_gflops_list):
     fig.savefig(f'{LOOP_TOOL_ROOT}/loop_tool_service/demos/demo.png')
        
 
-def eval_benchmark(env, benchmark):
+def eval_benchmark(env, benchmark, policy_path, cost_path):
     print(benchmark)
 
     reward_base = base_performance(env, benchmark)
     reward_greedy = greedy_search(env, benchmark)
-    reward_cost = cost_search(env, benchmark)
-    reward_policy = policy_search(env, benchmark)
-    reward_cost_policy = cost_policy_search(env, benchmark)
+    reward_cost = cost_search(env, benchmark, cost_path)
+    reward_policy = policy_search(env, benchmark, policy_path)
+    reward_cost_policy = cost_policy_search(env, benchmark, policy_path, cost_path)
     reward_handtune = handtune_benchmark(benchmark)
     df_gflops = pd.DataFrame([[benchmark, reward_base, reward_greedy, reward_cost, reward_policy, reward_cost_policy, reward_handtune]], \
                       columns=['bench', 'base', 'greedy', 'cost', 'policy', 'cost_policy', 'handtune'])
     plot_results([df_gflops])
 
 
-def eval_benchmarks(env, dataset):
+def eval_benchmarks(env, dataset, policy_path, cost_path):
     df_gflops_list = []
-    df_gflops = pd.DataFrame(columns=['bench', 'base', 'greedy', 'policy', 'cost-policy'])
+    df_gflops = pd.DataFrame(columns=['bench', 'base', 'greedy', 'policy', 'cost_policy'])
     train_benchmarks, val_benchmarks = load_datasets(env, dataset)
     for benchmarks in [train_benchmarks, val_benchmarks]:
         for benchmark in tqdm(benchmarks):
             print(benchmark)
             reward_base = base_performance(env, benchmark)
             reward_greedy = greedy_search(env, benchmark)
-            reward_policy = policy_search(env, benchmark)
-            reward_cost_policy = cost_policy_search(env, benchmark)
+            reward_policy = policy_search(env, benchmark, policy_path)
+            reward_cost_policy = cost_policy_search(env, benchmark, policy_path, cost_path)
             df_gflops.loc[len(df_gflops)] = [benchmark, reward_base, reward_greedy, reward_policy, reward_cost_policy]
 
         df_gflops_list.append(df_gflops)
         
     plot_results(df_gflops_list)
 
+def resolve_policy(policy_path):
+    if policy_path == '' or exists(policy_path):
+        return policy_path
+    try:
+        wandb.restore('policy_model.pt', run_path=policy_path)
+    except:
+        print('Policy not found')
+        exit(1)
+        
+    shutil.move("policy_model.pt", weights_path/'policy.pt')
+    return str(weights_path/'policy.pt')
 
+def resolve_cost(cost_path):
+    if cost_path == '' or exists(cost_path):
+        return cost_path
+    try:
+        wandb.restore('cost_model.pt', run_path=cost_path)
+    except:
+        print('Cost path not found')
+        exit(1)
+        
+    shutil.move("cost_model.pt", weights_path/'cost.pt')
+    return str(weights_path/'cost.pt')
 
 
 if __name__ == '__main__':
     
     print(args)
+    policy_path = resolve_policy(args.policy)
+    cost_path = resolve_cost(args.cost)
+
     # register_env()
     benchmark = str(args.benchmark)
 
     with make_env() as env:
         if benchmark in env.datasets.datasets():
-            eval_benchmarks(env, benchmark)
+            eval_benchmarks(env, benchmark, policy_path, cost_path)
         elif benchmark in env.datasets.benchmarks():
-            eval_benchmark(env, benchmark)
+            eval_benchmark(env, benchmark, policy_path, cost_path)
         else:
             print('benchmark cannot be found')
             breakpoint()

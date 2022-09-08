@@ -228,7 +228,7 @@ def register_env():
                 # runtime_reward.RewardScalar(),
                 ],
             "datasets": [
-                # loop_tool_dataset.Dataset(),
+                loop_tool_dataset.Dataset(),
                 loop_tool_test_dataset.Dataset()
             ],
         },

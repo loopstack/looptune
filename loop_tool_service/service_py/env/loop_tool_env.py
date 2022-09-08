@@ -310,8 +310,8 @@ class Environment:
                 agent_copy.apply_action(new_action_str)
                 actions.append(new_action_str)
         flops = self.eval_ln_flops(agent_copy)
-        print(agent_copy)
-        print(flops)
+        # print(agent_copy)
+        # print(flops)
         return actions, flops 
 
 

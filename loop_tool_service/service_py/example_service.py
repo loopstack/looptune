@@ -73,6 +73,7 @@ class LoopToolCompilationSession(CompilationSession):
                 named_discrete=NamedDiscreteSpace(
                     name=[
                         # "dummy",
+                        "terminate",
                         "up", 
                         "down", 
                         "swap_up", 
@@ -256,7 +257,7 @@ class LoopToolCompilationSession(CompilationSession):
         self._action_space = action_space
 
         os.chdir(str(working_directory))
-        # logging.critical(f"\n\nWorking_dir = {str(working_directory)}\n")
+        logging.critical(f"\n\nWorking_dir = {str(working_directory)}\n")
         # breakpoint()
 
         self.save_state = save_state if save_state != None else True
@@ -358,7 +359,11 @@ class LoopToolCompilationSession(CompilationSession):
 
         # Compile benchmark with given optimization
         action = self._action_space.space.named_discrete.name[choice_index]
-        if action not in self.env.get_available_actions():
+        if action == "terminate":
+            end_of_session = True
+            action_had_effect = True
+            return (end_of_session, new_action_space, not action_had_effect)
+        elif action not in self.env.get_available_actions():
             logging.info(f"ACTION_NOT_AVAILABLE (action = {action})")
             logging.info(f"Actions = {self.env.get_available_actions()}")
             return (end_of_session, new_action_space, not action_had_effect)

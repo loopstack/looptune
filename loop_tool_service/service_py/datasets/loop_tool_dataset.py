@@ -47,31 +47,31 @@ class Dataset(Dataset):
                 self.preprocess(BENCHMARKS_PATH /"mm.txt"),
                 benchmark_config
             ),
-            "benchmark://loop_tool_simple-v0/conv": benchmark_from_file_contents(
-                "benchmark://loop_tool_simple-v0/conv",
-                self.preprocess(BENCHMARKS_PATH /"conv.txt"),
-                benchmark_config
-            ),
+            # "benchmark://loop_tool_simple-v0/conv": benchmark_from_file_contents(
+            #     "benchmark://loop_tool_simple-v0/conv",
+            #     self.preprocess(BENCHMARKS_PATH /"conv.txt"),
+            #     benchmark_config
+            # ),
             "benchmark://loop_tool_simple-v0/simple": benchmark_from_file_contents(
                 "benchmark://loop_tool_simple-v0/simple",
                 self.preprocess(BENCHMARKS_PATH /"simple.txt"),
                 benchmark_config
             ),
-            "benchmark://loop_tool_simple-v0/mm128": benchmark_from_file_contents(
-                "benchmark://loop_tool_simple-v0/mm128",
-                self.preprocess(BENCHMARKS_PATH /"mm128.txt"),
-                benchmark_config
-            ),
-            "benchmark://loop_tool_simple-v0/mm256": benchmark_from_file_contents(
-                "benchmark://loop_tool_simple-v0/mm256",
-                self.preprocess(BENCHMARKS_PATH /"mm256.txt"),
-                benchmark_config
-            ),
-            "benchmark://loop_tool_simple-v0/mm512": benchmark_from_file_contents(
-                "benchmark://loop_tool_simple-v0/mm512",
-                self.preprocess(BENCHMARKS_PATH /"mm512.txt"),
-                benchmark_config
-            ),
+            # "benchmark://loop_tool_simple-v0/mm128": benchmark_from_file_contents(
+            #     "benchmark://loop_tool_simple-v0/mm128",
+            #     self.preprocess(BENCHMARKS_PATH /"mm128.txt"),
+            #     benchmark_config
+            # ),
+            # "benchmark://loop_tool_simple-v0/mm256": benchmark_from_file_contents(
+            #     "benchmark://loop_tool_simple-v0/mm256",
+            #     self.preprocess(BENCHMARKS_PATH /"mm256.txt"),
+            #     benchmark_config
+            # ),
+            # "benchmark://loop_tool_simple-v0/mm512": benchmark_from_file_contents(
+            #     "benchmark://loop_tool_simple-v0/mm512",
+            #     self.preprocess(BENCHMARKS_PATH /"mm512.txt"),
+            #     benchmark_config
+            # ),
         }
 
     @property

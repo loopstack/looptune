@@ -14,6 +14,7 @@ For CLI options:
 $ python custom_env.py --help
 """
 import argparse
+from distutils.command.config import config
 import gym
 from itertools import islice
 from gym.spaces import Discrete, Box
@@ -41,6 +42,9 @@ import compiler_gym
 from compiler_gym.wrappers import CycleOverBenchmarks
 from compiler_gym.util.registration import register
 from compiler_gym.wrappers import TimeLimit
+import logging
+from compiler_gym.util.logging import init_logging
+from ray.tune.logger import Logger
 
 import loop_tool_service
 from loop_tool_service import paths
@@ -80,7 +84,7 @@ default_config = {
     "model": {
         "custom_model": "my_model",
         "vf_share_layers": True,
-        "fcnet_hiddens": [10] * 4,
+        "fcnet_hiddens": [512] * 4,
         # "post_fcnet_hiddens":
         # "fcnet_activation": 
         # "post_fcnet_activation":
@@ -89,18 +93,15 @@ default_config = {
     },
     # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
     "num_gpus": torch.cuda.device_count(),
-    "num_workers": 6,  # parallelism
+    # "num_workers": -1,  # parallelism
     "rollout_fragment_length": 100, 
-    "train_batch_size": 6000, # train_batch_size == num_workers * rollout_fragment_length
+    "train_batch_size": 7900, # train_batch_size == num_workers * rollout_fragment_length
     "num_sgd_iter": 30,
     # "evaluation_interval": 5, # num of training iter between evaluations
     # "evaluation_duration": 10, # num of episodes run per evaluation period
     "explore": True,
-    "gamma": 0.9, #tune.grid_search([0.5, 0.8, 0.9]), # def 0.99
-    "lr": 1e-4,
-    # define search space here
-    # "parameter_1": tune.choice([1, 2, 3]),
-    # "parameter_2": tune.choice([4, 5, 6]),
+    "gamma": 0.9,
+    "lr": 1e-6,
 }
 wandb_log = {}
 
@@ -113,7 +114,7 @@ parser.add_argument(
     "--policy-model",  type=str, nargs='?', const=f'{last_run_path}/policy_model.pt', default='', help="Load policy network."
 )
 parser.add_argument(
-    "--sweep",  type=int, nargs='?', const=2, default=1, help="Run with wandb sweeps"
+    "--sweep",  type=int, nargs='?', const=2, default=0, help="Run with wandb sweeps"
 )
 parser.add_argument(
     "--slurm", 
@@ -122,7 +123,7 @@ parser.add_argument(
     help="Run on slurm"
 )
 parser.add_argument(
-    "--stop-iters", type=int, default=100, help="Number of iterations to train."
+    "--iter", type=int, default=20, help="Number of iterations to train."
 )
 # parser.add_argument(
 #     "--stop-timesteps", type=int, default=100, help="Number of timesteps to train."
@@ -159,7 +160,7 @@ def register_env():
                 # flops_loop_nest_reward.AbsoluteRewardTensor(),
                 ],
             "datasets": [
-                loop_tool_dataset.Dataset(),
+                # loop_tool_dataset.Dataset(),
                 loop_tool_test_dataset.Dataset()
             ],
         },
@@ -197,23 +198,31 @@ def load_datasets(env=None):
         print("Number of benchmarks for validation:", len(val_benchmarks))    
         return train_benchmarks, val_benchmarks
 
+from ray.tune import Callback
+class MyCallback(Callback):
+    def on_trial_result(self, iteration, trials, trial, result, **info):
+        # breakpoint()
+        print(f"Got result:")
+
 
 def train_agent(config, stop_criteria, sweep_count=1):
+    print(f'Before tune.run, stop = {stop_criteria}')
+    models = {}
     analysis = tune.run(
-        # args.run, 
         PPOTrainer,
         metric="episode_reward_mean", # "final_performance",
         mode="max",
         reuse_actors=False,
-        checkpoint_freq=10,
+        checkpoint_freq=1,
         checkpoint_at_end=True,
         config=config, 
-        num_samples=sweep_count,
+        num_samples=max(1, sweep_count),
         stop=stop_criteria,    
         callbacks=[ 
+            MyCallback(),
             WandbLoggerCallback(
                 project="loop_tool_agent",
-                group=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
+                # group=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
                 api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
                 log_config=False,
                 )
@@ -226,18 +235,25 @@ def train_agent(config, stop_criteria, sweep_count=1):
 
     os.makedirs(last_run_path)
 
-    config = analysis.best_config
-    config["explore"] = False
-    agent = PPOTrainer(
-        env="compiler_gym",
-        config=config
-    )
-    agent.restore(analysis.best_checkpoint)
-    policy = agent.get_policy()
-    torch.save(policy.model, last_run_path/'policy_model.pt')
-    os.symlink(last_run_path/'policy_model.pt', LOOP_TOOL_ROOT/'loop_tool_service/models/weights/policy.pt')
+    for trial in analysis.trials:
+        os.makedirs(last_run_path/trial.trial_id)
+        config = trial.config
+        config["explore"] = False
+        agent = PPOTrainer(
+            env="compiler_gym",
+            config=config
+        )
+        best_checkpoint = trial.checkpoint
+        agent.restore(best_checkpoint.value)
+        policy_model = agent.get_policy().model
 
-    return policy.model, analysis.best_trial.trial_id
+        torch.save(policy_model, last_run_path/trial.trial_id/'policy_model.pt')
+        models[trial.trial_id] = { "model": policy_model, "config": config }
+        # weights_policy_path = LOOP_TOOL_ROOT/'loop_tool_service/models/weights/policy.pt'
+        # if os.path.exists(weights_policy_path): os.remove(weights_policy_path)
+        # os.symlink(last_run_path/'policy_model.pt', weights_policy_path)
+
+    return models
 
 
 # Lets define a helper function to make it easy to evaluate the agent's
@@ -256,12 +272,11 @@ def run_agent_on_benchmarks(policy_model, benchmarks):
             # breakpoint()
             
             while not done:
-                env.send_param("print_looptree", "")
                 logits, _ = policy_model({"obs": torch.Tensor(observation).to(device)})
                 sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
 
-                for q, a in zip(sorted_actions_q.flatten().tolist(), sorted_actions.flatten().tolist()):
-                    print(env.action_space.to_string(a), q)
+                # for q, a in zip(sorted_actions_q.flatten().tolist(), sorted_actions.flatten().tolist()):
+                #     print(env.action_space.to_string(a), q)
                     
                 for action in sorted_actions.flatten().tolist():
                     observation, _, done, info = env.step(int(action))
@@ -271,7 +286,10 @@ def run_agent_on_benchmarks(policy_model, benchmarks):
                 flops = env.observation["flops_loop_nest_tensor"]
                 df_gflops.loc[i, 'network'] = flops
                 step_count += 1
-                print(f'{step_count}. Flops = {flops}, Actions = {[ env.action_space.to_string(a) for a in env.actions]}')
+                # print(f'{step_count}. Flops = {flops}, Actions = {[ env.action_space.to_string(a) for a in env.actions]}')
+
+            env.send_param("print_looptree", "")
+            print(f'My network = {flops}, {[ env.action_space.to_string(a) for a in env.actions]}')
 
             walk_count = 10
             search_depth=0
@@ -289,7 +307,6 @@ def run_agent_on_benchmarks(policy_model, benchmarks):
 
 def send_to_wandb(last_run_path, wandb_log):
     os.chdir(last_run_path)
-
     wandb_uri = f'dejang/loop_tool_agent/{wandb_log["run_id"]}'
     print(f'Wandb page = https://wandb.ai/{wandb_uri}')
     api = wandb.Api()
@@ -304,7 +321,7 @@ def send_to_wandb(last_run_path, wandb_log):
     wandb_run.summary.update()
     
 
-def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
+def plot_results(df_gflops_train, df_gflops_val, wandb_run_id, config):
     print("hack888")
     global last_run_path, wandb_log
     # Finally lets plot our results to see how we did!
@@ -314,7 +331,7 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
     axs[1] = df_gflops_val.plot(x='bench', y=['base', 'network', 'search'], kind='bar', ax=axs[1])
     fig.autofmt_xdate()
     plt.tight_layout()
-    fig.savefig(last_run_path/"benchmarks_gflops.png")
+    fig.savefig(last_run_path/wandb_run_id/"benchmarks_gflops.png")
     
     # Analyse results
     fig, axs = plt.subplots()
@@ -332,26 +349,32 @@ def plot_results(df_gflops_train, df_gflops_val, wandb_run_id=None):
     axs.set_title('Speedup distribution for greedy search and network approach')
     axs.yaxis.grid(True)
     axs.set_xlabel('Models')
-    fig.savefig(last_run_path/"speedup_violin.png")
+    fig.savefig(last_run_path/wandb_run_id/"speedup_violin.png")
 
     # Save df
     df_gflops_all = pd.concat([df_gflops_train, df_gflops_val])
     df_gflops_all['search_speedup'] = df_gflops_all['search'] / df_gflops_all['base']
     df_gflops_all['network_speedup'] = df_gflops_all['network'] / df_gflops_all['base']
+    df_gflops_all['final_performance'] = df_gflops_val['network'] / df_gflops_val['search']
 
-    df_gflops_all.to_csv(last_run_path/'benchmarks_gflops.csv')
+    df_gflops_all.to_csv(last_run_path/wandb_run_id/'benchmarks_gflops.csv')
 
+    wandb_log['group_id'] = wandb_run_id.split('_')[0]
     wandb_log['run_id'] = wandb_run_id
-    wandb_log['final_performance'] = np.mean(df_gflops_val['network'] / df_gflops_val['search'])
+
+    if 'fcnet_hiddens' in config['model']:
+        wandb_log['layers_num'] = len(config['model']['fcnet_hiddens'])
+        wandb_log['layers_width'] = config['model']['fcnet_hiddens'][0]
+    wandb_log['final_performance'] = np.mean(df_gflops_all['final_performance'])
     wandb_log['avg_search_base_speedup'] = np.mean(df_gflops_val['search'] / df_gflops_val['base'])
     wandb_log['avg_network_base_speedup'] = np.mean(df_gflops_val['network'] / df_gflops_val['base'])
 
-    wandb_log_path = last_run_path/"wandb_log.json"
+    wandb_log_path = last_run_path/wandb_run_id/"wandb_log.json"
     with open(wandb_log_path, "w") as f: json.dump(wandb_log, f)
 
     # Send results to wandb server
-    if wandb_run_id:
-        send_to_wandb(last_run_path, wandb_log)
+    if wandb_run_id not in [None, '']:
+        send_to_wandb(last_run_path/wandb_run_id, wandb_log)
 
 
 def train(config, stop_criteria, sweep_count=1, policy_model_path=''):
@@ -372,21 +395,22 @@ def train(config, stop_criteria, sweep_count=1, policy_model_path=''):
 
     print("hhh1______________________")
     if policy_model_path == '':
-        policy_model, wandb_id = train_agent(
+        models = train_agent(
             config=config, 
             stop_criteria=stop_criteria, 
             sweep_count=sweep_count, 
         )
     else:
-        policy_model = torch.load(policy_model_path)
-        wandb_id = None
+        models = {}
+        models[''] = torch.load(policy_model_path)
 
 
-    # Evaluate agent performance on the train and validation set.
-    df_gflops_train = run_agent_on_benchmarks(policy_model, train_benchmarks)
-    df_gflops_val = run_agent_on_benchmarks(policy_model, val_benchmarks)
+    for trial_id, policy_model in models.items():
+        # Evaluate agent performance on the train and validation set.
+        df_gflops_train = run_agent_on_benchmarks(policy_model["model"], train_benchmarks)
+        df_gflops_val = run_agent_on_benchmarks(policy_model["model"], val_benchmarks)
 
-    plot_results(df_gflops_train, df_gflops_val, wandb_id)
+        plot_results(df_gflops_train, df_gflops_val, trial_id, policy_model["config"])
 
     ray.shutdown()
     print("Return from train...")
@@ -404,11 +428,12 @@ def update_default_config(sweep_config=None):
     
 
 if __name__ == '__main__':
+    # init_logging(level=logging.DEBUG)
     if ray.is_initialized(): ray.shutdown()
 
     print(f"Running with following CLI options: {args}")
 
-    stop_criteria['training_iteration'] = 2 if args.debug else args.stop_iters
+    stop_criteria['training_iteration'] = 2 if args.debug or False else args.iter
     sweep_count = args.sweep
 
     
@@ -426,11 +451,11 @@ if __name__ == '__main__':
         default_config['num_workers'] = int(ray.cluster_resources()['CPU']) - 1
 
     if sweep_count:
-        hiddens_layers = [3, 10, 20]
-        hiddens_width = [50, 100, 500]
+        hiddens_layers = [10, 20]
+        hiddens_width = [100, 500]
         sweep_config = {
-            'lr': tune.uniform(1e-3, 1e-6),
-            "gamma": tune.uniform(0.5, 0.99),
+            'lr': tune.uniform(1e-4, 1e-7),
+            "gamma": tune.uniform(0.8, 0.99),
             'model': {
                 "fcnet_hiddens": tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]),
             },

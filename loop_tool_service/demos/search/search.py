@@ -251,3 +251,6 @@ if __name__ == '__main__':
             eval_benchmarks(env, benchmark)
         elif benchmark in env.datasets.benchmarks():
             eval_benchmark(env, benchmark)
+        else:
+            print('benchmark cannot be found')
+            breakpoint()

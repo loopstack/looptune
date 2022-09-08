@@ -30,6 +30,14 @@ PYTHONHASHSEED=42
 export PYTHONHASHSEED
 
 # ===== Obtain the head IP address
+# if ${EXTERNAL_REDIS}
+# then
+#   port=8765
+#   RAY_ADDRESS=$ip:6379
+# else
+#   port=6379
+#   RAY_ADDRESS=auto
+# fi
 
 REDIS_PASSWORD=$(uuidgen)
 export REDIS_PASSWORD
@@ -89,6 +97,7 @@ for ((i = 1; i <= worker_num; i++)); do
     sleep 5
 done
 
+export RAY_BACKEND_LOG_LEVEL=debug
 # ===== Submitting the script
 echo "Starting command: $COMMAND_PLACEHOLDER"
 ${COMMAND_PLACEHOLDER}

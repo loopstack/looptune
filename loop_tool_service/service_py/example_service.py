@@ -78,22 +78,18 @@ class LoopToolCompilationSession(CompilationSession):
                         "down", 
                         "swap_up", 
                         "swap_down", 
-                        # "split_2", 
-                        # "split_4", 
-                        # "split_8", 
-                        # "split_16", 
-                        # "split_32", 
-                        # "split_64", 
-                        # "split_128", 
-                        # "split_256", 
-                        # "split_512", 
-                        # "split_1024", 
-                        # "merge", 
+                        "split_2", 
+                        "split_4", 
+                        "split_8", 
+                        "split_16", 
+                        "split_32", 
+                        "split_64", 
+                        "split_128", 
+                        "split_256",
+                        "merge", 
                         # "unroll", 
-                        # "vectorize", 
                         # "increase_reuse",
                         # "decrease_reuse"
-
                         # "copy_input_0", #TODO: Copy input should be parametric action 0,1,...n is id of variable
                         # "copy_input_1",
                         # "copy_input_2",
@@ -338,6 +334,9 @@ class LoopToolCompilationSession(CompilationSession):
             self.env.agent.undo_action()
             return ""
         
+        elif key == "actions":
+            return str(self.env.agent.actions)
+            
         elif key == "print_looptree":
             print(self.env.agent.actions)
             print(self.env.agent)

@@ -73,7 +73,7 @@ class Environment:
         self.timeout_sec = timeout_sec        
 
         ir = lt.deserialize(benchmark.program.contents)
-        self.agent = lt.LoopTreeAgent(lt.LoopTree(ir))
+        self.agent = lt.LoopTreeAgent(lt.LoopTree(ir)).merge_all()
         logging.info(self.agent)
         self.lt_changed = False
         self.actions = []
@@ -82,6 +82,11 @@ class Environment:
         self.policy_model = None
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.eval_cost_fn = self.eval_ln_flops
+
+        self.agent_all_actions = self.agent.get_all_actions()
+        for action in self.action_space_str:
+            if action == 'terminate': continue
+            assert(action in self.agent_all_actions), f'Action: {action} is not supported from LoopToolAgent'
 
 
     def get_available_actions(self, agent=None):
@@ -303,10 +308,12 @@ class Environment:
     def walk(self, step_count: int, search_depth: int, search_width: int)-> list: 
         agent_copy = self.agent.copy() #deepcopy(self.agent)        
         actions = []
-        with Timer() as step_time:
-            for self.step_num in range(1, step_count + 1):
-        
-                new_action_str, new_reward = self.get_best_next_action(agent_copy, search_depth, search_width)
+        cur_reward = 0
+        for self.step_num in range(1, step_count + 1):
+    
+            new_action_str, new_reward = self.get_best_next_action(agent_copy, search_depth, search_width)
+            if new_reward > cur_reward:
+                cur_reward = new_reward
                 agent_copy.apply_action(new_action_str)
                 actions.append(new_action_str)
         flops = self.eval_ln_flops(agent_copy)
@@ -342,6 +349,10 @@ class Environment:
         # print(chosen_actions)
         for action_str in chosen_actions:
             agent_copy = agent.copy() #deepcopy(agent)
+            try:
+                agent_copy.apply_action(action_str)
+            except:
+                breakpoint()
             next_action, new_reward =  self.get_best_action_helper(agent_copy, search_depth - 1, search_width)
 
             if new_reward > best_reward:
@@ -371,6 +382,4 @@ class Environment:
         logits, _ = self.policy_model({"obs": feature_vector})
         sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
         return sorted_actions_q, sorted_actions
-        
-        
         

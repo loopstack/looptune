@@ -13,3 +13,4 @@ weights
 *wandb*
 wandb_key.txt
 core
+pids.txt

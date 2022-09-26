@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh ../../../kill_autotune_processes.sh
+# sh ../../../kill_autotune_processes.sh
 
 iter=$1
 cmd=${@:2}

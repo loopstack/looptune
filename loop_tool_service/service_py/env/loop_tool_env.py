@@ -73,7 +73,7 @@ class Environment:
         self.timeout_sec = timeout_sec        
 
         ir = lt.deserialize(benchmark.program.contents)
-        self.agent = lt.LoopTreeAgent(lt.LoopTree(ir)).merge_all()
+        self.agent = lt.LoopTreeAgent(lt.LoopTree(ir))#.merge_all()
         logging.info(self.agent)
         self.lt_changed = False
         self.actions = []
@@ -291,7 +291,7 @@ class Environment:
     def greedy_search(self, walk_count, step_count, search_depth, search_width) -> None:
         actions_reward_pairs = []
         start_flops = self.eval_ln_flops(self.agent)
-        actions_reward_pairs.append([[], start_flops])
+        actions_reward_pairs.append([['terminate'], start_flops])
 
         for self.walk_num in range(1, walk_count + 1):
             actions, reward = self.walk(
@@ -317,6 +317,7 @@ class Environment:
                 agent_copy.apply_action(new_action_str)
                 actions.append(new_action_str)
         flops = self.eval_ln_flops(agent_copy)
+        actions.append('terminate')
         # print(agent_copy)
         # print(flops)
         return actions, flops 

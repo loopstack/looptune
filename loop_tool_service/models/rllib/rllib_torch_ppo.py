@@ -16,6 +16,7 @@ $ python custom_env.py --help
 import argparse
 import ast
 from distutils.command.config import config
+from math import ceil, floor
 import gym
 from itertools import islice
 from gym.spaces import Discrete, Box
@@ -50,7 +51,7 @@ from ray.tune.logger import Logger
 import loop_tool_service
 from loop_tool_service import paths
 
-from loop_tool_service.service_py.datasets import loop_tool_dataset, loop_tool_test_dataset
+from loop_tool_service.service_py.datasets import single_mmo_dataset, full_mmo_dataset, single_mm_dataset, loop_tool_dataset, loop_tool_test_dataset
 
 from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward, runtime_reward
 import loop_tool_service.models.rllib.my_net_rl as my_net_rl
@@ -65,11 +66,6 @@ from loop_tool_service.paths import LOOP_TOOL_ROOT
 # python launcher/slurm_launch.py -e launcher/exp.yaml -n 1 -t 3:00   ### slurm_launch.py internaly calls rllib_torch.py
 # python
 
-# wandb.tensorboard.patch(root_logdir="...")
-# wandb.init(project="loop_tool_agent", entity="dejang")
-
-
-# tf1, tf, tfv = try_import_tf()
 torch, nn = try_import_torch()
 
 
@@ -112,7 +108,7 @@ parser.add_argument(
     "--run", type=str, default="PPO", help="The RLlib-registered algorithm to use."
 )
 parser.add_argument(
-    "--policy",  type=str, nargs='?', const=f'{last_run_path}/policy_model.pt', default='', help="Load policy network."
+    "--policy",  type=str, nargs='?', const=str(list(Path(last_run_path).glob('**/policy_model.pt'))[0]) , default='', help="Load policy network."
 )
 parser.add_argument(
     "--sweep",  type=int, nargs='?', const=2, default=0, help="Run with wandb sweeps"
@@ -159,12 +155,16 @@ def register_env():
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.RewardTensor(),
+                flops_loop_nest_reward.NormRewardTensor(),
+                # flops_loop_nest_reward.RewardTensor(),
                 # flops_loop_nest_reward.AbsoluteRewardTensor(),
                 ],
             "datasets": [
+                single_mmo_dataset.Dataset(),
+                # full_mmo_dataset.Dataset(),
+                # single_mm_dataset.Dataset(),
                 # loop_tool_dataset.Dataset(),
-                loop_tool_test_dataset.Dataset()
+                # loop_tool_test_dataset.Dataset()
             ],
         },
     )
@@ -180,21 +180,24 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
     )
     # env = compiler_gym.make("loop_tool_env-v0")
 
-    env = TimeLimit(env, max_episode_steps=10) # <<<< Must be here
+    env = TimeLimit(env, max_episode_steps=20) # <<<< Must be here
     return env
 
 
 def load_datasets(env=None):
 
     with make_env() as env:
-        # The two datasets we will be using:
-        lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
-        benchmarks = random.sample(list(lt_dataset.benchmarks()), min(len(lt_dataset), args.size) )
+        train_benchmarks = []
+        val_benchmarks = []
+        for dataset in env.datasets.datasets():
+            wandb_log['dataset'] = dataset.name
+            benchmarks = random.sample(list(dataset.benchmarks()), min(len(dataset), args.size))
 
-        train_perc = 0.8
-        train_size = int(train_perc * len(benchmarks))
-        test_size = len(benchmarks) - train_size
-        train_benchmarks, val_benchmarks = torch.utils.data.random_split(benchmarks, [train_size, test_size])
+            train_perc = 0.8
+            train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
+            train_benchmarks.extend(benchmarks[:train_size]) 
+            val_benchmarks.extend(benchmarks[train_size:])
+            # train_benchmarks, val_benchmarks = torch.utils.data.random_split(benchmarks, [train_size, len(benchmarks) - train_size])
 
         print("Number of benchmarks for training:", len(train_benchmarks))
         print("Number of benchmarks for validation:", len(val_benchmarks))    
@@ -258,60 +261,132 @@ def train_agent(config, stop_criteria, sweep_count=1):
     return models
 
 
+def run_benchmark_network(env, benchmark, policy_model):
+    d = {}
+    max_steps = 20
+    observation, done = env.reset(benchmark=benchmark), False
+    step_count = 0
+    d['bench'] =  str(benchmark).split('/')[-1]
+    d['base'] = float(env.observation["flops_loop_nest_tensor"])
+
+    network_actions = []
+    while not done or step_count < max_steps:
+        logits, _ = policy_model({"obs": torch.Tensor(observation).to(device)})
+        sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
+
+        # for q, a in zip(sorted_actions_q.flatten().tolist(), sorted_actions.flatten().tolist()):
+        #     print(env.action_space.to_string(a), q)
+
+        chosen_rank = []
+        for ai, action in enumerate(sorted_actions.flatten().tolist()):
+            observation, _, done, info = env.step(int(action))
+            if not info['action_had_no_effect']:
+                chosen_rank.append(ai)
+                network_actions.append(env.action_space.to_string(action))
+                break
+    
+        flops = float(env.observation["flops_loop_nest_tensor"])
+        d['network'] = flops
+        step_count += 1
+        # print(f'{step_count}. Flops = {flops}, Actions = {[ env.action_space.to_string(a) for a in env.actions]}')
+
+    d['rank'] = np.mean(chosen_rank)
+    d['network_actions'] = network_actions
+
+    env.send_param("print_looptree", "")
+    print(f'My network = {flops}, {env.send_param("actions", "")}')
+    return d
+
+
+def run_benchmark_search(env, benchmark):
+    d = {}
+    walk_count = 1
+    step_count = 20
+    search_depth=1
+    search_width = 10000
+    # breakpoint()
+    env.reset(benchmark=benchmark)
+    best_actions_reward_str = env.send_param("greedy_search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
+    print(f'Search = {best_actions_reward_str}')
+    best_actions_reward = json.loads(best_actions_reward_str)
+    d['search_actions'] = best_actions_reward[0]
+    d['search'] = best_actions_reward[1]
+    return d
+
 # Lets define a helper function to make it easy to evaluate the agent's
 # performance on a set of benchmarks.
 def run_agent_on_benchmarks(policy_model, benchmarks):
     """Run agent on a list of benchmarks and return a list of cumulative rewards."""
     with make_env() as env:
-        df_gflops = pd.DataFrame(np.zeros((len(benchmarks), 5)), columns=['bench', 'base', 'network', 'search', 'rank'])
+        wandb_log['actions'] = ",".join(env.action_space.names)
+        df_gflops = pd.DataFrame(columns=['bench', 'base', 'network', 'search', 'rank', 'network_actions', 'search_actions'])
 
         for i, benchmark in enumerate(benchmarks, start=0):
-            observation, done = env.reset(benchmark=benchmark), False
-            step_count = 0
-            df_gflops.loc[i, 'bench'] =  str(benchmark).split('/')[-1]
-            df_gflops.loc[i, 'base'] = env.observation["flops_loop_nest_tensor"]
-
-            # breakpoint()
+            d = {}
+            d_network = run_benchmark_network(env=env, benchmark=benchmark, policy_model=policy_model)
+            d.update(d_network)
             
-            while not done:
-                logits, _ = policy_model({"obs": torch.Tensor(observation).to(device)})
-                sorted_actions_q, sorted_actions = torch.sort(logits, descending=True)
+            d_search = run_benchmark_search(env=env, benchmark=benchmark)
+            d.update(d_search)
 
-                # for q, a in zip(sorted_actions_q.flatten().tolist(), sorted_actions.flatten().tolist()):
-                #     print(env.action_space.to_string(a), q)
-
-                chosen_rank = []
-                for ai, action in enumerate(sorted_actions.flatten().tolist()):
-                    observation, _, done, info = env.step(int(action))
-                    if not info['action_had_no_effect']:
-                        chosen_rank.append(ai)
-                        break
-            
-                flops = env.observation["flops_loop_nest_tensor"]
-                df_gflops.loc[i, 'network'] = flops
-                step_count += 1
-                # print(f'{step_count}. Flops = {flops}, Actions = {[ env.action_space.to_string(a) for a in env.actions]}')
-
-            df_gflops.loc[i, 'rank'] = np.mean(chosen_rank)
-
-            env.send_param("print_looptree", "")
-            print(f'My network = {flops}, {env.send_param("actions", "")}')
-
-            walk_count = 1
-            step_count = 20
-            search_depth=1
-            search_width = 10000
-            # breakpoint()
-            env.reset(benchmark=benchmark)
-            best_actions_reward_str = env.send_param("greedy_search", f'{walk_count}, {step_count}, {search_depth}, {search_width}')
-            print(f'Search = {best_actions_reward_str}')
-            best_actions_reward = json.loads(best_actions_reward_str)
-            df_gflops.loc[i, 'search'] = best_actions_reward[1]
+            for key, value in d.items():
+                df_gflops.at[i, key] = value
 
             print(f"[{i}/{len(benchmarks)}] ")
-
     
     return df_gflops
+
+
+def plot_benchmarks(name, train, val, columns, wandb_run_id):
+    global last_run_path
+    # Finally lets plot our results to see how we did!
+    fig, axs = plt.subplots(1, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [1, 1]})
+    fig.suptitle(f'GFlops comparison for training and test benchmarks', fontsize=16)
+    if len(train): axs[0] = train.plot(x='bench', y=columns, kind='bar', ax=axs[0])
+    if len(val): axs[1] = val.plot(x='bench', y=columns, kind='bar', ax=axs[1])
+
+    fig.autofmt_xdate()
+    plt.tight_layout()
+    fig.savefig(last_run_path/wandb_run_id/f"{name}.png")
+
+
+def save_results(df_gflops_train, df_gflops_val, wandb_run_id):
+    print("hack888")
+    global last_run_path, wandb_log
+    # Finally lets plot our results to see how we did!
+    fig, axs = plt.subplots(2, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [1, 1]})
+    fig.suptitle(f'GFlops comparison for training and test benchmarks', fontsize=16)
+    df_gflops_train_plot = df_gflops_train.sample(n = min(len(df_gflops_train), 40))
+    df_gflops_val_plot = df_gflops_val.sample(n = min(len(df_gflops_val), 40))
+    plot_benchmarks('benchmarks_gflops', df_gflops_train_plot, df_gflops_val_plot, columns=['base', 'network', 'search'], wandb_run_id=wandb_run_id)
+    plot_benchmarks('benchmarks_rank', df_gflops_train_plot, df_gflops_val_plot, columns=['rank'], wandb_run_id=wandb_run_id)
+
+    # Analyse results
+    fig, axs = plt.subplots()
+    axs.violinplot(dataset = [
+        df_gflops_train['search'].astype(float) / df_gflops_train['base'].astype(float) if len(df_gflops_train) else 0,
+        df_gflops_val['search'].astype(float) / df_gflops_val['base'].astype(float) if len(df_gflops_val) else 0,
+        df_gflops_train['network'].astype(float) / df_gflops_train['base'].astype(float) if len(df_gflops_train) else 0,
+        df_gflops_val['network'].astype(float) / df_gflops_val['base'].astype(float) if len(df_gflops_val) else 0,
+    ])
+    labels = ['search_train', 'search_test', 'network_train', 'network_val']
+    axs.set_xticks(np.arange(1, len(labels) + 1))
+    axs.set_xticklabels(labels)
+    axs.set_xlim(0.25, len(labels) + 0.75)
+
+    axs.set_title('Speedup distribution for greedy search and network approach')
+    axs.yaxis.grid(True)
+    axs.set_xlabel('Models')
+    fig.savefig(last_run_path/wandb_run_id/"speedup_violin.png")
+
+    # Save df
+    df_gflops_all = pd.concat([df_gflops_train, df_gflops_val])
+    df_gflops_all['search_speedup'] = df_gflops_all['search'].astype(float) / df_gflops_all['base'].astype(float)
+    df_gflops_all['network_speedup'] = df_gflops_all['network'].astype(float) / df_gflops_all['base'].astype(float)
+    df_gflops_all['final_performance'] = df_gflops_all['network'].astype(float) / df_gflops_all['search'].astype(float)
+
+    df_gflops_all.to_csv(last_run_path/wandb_run_id/'benchmarks_gflops.csv')
+
 
 
 def send_to_wandb(last_run_path, wandb_log):
@@ -331,69 +406,27 @@ def send_to_wandb(last_run_path, wandb_log):
     wandb_run.summary.update()
     
 
-def plot_benchmarks(name, train, val, columns, wandb_run_id):
-    global last_run_path
-    # Finally lets plot our results to see how we did!
-    fig, axs = plt.subplots(1, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [1, 1]})
-    fig.suptitle(f'GFlops comparison for training and test benchmarks', fontsize=16)
-    axs[0] = train.plot(x='bench', y=columns, kind='bar', ax=axs[0])
-    axs[1] = val.plot(x='bench', y=columns, kind='bar', ax=axs[1])
-
-    fig.autofmt_xdate()
-    plt.tight_layout()
-    fig.savefig(last_run_path/wandb_run_id/f"{name}.png")
+def update_wandb(df_gflops_val, prefix):
+    wandb_log[f'{prefix}final_performance'] = float(np.mean(df_gflops_val['network'] / df_gflops_val['search']))
+    wandb_log[f'{prefix}avg_search_base_speedup'] = float(np.mean(df_gflops_val['search'] / df_gflops_val['base']))
+    wandb_log[f'{prefix}avg_network_base_speedup'] = float(np.mean(df_gflops_val['network'] / df_gflops_val['base']))
+    wandb_log[f'{prefix}rank'] = float(np.mean(df_gflops_val['rank']))
+    wandb_log[f'{prefix}data_size'] = float(len(df_gflops_val))
+    wandb_log[f'{prefix}search_actions_num'] = float(np.mean(df_gflops_val['search_actions'].str.len()))
+    wandb_log[f'{prefix}network_actions_num'] = float(np.mean(df_gflops_val['network_actions'].str.len()))
 
 
-def plot_results(df_gflops_train, df_gflops_val, wandb_run_id, config):
-    print("hack888")
-    global last_run_path, wandb_log
-    # Finally lets plot our results to see how we did!
-    fig, axs = plt.subplots(2, 2, figsize=(40, 5), gridspec_kw={'width_ratios': [1, 1]})
-    fig.suptitle(f'GFlops comparison for training and test benchmarks', fontsize=16)
-    df_gflops_train_plot = df_gflops_train.sample(n = min(len(df_gflops_train), 40))
-    df_gflops_val_plot = df_gflops_val.sample(n = min(len(df_gflops_val), 40))
-    plot_benchmarks('benchmarks_gflops', df_gflops_train_plot, df_gflops_val_plot, columns=['base', 'network', 'search'], wandb_run_id=wandb_run_id)
-    plot_benchmarks('benchmarks_rank', df_gflops_train_plot, df_gflops_val_plot, columns=['rank'], wandb_run_id=wandb_run_id)
-
-    # Analyse results
-    fig, axs = plt.subplots()
-    axs.violinplot(dataset = [
-        df_gflops_train['search'] / df_gflops_train['base'],
-        df_gflops_val['search'] / df_gflops_val['base'],
-        df_gflops_train['network'] / df_gflops_train['base'],
-        df_gflops_val['network'] / df_gflops_val['base'],
-    ])
-    labels = ['search_train', 'search_test', 'network_train', 'network_val']
-    axs.set_xticks(np.arange(1, len(labels) + 1))
-    axs.set_xticklabels(labels)
-    axs.set_xlim(0.25, len(labels) + 0.75)
-
-    axs.set_title('Speedup distribution for greedy search and network approach')
-    axs.yaxis.grid(True)
-    axs.set_xlabel('Models')
-    fig.savefig(last_run_path/wandb_run_id/"speedup_violin.png")
-
-    # Save df
-    df_gflops_all = pd.concat([df_gflops_train, df_gflops_val])
-    df_gflops_all['search_speedup'] = df_gflops_all['search'] / df_gflops_all['base']
-    df_gflops_all['network_speedup'] = df_gflops_all['network'] / df_gflops_all['base']
-    df_gflops_all['final_performance'] = df_gflops_all['network'] / df_gflops_all['search']
-
-    df_gflops_all.to_csv(last_run_path/wandb_run_id/'benchmarks_gflops.csv')
-
+def finalize_wandb(wandb_run_id, df_gflops_train, df_gflops_val, config):
     wandb_log['group_id'] = wandb_run_id.split('_')[0]
     wandb_log['run_id'] = wandb_run_id
     wandb_log['algorithm'] = 'PPO'
-
 
     if 'fcnet_hiddens' in config['model']:
         wandb_log['layers_num'] = len(config['model']['fcnet_hiddens'])
         wandb_log['layers_width'] = config['model']['fcnet_hiddens'][0]
     
-    wandb_log['final_performance'] = np.mean(df_gflops_val['network'] / df_gflops_val['search'])
-    wandb_log['avg_search_base_speedup'] = np.mean(df_gflops_val['search'] / df_gflops_val['base'])
-    wandb_log['avg_network_base_speedup'] = np.mean(df_gflops_val['network'] / df_gflops_val['base'])
-    wandb_log['rank'] = np.mean(df_gflops_val['rank'])
+    update_wandb(df_gflops_train, prefix='train_')
+    update_wandb(df_gflops_val, prefix='')
 
     wandb_log_path = last_run_path/wandb_run_id/"wandb_log.json"
     with open(wandb_log_path, "w") as f: json.dump(wandb_log, f)
@@ -441,7 +474,13 @@ def train(config, stop_criteria, sweep_count=1, policy_model_path=''):
         df_gflops_train = run_agent_on_benchmarks(policy_model["model"], train_benchmarks)
         df_gflops_val = run_agent_on_benchmarks(policy_model["model"], val_benchmarks)
 
-        plot_results(df_gflops_train, df_gflops_val, trial_id, policy_model["config"])
+        save_results(df_gflops_train=df_gflops_train, df_gflops_val=df_gflops_val, wandb_run_id=trial_id)
+        finalize_wandb(
+            wandb_run_id=trial_id, 
+            df_gflops_train=df_gflops_train, 
+            df_gflops_val=df_gflops_val, 
+            config=policy_model["config"]
+        )
 
     ray.shutdown()
     print("Return from train!")
@@ -481,7 +520,7 @@ if __name__ == '__main__':
     if 'num_workers' not in default_config: 
         default_config['num_workers'] = int(ray.cluster_resources()['CPU']) - 1
 
-    if sweep_count and args.policy != '':
+    if sweep_count and args.policy == '':
         hiddens_layers = [4, 8, 20]
         hiddens_width = [100, 500, 1000]
         sweep_config = {

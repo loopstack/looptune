@@ -1,10 +1,26 @@
 import loop_tool as lt
+import argparse
 
 import sys
 # import loop_tool_service_py.ui as ui
 import numpy as np
 import pickle
 import pdb
+
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--bench", type=str, default="mm.txt", help="Benchmark to generate"
+)
+
+parser.add_argument(
+    "--tune",  type=str, nargs='?', const='const', default='default', help="tune benchmark and store it"
+)
+
+args = parser.parse_args()
+
 
 
 def mm(A, B):
@@ -159,41 +175,35 @@ def gen_mm512():
 def main():
     
     print(sys.argv)
-    if len(sys.argv) not in [2, 3]:
-        print('Format: generator.py file [tune=False]')
-        return 
 
-    path_to_file = sys.argv[1]
-    file_name = path_to_file.split('/')[-1]
-    tune = True if len(sys.argv) == 3 else False
+    file_in = args.bench
+    file_out = file_in if args.tune == 'const' else args.tune
 
-    if file_name == 'conv.txt':
+
+    if file_in == 'conv.txt':
         C = gen_conv()
-    elif file_name == 'mm.txt':
+    elif file_in == 'mm.txt':
         C = gen_mm()
-    elif file_name == 'mm128.txt':
+    elif file_in == 'mm128.txt':
         C = gen_mm128()
-    elif file_name == 'mm256.txt':
+    elif file_in == 'mm256.txt':
         C = gen_mm256()
-    elif file_name == 'mm512.txt':
+    elif file_in == 'mm512.txt':
         C = gen_mm512()
-    elif file_name == 'muladd.txt':
+    elif file_in == 'muladd.txt':
         C = gen_muladd()        
-    elif file_name == 'simple.txt':
+    elif file_in == 'simple.txt':
         C = gen_simple()
     else:
-        print('File not found :/')
+        with open(file_in, 'r') as f: ir = lt.deserialize(f.read())
+        C = gen_mm()
+        C = C.set(ir)
 
-    agent = lt.LoopTreeAgent(lt.LoopTree(C.ir))
-    breakpoint()
-    agent.apply_action("unroll")
-    breakpoint()
-
-    if tune:
+    if args.tune != 'default':
         with lt.Backend("loop_nest"):
             C = lt.ui(C, "/tmp/woo.c")
 
-    with open(file_name, "w") as f:
+    with open(file_out, "w") as f:
         f.write(C.ir.serialize())
    
 

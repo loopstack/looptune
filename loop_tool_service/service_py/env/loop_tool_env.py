@@ -130,6 +130,15 @@ class Environment:
         flops = self.eval_ln_flops(self.agent)
         return Event(float_value=flops)
             
+    def get_gflops_cost(self) -> Event:
+        gflops_cost = self.evaluator.eval_gflops(self.agent, 'cost')
+        return Event(float_value=gflops_cost)
+
+    def get_q_policy(self) -> Event:
+        q_policy = self.evaluator.get_actions_q_policy_tensor(self.agent)
+        return Event(float_tensor=FloatTensor(shape=[1, len(self.agent.action_space)], value=q_policy))
+
+
     def get_flops_loop_nest_tensor(self) -> Event:
         flops = self.eval_ln_flops(self.agent)
         tensor = DoubleTensor(shape = [1], value=[flops])

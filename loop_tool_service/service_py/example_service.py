@@ -99,6 +99,7 @@ class LoopToolCompilationSession(CompilationSession):
             ),
         ),
     ]
+    action_space_size = len(action_spaces[0].space.named_discrete.name)
 
     observation_spaces = [
         ObservationSpace(
@@ -156,6 +157,32 @@ class LoopToolCompilationSession(CompilationSession):
                 double_value=0,
             ),
         ),
+
+        ObservationSpace(
+            name="gflops_cost",
+            space=Space(double_value=DoubleRange()),
+            deterministic=False,
+            platform_dependent=True,
+            default_observation=Event(
+                double_value=0,
+            ),
+        ),
+
+        ObservationSpace( # Note: Be CAREFUL with dimensions, they need to be exactly the same like in perf.py
+            name="q_policy",
+            space=Space(
+                float_box=FloatBox(
+                    low = FloatTensor(shape = [1, 32], value=[0] * 32),
+                    high = FloatTensor(shape = [1, 32], value=[int(1e6)] * 32),
+                )
+            ),
+            deterministic=False,
+            platform_dependent=True,
+            default_observation=Event(
+                float_tensor=FloatTensor(shape = [1, 32], value=[0] * 32),
+            ),
+        ),
+
         ObservationSpace(
             name="ir",
             space=Space(
@@ -361,9 +388,8 @@ class LoopToolCompilationSession(CompilationSession):
         end_of_session = False
         action_had_effect = False
 
-        num_choices = len(self.action_spaces[0].space.named_discrete.name)
         choice_index = action.int64_value
-        if choice_index < 0 or choice_index >= num_choices:
+        if choice_index < 0 or choice_index >= self.action_space_size:
             raise ValueError("Out-of-range")
 
         # Compile benchmark with given optimization
@@ -421,6 +447,10 @@ class LoopToolCompilationSession(CompilationSession):
             observation = self.env.get_flops()
         elif observation_space.name == "flops_loop_nest":
             observation = self.env.get_flops_loop_nest()
+        elif observation_space.name == "gflops_cost":
+            return self.env.get_gflops_cost()
+        elif observation_space.name == "q_policy":
+            return self.env.get_q_policy()
         elif observation_space.name == "flops_loop_nest_tensor":
             return self.env.get_flops_loop_nest_tensor()
         elif observation_space.name == "ir":

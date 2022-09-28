@@ -59,14 +59,20 @@ class Evaluator:
                 print(f"LoopNest model_________________________{gflops}")
                 return gflops
 
-    def get_actions_q_policy(self, agent)-> dict:
-        print("Policy model_________________________")
-        available_actions = agent.get_available_actions()
+
+    def get_actions_q_policy_tensor(self, agent):
         feature_vector = self.env.get_loops_tensor(agent=agent).float_tensor.value
         feature_vector = torch.Tensor(feature_vector).unsqueeze(0).to(self.device)
         logits, _ = self.policy_model({"obs": feature_vector}) 
         assert (len(logits.flatten()) == len(agent.action_space)), f"Policy_model_output == {len(logits.flatten())}, while action_space = {agent.action_space}"
-        actions_q = { self.env.action_space_str[a_id]: float(a_q) for a_id, a_q in enumerate(logits.flatten()) if self.env.action_space_str[a_id] in available_actions }
+        return logits.flatten()
+        
+
+    def get_actions_q_policy(self, agent)-> dict:
+        print("Policy model_________________________")
+        available_actions = agent.get_available_actions()
+        logits = self.get_actions_q_policy_tensor(agent)
+        actions_q = { self.env.action_space_str[a_id]: float(a_q) for a_id, a_q in enumerate(logits) if self.env.action_space_str[a_id] in available_actions }
         return sorted(actions_q.items(), key=lambda x: x[0])
 
 

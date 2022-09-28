@@ -203,6 +203,7 @@ def main():
         with lt.Backend("loop_nest"):
             C = lt.ui(C, "/tmp/woo.c")
 
+    breakpoint()
     with open(file_out, "w") as f:
         f.write(C.ir.serialize())
    

@@ -24,11 +24,12 @@ setuptools.setup(
     install_requires=requirements,
     packages=[
         "loop_tool_service",
+        "loop_tool_service.benchmarks",
+        "loop_tool_service.experiments",
         "loop_tool_service.service_py",
         "loop_tool_service.service_py.datasets",
         "loop_tool_service.service_py.env",
         "loop_tool_service.service_py.rewards",        
-        "loop_tool_service.benchmarks",
         "loop_tool_service.models",
         "loop_tool_service.models.rllib",        
         "loop_tool_service.models.q_agents",
@@ -48,4 +49,4 @@ setuptools.setup(
 # Set up root directory
 ###############################################################
 print("\nSet root directory: \n\nexport LOOP_TOOL_ROOT=%s"%os.getcwd())
-print("\n")
+# print(f"export MAX_GFLOPS={os.popen('/private/home/dejang/tools/loop_tool/extern/loop_nest/build/apps/gflops.avx2.fp32').read()}")

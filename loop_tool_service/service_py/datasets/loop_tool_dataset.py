@@ -42,11 +42,11 @@ class Dataset(Dataset):
                 )
 
         self._benchmarks = {
-            "benchmark://loop_tool_simple-v0/mm": benchmark_from_file_contents(
-                "benchmark://loop_tool_simple-v0/mm",
-                self.preprocess(BENCHMARKS_PATH /"mm.txt"),
-                benchmark_config
-            ),
+            # "benchmark://loop_tool_simple-v0/mm": benchmark_from_file_contents(
+            #     "benchmark://loop_tool_simple-v0/mm",
+            #     self.preprocess(BENCHMARKS_PATH /"mm.txt"),
+            #     benchmark_config
+            # ),
             # "benchmark://loop_tool_simple-v0/conv": benchmark_from_file_contents(
             #     "benchmark://loop_tool_simple-v0/conv",
             #     self.preprocess(BENCHMARKS_PATH /"conv.txt"),

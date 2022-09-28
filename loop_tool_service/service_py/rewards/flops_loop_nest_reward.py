@@ -108,7 +108,7 @@ class NormRewardTensor(Reward):
             deterministic=False,
             platform_dependent=True,
         )
-        self.max_flops = os.getenv('MAX_FLOPS')
+        self.max_flops = float(os.getenv('MAX_GFLOPS'))
         self.prev_flops = 0
 
     def reset(self, benchmark: str, observation_view):

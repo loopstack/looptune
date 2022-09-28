@@ -73,7 +73,7 @@ class LoopToolCompilationSession(CompilationSession):
                 named_discrete=NamedDiscreteSpace(
                     name=[
                         # "dummy",
-                        "terminate",
+                        # "terminate",
                         "up", 
                         "down", 
                         "swap_up", 
@@ -285,15 +285,15 @@ class LoopToolCompilationSession(CompilationSession):
             return "Succeeded"
         
         elif key == "load_cost_model":
-            self.env.load_cost_model(value)
+            self.env.evaluator.load_cost_model(value)
             return ""
         
         elif key == "load_policy_model":
-            self.env.load_policy_model(value)
+            self.env.evaluator.load_policy_model(value)
             return ""
 
         elif key == "greedy_search": # value = "walk_count, step_count, search_depth, search_width"
-            walk_count, step_count, search_depth, search_width = value.split(',')
+            walk_count, num_steps, search_depth, search_width = value.split(',')
 
             # import cProfile
             # import cProfile, pstats
@@ -302,8 +302,8 @@ class LoopToolCompilationSession(CompilationSession):
             # profiler.enable()
             # breakpoint()
             best_actions_reward = self.env.greedy_search(
-                int(walk_count), 
-                int(step_count),
+                walk_count=int(walk_count), 
+                num_steps=int(num_steps),
                 search_depth=int(search_depth), 
                 search_width=int(search_width),
             )
@@ -316,6 +316,17 @@ class LoopToolCompilationSession(CompilationSession):
 
             return json.dumps(best_actions_reward)
 
+        elif key == "policy_cost_search": # value = "step_count, search_width, num_policy_optimas"
+            walk_count, step_count, search_width = value.split(',')
+
+            best_actions_reward = self.env.policy_cost_search(   # Must initialize policy, (and cost) model first
+                n=int(walk_count), 
+                num_steps=int(step_count),
+                search_width=int(search_width),    
+            )
+            return json.dumps(best_actions_reward)
+        
+
         elif key == "policy_search": # value = "search_depth, num_strategies"
             search_depth, num_strategies = value.split(',')
 
@@ -323,12 +334,11 @@ class LoopToolCompilationSession(CompilationSession):
                 search_depth=int(search_depth),
                 num_strategies=int(num_strategies)
             )
-
             return json.dumps(best_actions_reward)
         
 
         elif key == "available_actions":
-            return json.dumps(self.env.get_available_actions())
+            return json.dumps(self.env.agent.get_available_actions())
         
         elif key == "undo_action":
             self.env.agent.undo_action()
@@ -362,9 +372,9 @@ class LoopToolCompilationSession(CompilationSession):
             end_of_session = True
             action_had_effect = True
             return (end_of_session, new_action_space, not action_had_effect)
-        elif action not in self.env.get_available_actions():
+        elif action not in self.env.agent.get_available_actions():
             logging.info(f"ACTION_NOT_AVAILABLE (action = {action})")
-            logging.info(f"Actions = {self.env.get_available_actions()}")
+            logging.info(f"Actions = {self.env.agent.get_available_actions()}")
             return (end_of_session, new_action_space, not action_had_effect)
 
         logging.info(
@@ -386,13 +396,13 @@ class LoopToolCompilationSession(CompilationSession):
         #     space=Space(
         #         # potentially define new splits
         #         named_discrete=NamedDiscreteSpace(
-        #             name=self.env.get_available_actions()
+        #             name=self.env.agent.get_available_actions()
         #         ),
         #     ),
         # )
 
         self.cur_iter += 1
-        logging.info(f">>> AGENT ITERATION = {self.cur_iter}, actions = {self.env.actions}")
+        logging.info(f">>> AGENT ITERATION = {self.cur_iter}, actions = {self.env.agent.actions}")
         return (end_of_session, new_action_space, not action_had_effect)
 
 

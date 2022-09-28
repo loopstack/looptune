@@ -22,24 +22,30 @@ from loop_tool_service.paths import LOOP_TOOL_ROOT
 
 
 from compiler_gym.util.registration import register
-from absl import app, flags
 from tqdm import tqdm
+import argparse
 
-flags.DEFINE_integer("bench_count", 2, "The number of benchmarks.")
-flags.DEFINE_integer("search_depth", 1, "How deep you go in search before you decide.")
-flags.DEFINE_integer("search_width", 1000, "The number action you expand every level of the search.")
-flags.DEFINE_integer("walk_count", 5, "The number of walks.")
-flags.DEFINE_integer("step_count", 6, "The number of steps.")
-flags.DEFINE_string("reward", "flops_loop_nest", "Reward.")
-flags.DEFINE_string("data_set", "benchmark://loop_tool_test-v0", "Data set.")
-flags.DEFINE_string("model_path",  f"{str(LOOP_TOOL_ROOT)}/loop_tool_service/models/weights/cost.pt", "If you want to search based on model")
 
-FLAGS = flags.FLAGS
+parser = argparse.ArgumentParser(description="LoopTool Optimizer")
+
+parser.add_argument("--data_set", type=str, nargs='?', default="benchmark://loop_tool_test-v0", help="Data set.")
+parser.add_argument("--cost_model", type=str, nargs='?', const=f"{str(LOOP_TOOL_ROOT)}/loop_tool_service/models/weights/model_cost.pth", default='', help="Path to the RLlib optimized network.")
+parser.add_argument("--policy_model", type=str, nargs='?', const=f"{str(LOOP_TOOL_ROOT)}/loop_tool_service/models/weights/policy_model.pt", default='', help="Path to the RLlib optimized network.")
+parser.add_argument("--search", type=str, nargs='?', default='policy_cost', help="Kind of search to run.")
+
+
+parser.add_argument("--bench_count", type=int, nargs='?', default=2, help="The number of benchmarks.")
+parser.add_argument("--search_depth", type=int, nargs='?', default=1, help="How deep you go in search before you decide.")
+parser.add_argument("--search_width", type=int, nargs='?', default=1000, help="The number action you expand every level of the search.")
+parser.add_argument("--walk_count", type=int, nargs='?', default=1, help="The number of walks.")
+parser.add_argument("--step_count", type=int, nargs='?', default=6, help="The number of steps.")
+
+args = parser.parse_args()
 
 
 import loop_tool_service
 from loop_tool_service.service_py.rewards import flops_loop_nest_reward
-from loop_tool_service.service_py.datasets import loop_tool_test_dataset
+from loop_tool_service.service_py.datasets import loop_tool_test_dataset, loop_tool_dataset
 
 
 def register_env():
@@ -53,6 +59,7 @@ def register_env():
                 ],
             "datasets": [
                 loop_tool_test_dataset.Dataset(),
+                loop_tool_dataset.Dataset(),
             ],
         },
     )
@@ -60,9 +67,9 @@ def register_env():
 
 
 import logging
-def main(argv):
+def main():
     """Main entry point."""
-    assert len(argv) == 1, f"Unrecognized flags: {argv[1:]}"
+    # assert len(argv) == 1, f"Unrecognized flags: {argv[1:]}"
     # This two lines try to suppress logging to stdout.
     logging.basicConfig(level=logging.CRITICAL, force=True)
     # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
@@ -71,23 +78,38 @@ def main(argv):
 
     with loop_tool_service.make_env("loop_tool-v0") as env:
 
-        data_set = env.datasets[FLAGS.data_set]
+        data_set = env.datasets[args.data_set]
         i = 0
-        for bench in tqdm(data_set, total=min(len(data_set), FLAGS.bench_count)):
-            if i == FLAGS.bench_count: break
+        for bench in tqdm(data_set, total=min(len(data_set), args.bench_count)):
+            if i == args.bench_count: break
             print(bench)
             env.reset()
+            env.send_param("print_looptree", "")
 
-            if FLAGS.model_path != '':
-                env.send_param('load_cost_model', FLAGS.model_path)
+            if args.policy_model != '':
+                env.send_param('load_policy_model', args.policy_model)
 
-            best_actions_reward = json.loads(env.send_param("greedy_search", 
-                f'{FLAGS.walk_count}, {FLAGS.step_count}, {FLAGS.search_depth}, {FLAGS.search_width}')
-            )
+            if args.cost_model != '':
+                env.send_param('load_cost_model', args.cost_model)
+
+
+            if args.search == 'greedy':
+                best_actions_reward = json.loads(env.send_param("greedy_search", 
+                    f'{args.walk_count}, {args.step_count}, {args.search_depth}, {args.search_width}')
+                )
+            elif args.search == 'policy_cost':
+                best_actions_reward = json.loads(env.send_param("policy_cost_search", 
+                    f'{args.walk_count}, {args.step_count}, {args.search_width}')
+                )
+            else:
+                print('Search not supported')
+                break
+
             print(best_actions_reward)
+            breakpoint()
             i += 1
 
 
         
 if __name__ == "__main__":
-    app.run(main)
+    main()

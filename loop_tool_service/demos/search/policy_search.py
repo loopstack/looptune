@@ -16,15 +16,18 @@ import loop_tool_service
 # from loop_tool_service.models.rllib.rllib_torch import load_datasets, make_env
 import loop_tool_service.models.rllib.my_net_rl as my_net_rl
 from loop_tool_service.paths import LOOP_TOOL_ROOT
+from pathlib import Path
+
 
 last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
 
-
+policy_paths = list(Path(last_run_path).glob('**/policy_model.pt'))
+policy_path = str(policy_paths[0]) if len(policy_paths) else ""
 
 
 # Training settings
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
-parser.add_argument("--policy-model", type=str, default=f"{last_run_path}/policy_model.pt", help="Path to the RLlib optimized network.")
+parser.add_argument("--policy-model", type=str, default=policy_path, help="Path to the RLlib optimized network.")
 parser.add_argument("--cost-model", type=str, help="Path to the cost model network.")
 parser.add_argument(
     "--debug",
@@ -51,7 +54,7 @@ def make_env() -> compiler_gym.envs.CompilerEnv:
     return env
     
 def load_datasets(env):
-    lt_dataset = env.datasets["benchmark://loop_tool_test-v0"]
+    for lt_dataset in env.datasets.datasets(): break
     data_size = 10 if args.debug else len(lt_dataset)
     benchmarks = list(lt_dataset.benchmarks())[:data_size]
     
@@ -127,7 +130,7 @@ if __name__ == '__main__':
                 env.send_param('load_cost_model', args.cost_model)
             if args.policy_model != '':
                 env.send_param('load_policy_model', args.policy_model)
-            best_actions_reward = json.loads(env.send_param("policy_search", '100, 3'))
+            best_actions_reward = json.loads(env.send_param("beambeam_search", '--steps1=2 --width1=2 --eval1=policy --steps2=2 --width2=5 --eval2=loop_nest'))
             print(best_actions_reward)
             # i += 1
             # breakpoint()

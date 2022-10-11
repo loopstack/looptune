@@ -31,7 +31,7 @@ class Dataset(Dataset):
                         # $IN is replaced with benchmark path
                         # Following are linking flags (only one in this case).
                         argument=["$CC", "$IN"],
-                        timeout_seconds=60,
+                        timeout_seconds=6000,
                         outfile=["a.out"],
                     ),
                     run_cmd=Command(
@@ -42,21 +42,21 @@ class Dataset(Dataset):
                 )
 
         self._benchmarks = {
-            # "benchmark://loop_tool_simple-v0/mm": benchmark_from_file_contents(
-            #     "benchmark://loop_tool_simple-v0/mm",
-            #     self.preprocess(BENCHMARKS_PATH /"mm.txt"),
-            #     benchmark_config
-            # ),
-            # "benchmark://loop_tool_simple-v0/conv": benchmark_from_file_contents(
-            #     "benchmark://loop_tool_simple-v0/conv",
-            #     self.preprocess(BENCHMARKS_PATH /"conv.txt"),
-            #     benchmark_config
-            # ),
-            "benchmark://loop_tool_simple-v0/simple": benchmark_from_file_contents(
-                "benchmark://loop_tool_simple-v0/simple",
-                self.preprocess(BENCHMARKS_PATH /"simple.txt"),
+            "benchmark://loop_tool_simple-v0/mm": benchmark_from_file_contents(
+                "benchmark://loop_tool_simple-v0/mm",
+                self.preprocess(BENCHMARKS_PATH /"mm.txt"),
                 benchmark_config
             ),
+            "benchmark://loop_tool_simple-v0/conv": benchmark_from_file_contents(
+                "benchmark://loop_tool_simple-v0/conv",
+                self.preprocess(BENCHMARKS_PATH /"conv.txt"),
+                benchmark_config
+            ),
+            # "benchmark://loop_tool_simple-v0/simple": benchmark_from_file_contents(
+            #     "benchmark://loop_tool_simple-v0/simple",
+            #     self.preprocess(BENCHMARKS_PATH /"simple.txt"),
+            #     benchmark_config
+            # ),
             # "benchmark://loop_tool_simple-v0/mm128": benchmark_from_file_contents(
             #     "benchmark://loop_tool_simple-v0/mm128",
             #     self.preprocess(BENCHMARKS_PATH /"mm128.txt"),

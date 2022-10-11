@@ -95,12 +95,9 @@ def main():
 
             if args.search == 'greedy':
                 best_actions_reward = json.loads(env.send_param("greedy_search", 
-                    f'{args.walk_count}, {args.step_count}, {args.search_depth}, {args.search_width}')
+                    f'--steps={args.step_count} --lookahead={args.search_depth} --width={args.search_width} --eval=loop_nest')
                 )
-            elif args.search == 'policy_cost':
-                best_actions_reward = json.loads(env.send_param("policy_cost_search", 
-                    f'{args.walk_count}, {args.step_count}, {args.search_width}')
-                )
+
             else:
                 print('Search not supported')
                 break

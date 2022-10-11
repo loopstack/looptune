@@ -47,6 +47,11 @@ class Dataset(Dataset):
                 f"{dataset_name}/302451",
                 self.preprocess(BENCHMARKS_PATH /"302451.txt"),
                 benchmark_config
+            ),
+            f"{dataset_name}/mm128o": benchmark_from_file_contents(
+                f"{dataset_name}/mm128o",
+                self.preprocess(BENCHMARKS_PATH /"../data/mm128o.txt"),
+                benchmark_config
             )
         }
 

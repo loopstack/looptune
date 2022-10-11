@@ -1,9 +1,12 @@
+import argparse
 import os
+import time
 
 import numpy as np
 import pandas as pd
 import random
 from matplotlib import pyplot as plt
+from pathlib import Path
 
 from tqdm import tqdm
 
@@ -16,11 +19,37 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 
 import wandb
+from loop_tool_service.paths import LOOP_TOOL_ROOT
+
 
 import pdb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+parser = argparse.ArgumentParser()
 
+parser.add_argument(
+    "--sweep",  type=int, nargs='?', const=2, default=1, help="Run with wandb sweeps"
+)
+args = parser.parse_args()
+
+
+default_config = {
+    "name" : "Cost-sweep",
+    "method": "random",
+    "metric": {
+        "name": "final_performance",
+        "goal": "maximize",
+    },
+    "parameters" : {
+        "layers" : { "value": 8},
+        "hidden_size" : { "value": 500},
+        'lr': { "value": 1e-6},
+        "epochs": { "value" : 10000 },
+        "batch_size": { "value" : 50 },
+        "dropout": { "value" : 0.2 }, # dropout cannot be 0 for some reason
+        "data_size": { "value" : 10 },
+    }
+}
 
 class LoopToolDataset(Dataset):
     def __init__(
@@ -46,6 +75,7 @@ def load_dataset(config):
     else:
         df = pd.read_pickle(data_path).iloc[:config['data_size'], :]
 
+    breakpoint()
     loop_tool_dataset = LoopToolDataset(df=df)
 
     test_size = len(loop_tool_dataset.df) // 5
@@ -64,7 +94,6 @@ def load_dataset(config):
 
 
 def load_model(config):
-    model_path = "model_weights.pt"
     model = my_net.SmallNet(
         in_size=config['size_in'], 
         out_size=config['size_out'], 
@@ -73,8 +102,7 @@ def load_model(config):
         dropout=config['dropout'],
     ).to(device)
 
-    wandb.watch(model, log="all")
-
+    # wandb.watch(model, log="all") # <<<<<<<< this breaks torch.jit.script
     return model
 
 
@@ -118,7 +146,7 @@ def test_epoch(model, TestLoader, optimizer, criterion):
     return test_losses_batch
 
 
-def final_performance(model, TestLoader):
+def final_performance_compare(model, TestLoader):
     correct = []
 
     with torch.no_grad():
@@ -139,6 +167,26 @@ def final_performance(model, TestLoader):
 
     return np.mean(correct)
 
+def final_performance(model, TestLoader, loss):
+    losses = []
+
+    with torch.no_grad():
+        model.eval()
+
+        for state, cost in TestLoader:
+            losses.append(float(loss(model(state), cost)))
+
+    return np.mean(losses)
+
+
+def save_model(model, model_name):
+    model_path = LOOP_TOOL_ROOT/f'loop_tool_service/models/weights/{model_name}'
+    model_path.parent.mkdir(exist_ok=True, parents=True)
+    # torch.save(model.state_dict(), model_path)
+    model_scripted = torch.jit.script(model) # Export to TorchScript
+    model_scripted.save(str(model_path)) # Save
+
+    wandb.run.save(str(model_path))
 
 
 def train(config=None):
@@ -146,13 +194,13 @@ def train(config=None):
     test_loss = []
 
     with wandb.init(
-        project="loop_tool", 
-        entity="dejang", 
+        project="loop_stack_cost_model", 
+        entity="dejang",
     ):
         config = wandb.config
+        wandb.run.name = f"cost_{wandb.config['layers']}_{wandb.config['hidden_size']}"
         trainLoad, testLoad = load_dataset(config)
         model = load_model(config)
-
 
         optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
         criterion = nn.MSELoss()
@@ -166,40 +214,53 @@ def train(config=None):
                     "test_loss": np.mean(test_losses_batch)
                 }
             )
-        pf = final_performance(model, testLoad)
-        print(f"final_performance {pf}" )
-        wandb.log({"final_performance": final_performance(model, testLoad) })
+        fp = final_performance(model, testLoad, torch.nn.L1Loss())
+        print(f"final_performance {fp}" )
+        wandb.log({"final_performance": fp })
+        save_model(model=model, model_name='cost_model.pt')
+
+
     return train_loss, test_loss
 
+def update_default_config(sweep_config=None):
+    for key, val in default_config.items():
+        if key in sweep_config:
+            if type(val) == dict:
+                val.update(sweep_config[key])
+            else:
+                default_config[key] = sweep_config[key]
+
+    return default_config
 
 
 if __name__ == '__main__':
 
-    sweep_count = 20
     os.environ['WANDB_NOTEBOOK_NAME'] = 'cost_sweep.ipynb'
 
     sweep_config = {
-    "name" : "Cost-sweep",
-    "method": "random",
-    "metric": {
-        "name": "final_performance",
-        "goal": "maximize",
-    },
-    "parameters" : {
-        "hidden_size" : {"values": [ 300, 400 ]},
-        "layers" : {"values": [ 5, 10]},
-        'lr': {
-        'distribution': 'log_uniform_values',
-        'min': 0.000001,
-        'max': 0.001
+        "name" : "Cost-sweep",
+        "method": "grid",
+        "metric": {
+            "name": "final_performance",
+            "goal": "maximize",
         },
-        "epochs": { "value" : 5000 },
-        "batch_size": { "value" : 50 },
-        "dropout": { "values" : [0, 0.2] },
-        "data_size": { "value" : -1 },
-    }
+        "parameters":{
+            "layers" : {"values": [ 4, 8, 20]},
+            "hidden_size" : {"values": [ 100, 500, 1000]},
+            # 'lr': {
+            # 'distribution': 'log_uniform_values',
+            # 'min': 0.000001,
+            # 'max': 0.001
+            # },
+            # "epochs": { "value" : 5000 },
+            # "batch_size": { "value" : 50 },
+            # "dropout": { "values" : [0, 0.2] },
+            "data_size": { "value" : 10 },
+        }
     }
 
-    sweep_id = wandb.sweep(sweep_config, project="loop_tool")
 
-    wandb.agent(sweep_id=sweep_id, function=train, count=sweep_count)
+    default_config = update_default_config(sweep_config)
+    sweep_id = wandb.sweep(default_config, project="loop_stack_cost_model")
+
+    wandb.agent(sweep_id=sweep_id, function=train, count=args.sweep)

@@ -189,6 +189,7 @@ train_loss, test_loss = train(config, model, trainLoad, testLoad)
 model_path = Path(os.path.dirname(os.path.realpath(__file__))+'/my_artifacts/cost.pt')
 model_path.parent.mkdir(exist_ok=True, parents=True)
 
+breakpoint()
 model_scripted = torch.jit.script(model) # Export to TorchScript
 model_scripted.save(str(model_path)) # Save
 

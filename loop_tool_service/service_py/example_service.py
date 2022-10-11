@@ -6,6 +6,7 @@
 # LICENSE file in the root directory of this source tree.
 """An example CompilerGym service in python."""
 
+import argparse
 import logging
 import os
 import pdb
@@ -319,47 +320,60 @@ class LoopToolCompilationSession(CompilationSession):
             self.env.evaluator.load_policy_model(value)
             return ""
 
-        elif key == "greedy_search": # value = "walk_count, step_count, search_depth, search_width"
-            walk_count, num_steps, search_depth, search_width = value.split(',')
-
-            # import cProfile
-            # import cProfile, pstats
-            # profiler = cProfile.Profile()
-            # breakpoint()
-            # profiler.enable()
-            # breakpoint()
-            best_actions_reward = self.env.greedy_search(
-                walk_count=int(walk_count), 
-                num_steps=int(num_steps),
-                search_depth=int(search_depth), 
-                search_width=int(search_width),
-            )
-
-            # profiler.disable()
-        
-            # stats = pstats.Stats(profiler).sort_stats('cumtime')
-            # stats.print_stats()
-            # breakpoint()
-
-            return json.dumps(best_actions_reward)
-
-        elif key == "policy_cost_search": # value = "step_count, search_width, num_policy_optimas"
-            walk_count, step_count, search_width = value.split(',')
-
-            best_actions_reward = self.env.policy_cost_search(   # Must initialize policy, (and cost) model first
-                n=int(walk_count), 
-                num_steps=int(step_count),
-                search_width=int(search_width),    
+        elif key == "greedy_search": 
+            parser = argparse.ArgumentParser()
+            parser.add_argument('--steps', type=int, help='Number of actions.', required=True)
+            parser.add_argument('--lookahead', type=int, help='Lookahead of search.', required=True)
+            parser.add_argument('--width',     type=int, help='Width of lookahead.', required=True)
+            parser.add_argument('--eval', type=str, choices=['loop_nest', 'cost', 'policy'], help='Eval mode', required=True)
+            parser.add_argument("--debug", default=False, action="store_true", help="Print graph.")
+            args = parser.parse_args(value.split())
+            best_actions_reward = self.env.greedy_searcher.search(
+                agent=self.env.agent,
+                num_steps=args.steps,
+                lookahead=args.lookahead, 
+                search_width=args.width,
+                eval_mode=args.eval,
+                debug=args.debug,
             )
             return json.dumps(best_actions_reward)
+
+        elif key == "beam_search": 
+            parser = argparse.ArgumentParser()
+            parser.add_argument('--steps', type=int, help='Number of actions.', required=True)
+            parser.add_argument('--width',     type=int, help='Width of beam', required=True)
+            parser.add_argument('--eval', type=str, choices=['loop_nest', 'cost', 'policy'], help='Eval mode', required=True)
+            parser.add_argument("--debug", default=False, action="store_true", help="Print graph.")
+            args = parser.parse_args(value.split())
+            best_actions_reward = self.env.beam_searcher.search(
+                agent=self.env.agent,
+                num_steps=args.steps,
+                search_width=args.width,
+                eval_mode=args.eval,
+                debug=args.debug,
+            )
+            return json.dumps(best_actions_reward)
         
+        elif key == "beambeam_search": 
+            parser = argparse.ArgumentParser()
+            parser.add_argument('--steps1', type=int, help='Number of actions.', required=True)
+            parser.add_argument('--width1',     type=int, help='Width of beam', required=True)
+            parser.add_argument('--eval1', type=str, choices=['loop_nest', 'cost', 'policy'], help='Eval mode', required=True)
+            parser.add_argument('--steps2', type=int, help='Number of actions.', required=True)
+            parser.add_argument('--width2',     type=int, help='Width of beam', required=True)
+            parser.add_argument('--eval2', type=str, choices=['loop_nest', 'cost', 'policy'], help='Eval mode', required=True)
+            parser.add_argument("--debug", default=False, action="store_true", help="Print graph.")
+            args = parser.parse_args(value.split())
 
-        elif key == "policy_search": # value = "search_depth, num_strategies"
-            search_depth, num_strategies = value.split(',')
-
-            best_actions_reward = self.env.policy_search(   # Must initialize policy, (and cost) model first
-                search_depth=int(search_depth),
-                num_strategies=int(num_strategies)
+            best_actions_reward = self.env.beambeam_searcher.search(
+                agent=self.env.agent,
+                num_steps1=args.steps1,
+                eval_mode1=args.eval1,
+                search_width1=args.width1,
+                num_steps2=args.steps2,
+                eval_mode2=args.eval2,
+                search_width2=args.width2,
+                debug=args.debug,
             )
             return json.dumps(best_actions_reward)
         

@@ -51,7 +51,7 @@ from ray.tune.logger import Logger
 import loop_tool_service
 from loop_tool_service import paths
 
-from loop_tool_service.service_py.datasets import single_mmo_dataset, full_mmo_dataset, single_mm_dataset, loop_tool_dataset, loop_tool_test_dataset
+from loop_tool_service.service_py.datasets import mm128_128_128, mm16_8_128_128
 
 from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward, runtime_reward
 import loop_tool_service.models.rllib.my_net_rl as my_net_rl
@@ -71,6 +71,9 @@ torch, nn = try_import_torch()
 
 
 last_run_path = LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
+potential_policy = list(Path(last_run_path).parent.glob('**/policy_model.pt'))
+policy_path = str(potential_policy[0]) if len(potential_policy) else ''
+
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 stop_criteria = {'training_iteration': 1}
@@ -108,10 +111,10 @@ parser.add_argument(
     "--run", type=str, default="PPO", help="The RLlib-registered algorithm to use."
 )
 parser.add_argument(
-    "--policy",  type=str, nargs='?', const=str(list(Path(last_run_path).glob('**/policy_model.pt'))[0]) , default='', help="Load policy network."
+    "--policy",  type=str, nargs='?', const=policy_path , default='', help="Load policy network."
 )
 parser.add_argument(
-    "--sweep",  type=int, nargs='?', const=2, default=0, help="Run with wandb sweeps"
+    "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps"
 )
 parser.add_argument(
     "--slurm", 
@@ -148,26 +151,22 @@ args = parser.parse_args()
 
 
 
-def register_env():
-    register(
-        id="loop_tool_env-v0",
-        entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
-        kwargs={
-            "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
-            "rewards": [
-                flops_loop_nest_reward.NormRewardTensor(),
-                # flops_loop_nest_reward.RewardTensor(),
-                # flops_loop_nest_reward.AbsoluteRewardTensor(),
-                ],
-            "datasets": [
-                single_mmo_dataset.Dataset(),
-                # full_mmo_dataset.Dataset(),
-                # single_mm_dataset.Dataset(),
-                # loop_tool_dataset.Dataset(),
-                # loop_tool_test_dataset.Dataset()
-            ],
-        },
-    )
+# def register_env():
+#     register(
+#         id="loop_tool_env-v0",
+#         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
+#         kwargs={
+#             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
+#             "rewards": [
+#                 flops_loop_nest_reward.NormRewardTensor(),
+#                 # flops_loop_nest_reward.RewardTensor(),
+#                 # flops_loop_nest_reward.AbsoluteRewardTensor(),
+#                 ],
+#             "datasets": [
+#                 mm128_128_128.Dataset(),
+#             ],
+#         },
+#     )
 
 
 def make_env() -> compiler_gym.envs.CompilerEnv:
@@ -395,11 +394,11 @@ def send_to_wandb(last_run_path, wandb_log):
     print(f'Wandb page = https://wandb.ai/{wandb_uri}')
     api = wandb.Api()
     wandb_run = api.run(wandb_uri)
+    wandb_run.upload_file('policy_model.pt')
     wandb_run.upload_file('benchmarks_gflops.png')
     wandb_run.upload_file('benchmarks_rank.png')
     wandb_run.upload_file('benchmarks_gflops.csv')
     wandb_run.upload_file('speedup_violin.png')
-    wandb_run.upload_file('policy_model.pt')
 
     for key, value in wandb_log.items(): 
         wandb_run.summary[key] = value
@@ -443,7 +442,7 @@ def finalize_wandb(wandb_run_id, df_gflops_train, df_gflops_val, config):
 def train(config, stop_criteria, sweep_count=1, policy_model_path=''):
     print(f'Train params: ', config, stop_criteria, policy_model_path)
 
-    register_env()
+    # register_env()
     train_benchmarks, val_benchmarks = load_datasets()
 
     def make_training_env(*args): 
@@ -521,7 +520,7 @@ if __name__ == '__main__':
         default_config['num_workers'] = int(ray.cluster_resources()['CPU']) - 1
 
     if sweep_count and args.policy == '':
-        hiddens_layers = [4, 8, 20]
+        hiddens_layers = [4]
         hiddens_width = [100, 500, 1000]
         sweep_config = {
             'lr': tune.uniform(1e-4, 1e-7),

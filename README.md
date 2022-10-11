@@ -103,3 +103,48 @@ This combines cost and policy models and compares them to greedy and handtune.
 python loop_tool_service/demos/search/search.py --cost --policy --benchmark
 ```
 
+
+
+# Datasets
+Datasets are important part of training RL agent. It is important that they are organized from easy to hard. To generate dataset go to loop_tool_service/benchmarks directory and run generator.py. This will create an example or all permutations of matrix multiplication or convolution. With reader.py you can visualise each of these benchmarks.
+
+
+Format Matrix Multiply: 
+- mm{loop0_size}\_{loop1_size}...\_{loopN_size}
+
+### mm128_128_128
+```
+for m_8757 in 128  
+ for k_8758 in 128
+  for n_8796 in 128
+   %2[m_8757, k_8758, n_8796] <- multiply(%0, %1)
+   %3[m_8757, n_8796] <- add(%2)
+ for n_8796 in 128
+  %4[m_8757, n_8796] <- write(%3)
+```
+
+### mm8_16_128_128
+```
+for m_8757 in 8
+ for m_8757 in 16
+  for k_8758 in 128
+   for n_8796 in 128 
+    %2[m_8757, k_8758, n_8796] <- multiply(%0, %1)
+    %3[m_8757, n_8796] <- add(%2)
+  for n_8796 in 128
+   %4[m_8757, n_8796] <- write(%3)
+```
+
+### mm8_16_8_16_8_16
+```
+for m_8757 in 8 
+ for m_8757 in 16
+  for k_8758 in 8
+   for k_8758 in 16
+    for n_8796 in 8
+     for n_8796 in 16
+      %2[m_8757, k_8758, n_8796] <- multiply(%0, %1)
+      %3[m_8757, n_8796] <- add(%2)
+  for n_8796 in 128
+   %4[m_8757, n_8796] <- write(%3)
+```

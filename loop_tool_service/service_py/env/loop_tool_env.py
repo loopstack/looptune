@@ -17,9 +17,9 @@ import pandas as pd
 from itertools import cycle
 from loop_tool_service.paths import LOOP_TOOL_ROOT
  
-from loop_tool_service.service_py.env.evaluator import Evaluator
-from loop_tool_service.service_py.env.search import *
-
+from loop_tool_service.service_py.env.evaluator_env import Evaluator
+from loop_tool_service.service_py.env.search_env import *
+import time
 
 from compiler_gym.service.proto import (
     Event,
@@ -83,16 +83,15 @@ class Environment:
         self.lt_changed = False
         self.agent_saved = None
 
-       
-        self.evaluator = Evaluator(self)
-        self.beam_searcher = BeamSearcher(self.evaluator)
-        self.greedy_searcher = GreedySearcher(self.evaluator)
-        self.policy_cost_searcher = PolicyCostSearcher(self.evaluator)
-
         self.cost_model = None
         self.policy_model = None
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.eval_cost_fn = self.eval_ln_flops
+
+        self.evaluator = Evaluator(self)
+        self.beam_searcher = BeamSearcher(self.evaluator)
+        self.greedy_searcher = GreedySearcher(self.evaluator)
+        self.beambeam_searcher = BeamBeamSearcher(self.evaluator)
 
 
     ##############################################################
@@ -127,7 +126,10 @@ class Environment:
         return Event(float_value=self.agent.eval("FLOPS") / 1e9)
 
     def get_flops_loop_nest(self) -> Event:
+        start = time.time()
         flops = self.eval_ln_flops(self.agent)
+        end = time.time()
+        print(f'LoopNest = {end - start}')
         return Event(float_value=flops)
             
     def get_gflops_cost(self) -> Event:
@@ -211,114 +213,3 @@ class Environment:
         dict = ast.literal_eval(ast.literal_eval(label))
         return list(dict.values())
 
-
-
-    ##############################################################
-    # Search functions
-    ##############################################################
-    '''
-        Format search(agent) -> list(actions), list(rewards
-    '''
-    def policy_beam_search(self, search_depth=10, num_strategies=1):
-        actions_reward_pairs = []
-        actions_reward_pairs_policy = self.policy_search_get_all(search_depth, num_strategies)
-        agent = self.agent.copy()
-
-        for actions in actions_reward_pairs_policy:
-            for action in actions:
-                agent_copy = agent.copy()
-                agent_copy.apply_action(action)
-                actions_reward_pairs.append(self.greedy_search(agent_copy))
-                
-
-        return actions_reward_pairs
-
-
-
-    def policy_search_get_all(self, search_depth=10, num_strategies=1):
-        if self.policy_model == None:
-            print('Instantiate policy model with: env.send_param("load_policy_model", policy_model_path)')
-            return ["", 0]
-
-        graph = nx.DiGraph()
-        actions_reward_pairs = []
-        self.get_best_actions_helper(self.agent, actions_reward_pairs, search_depth=search_depth, num_strategies=num_strategies, graph=graph)
-        print(nx.nx_pydot.to_pydot(graph))
-        print(actions_reward_pairs)
-        return actions_reward_pairs
-
-
-    def policy_search(self, search_depth=10, num_strategies=1):
-        actions_reward_pairs = self.policy_search_get_all(search_depth, num_strategies)
-
-        if len(actions_reward_pairs):
-            return max(actions_reward_pairs, key=lambda x: x[1]) 
-        else:
-            return ["", 0]
-
-
-    def get_best_actions_helper(self, agent, actions_reward_pairs, search_depth=10, num_strategies=1, graph=nx.DiGraph()):
-        if search_depth == 0:
-            return
-            
-        sorted_actions_q, sorted_actions = self.eval_policy_model(agent)
-        available_actions_str = agent.get_available_actions()
-
-        avail_sorted_aq = []
-        for a, q in zip(sorted_actions.squeeze(), sorted_actions_q.squeeze()):
-            a_str = self.action_space_str[a.item()]
-            if a_str in available_actions_str:
-                avail_sorted_aq.append((a_str, q.item()))
-
-
-        print(avail_sorted_aq)
-        node_key = hash(agent.dump())
-        real_flops = self.eval_ln_flops(agent)
-        predicted_flops = self.eval_cost_model(agent) if self.cost_model else -1
-        graph.add_node(
-            node_key, 
-            label=f'FLOPS = {real_flops:9.4f}\nPRED = {predicted_flops:9.4f}\n' + agent.dump().replace(':', ';')
-            )
-
-        if all([x[1] < 0 for x in avail_sorted_aq]):
-            graph.nodes[node_key]['color'] = 'lightblue1'
-            graph.nodes[node_key]['style'] = 'filled'
-            actions_reward_pairs.append((agent.actions, self.eval_cost_fn(agent)))
-            return
-
-
-        # print(chosen_actions)
-        for action_str, action_q in avail_sorted_aq:
-            if len(actions_reward_pairs) == num_strategies: return
-
-            agent_copy = agent.copy()
-            agent_copy.apply_action(action_str)
-            
-            loop_detetcted = hash(agent_copy.dump()) in graph
-            graph.add_edge(hash(agent.dump()), hash(agent_copy.dump()), label=f'{action_str}\n{action_q:9.4f}', color='black')
-            if loop_detetcted: 
-                continue
-
-            self.get_best_actions_helper(agent_copy, actions_reward_pairs, search_depth-1, num_strategies, graph)                
-
-
-
-    def greedy_search(self, walk_count, num_steps, search_depth, search_width):
-        return self.greedy_searcher.search_n(
-            agent=self.agent,
-            n=walk_count, 
-            num_steps=num_steps,
-            lookahead=search_depth, 
-            search_width=search_width,
-            eval_mode="policy",
-        )
-
-    def policy_cost_search(self, num_steps, search_width, n):
-        return self.policy_cost_searcher.search(
-            agent=self.agent,
-            num_steps=num_steps,
-            search_width=search_width,
-            n=n, 
-        )
-
-    

@@ -3,6 +3,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import time
 from tqdm import tqdm
+import random
 
 
 class Evaluator:
@@ -18,7 +19,6 @@ class Evaluator:
         self.cost_path = cost_path
         self.policy_path = policy_path
         self.steps = steps
-        df_gflops, df_time = None, None
         self.searches = {
             'greedy1_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=loop_nest',
             'greedy1_cost': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=cost',
@@ -41,55 +41,79 @@ class Evaluator:
             benchmarks (list): list of string names of benchmarks to evaluate
             searches (dict): dict {search_name: search_cmd}. Check handle_session_parameter for format
         """
-        self.df_gflops, self.df_time = pd.DataFrame(), pd.DataFrame()
-        for i, benchmark in tqdm(enumerate(benchmarks)):
-            results_gflops, results_time = self.evaluate_single_benchmark(env, benchmark, searches)
+        self.df_gflops, self.df_time, self.df_actions = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        for benchmark in tqdm(benchmarks):
+            results_gflops, results_time, results_actions = self.evaluate_single_benchmark(env, benchmark, searches)
             self.df_gflops = pd.concat([self.df_gflops, pd.DataFrame([results_gflops])], axis=0)
             self.df_time = pd.concat([self.df_time, pd.DataFrame([results_time])], axis=0)
+            self.df_actions = pd.concat([self.df_actions, pd.DataFrame([results_actions])], axis=0)
 
 
-        return self.df_gflops, self.df_time
+        return self.df_gflops, self.df_time, self.df_actions
         
 
-    def save(self, path, yscale='linear'):
+    def save(self, path):
         fig, axs = plt.subplots(2, 1)
-        breakpoint()
-        axs[0] = self.df_gflops.plot(x=self.df_gflops.columns[0], y=self.df_gflops.columns[1:], kind='bar', figsize=(40, 5), ax=axs[0])
+        num_bench = min(len(self.df_gflops), 100)
+        figsize = ((num_bench + 1) // 2, 5)
+        indexes = sorted(random.sample(range(len(self.df_gflops)), num_bench))
+
+        axs[0] = self.df_gflops.iloc[indexes].plot(x=self.df_gflops.columns[0], y=self.df_gflops.columns[1:], kind='bar', figsize=figsize, width=0.8, align='edge', ax=axs[0])
         axs[0].minorticks_on()
         axs[0].grid(which='both', axis='y')
         axs[0].set_ylabel('GFLOPS')
         
-        axs[1] = self.df_time.plot(x=self.df_time.columns[0], y=self.df_time.columns[1:], kind='bar', figsize=(40, 5), ax=axs[1])
+        axs[1] = self.df_time.iloc[indexes].plot(x=self.df_time.columns[0], y=self.df_time.columns[1:], kind='bar', figsize=figsize, width=0.8, align='edge', ax=axs[1])
         axs[1].minorticks_on()
         axs[1].grid(which='both', axis='y')
         axs[1].set_ylabel('seconds')
+        axs[1].set_yscale('log')
         
 
-        fig.suptitle(f'GFlops comparison benchmarks', fontsize=16)
+        fig.suptitle(f'Benchmarks evaluation', fontsize=16)
         fig.autofmt_xdate()
-        # fig.tight_layout()
 
-        axs[0].legend(title='SUBJECT',loc='center left', bbox_to_anchor=(1, 0.5))
+        axs[0].legend(title='Searches',loc='center left', bbox_to_anchor=(1, 0.5))
         axs[1].get_legend().remove()
 
         fig.savefig(f'{path}/results.png', bbox_inches = 'tight')
-        breakpoint()
-        pd.concat( [self.df_gflops, self.df_time], axis=1).to_csv(f'{path}/results.csv')
+        pd.concat( [self.df_gflops, self.df_time, self.df_actions], axis=1).to_csv(f'{path}/results.csv')
+
+        for index, row in self.df_actions.iterrows():
+            print(f"\n_______________________________________________________________")
+            for search, actions in row.items():
+                print(f"\t{search}, {actions}")
        
 
     def evaluate_single_benchmark(self, env, benchmark, searches):
+        """ Run set of searches on single benchmark
+
+        Args:
+            env (CompilerGymEnv): environment.
+            benchmark (str): benchmark to run.
+            searches (dict): {search_name: search_cmd}. Check handle_session_parameter for format
+
+        Returns:
+            dict, dict, dict: gflops, time, actions dict for each search
+        """
         results_gflops = {'benchmark': benchmark}
         results_time = {'benchmark': benchmark}
+        results_actions = {'benchmark': benchmark}
+
         env.reset(benchmark=benchmark)
-        env.send_param("print_looptree", "")
         env.send_param('load_cost_model', str(self.cost_path))
         env.send_param('load_policy_model', str(self.policy_path))        
         
-        results_gflops['base'], results_time['base'] = self.base_performance(env, eval_mode='loop_nest')
+        results_gflops['base'], results_time['base'], results_actions['base'] = self.base_performance(env, eval_mode='loop_nest')
+
+        print(benchmark)
+        env.send_param("print_looptree", "")
+        print(f"Base performance = {results_gflops['base']}")
+
         for search_name, search_cmd in searches.items():
-            results_gflops[search_name], results_time[search_name] = self.search_performance(env, search_cmd)
+            results_gflops[search_name], results_time[search_name], results_actions[search_name] = self.search_performance(env, search_cmd)
             
-        return results_gflops, results_time
+        return results_gflops, results_time, results_actions
 
 
     #############################################################
@@ -103,7 +127,7 @@ class Evaluator:
             gflops = env.observation['gflops_cost']
         else:
             assert(0), 'base performance eval_mode must be loop_nest or cost'
-        return gflops, time.time() - start
+        return gflops, time.time() - start, ""
 
 
     def search_performance(self, env, search):
@@ -118,7 +142,7 @@ class Evaluator:
             gflops, search_time = 0, 0
             actions_reward = "failed"
 
-        return gflops, search_time
+        return gflops, search_time, actions_reward[0]
 
 
     def move_and_eval(self, env, actions_str):

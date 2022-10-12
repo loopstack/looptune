@@ -228,9 +228,9 @@ def register_env():
                 flops_loop_nest_reward.NormRewardTensor(),
                 ],
             "datasets": [   
-                # mm128_128_128.Dataset(),
+                mm128_128_128.Dataset(),
                 # mm8_16_128_128.Dataset(),
-                mm8_16_8_16_128.Dataset(),
+                # mm8_16_8_16_128.Dataset(),
                 # mm8_16_8_16_8_16.Dataset(),
             ],
         },

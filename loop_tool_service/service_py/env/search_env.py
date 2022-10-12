@@ -110,6 +110,7 @@ class BeamSearcher:
         actions_rewards = self.beam_search.search_n(agent=agent, num_steps=num_steps, search_width=search_width, n=search_width, eval_mode=eval_mode, graph=graph)
         if debug:        
             print(nx.nx_pydot.to_pydot(graph))
+        
         return max(actions_rewards, key=lambda x: x[1]) 
 
 

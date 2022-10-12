@@ -96,7 +96,7 @@ class Environment:
 
 
     def reset_agent(self):
-        self.agent = self.agent_start
+        self.agent = self.agent_start.copy()
     ##############################################################
     # Apply action
     ##############################################################
@@ -132,7 +132,7 @@ class Environment:
         start = time.time()
         flops = self.eval_ln_flops(self.agent)
         end = time.time()
-        print(f'LoopNest = {end - start}')
+        # print(f'LoopNest = {end - start}')
         return Event(float_value=flops)
             
     def get_gflops_cost(self) -> Event:

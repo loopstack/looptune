@@ -9,14 +9,11 @@ python generate_permutations.py --kind=mm --size=128 --out=path-to-dir [--permut
 '''
 
 import argparse
-import sys
 import loop_tool as lt
 import numpy as np
 
 from itertools import combinations, permutations
-from loop_tool_service.paths import LOOP_TOOL_ROOT
 import os
-import shutil
 
 
 
@@ -95,16 +92,13 @@ def swap_loops(loop_tree, l1, l2):
 
 
 def order_loop_tree(loop_tree, order):
-    i = 0
-    order_tmp = list(order)
+    cur_order = [*range(len(order))]
 
-    while(i < len(order_tmp)):
-        if i == order_tmp[i]:
-            i += 1
-        else:
-            # breakpoint()
-            loop_tree = swap_loops(loop_tree, l1=i, l2=order[i])
-            order_tmp[order_tmp[i]], order_tmp[i] = order_tmp[i], order_tmp[order_tmp[i]]
+    for i in range(len(order)):
+        for j in range(i+1, len(order)):
+            if order[i] == cur_order[j]:
+                loop_tree = swap_loops(loop_tree, l1=i, l2=j)
+                cur_order[i], cur_order[j] = cur_order[j], cur_order[i]
 
     return loop_tree
 

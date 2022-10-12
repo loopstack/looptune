@@ -315,7 +315,7 @@ class LoopToolCompilationSession(CompilationSession):
         elif key == "reset_agent":
             self.env.reset_agent()
             return ""
-        
+
         elif key == "load_cost_model":
             self.env.evaluator.load_cost_model(value)
             return ""
@@ -395,7 +395,7 @@ class LoopToolCompilationSession(CompilationSession):
         elif key == "print_looptree":
             print(self.env.agent.actions)
             print(self.env.agent)
-            return ""
+            return self.env.agent.lt.dump()
         else:
             logging.critical("handle_session_parameter Unsuported key:", key)
             return ""

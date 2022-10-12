@@ -312,6 +312,10 @@ class LoopToolCompilationSession(CompilationSession):
                 self.env.agent = self.env.agent_saved.copy() #deepcopy(self.env.agent_saved)
             return "Succeeded"
         
+        elif key == "reset_agent":
+            self.env.reset_agent()
+            return ""
+        
         elif key == "load_cost_model":
             self.env.evaluator.load_cost_model(value)
             return ""

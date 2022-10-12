@@ -76,9 +76,9 @@ class Evaluator:
                 end = time.time()
                 del pred_tensor, state_tensor
                 self.time_spent.append(end - start)
-                print(f'Costs: \n model = {end - start}')
+                # print(f'Costs: \n model = {end - start}')
 
-                print(f"Cost model____________{end - start}_____________{pred_gflops}")
+                # print(f"Cost model____________{end - start}_____________{pred_gflops}")
 
                 # aa=time.time();self.cost_model(state_tensor);bb=time.time(); print(bb-aa)
                 self.cost_cache[tree_hash] = pred_gflops
@@ -93,7 +93,7 @@ class Evaluator:
                 end = time.time()
                 self.time_spent.append(end - start)
                 self.ln_cache[tree_hash] = gflops
-                print(f"LoopNest model______{end - start}_________cache__{len(self.ln_cache)}________{gflops}")
+                # print(f"LoopNest model______{end - start}_________cache__{len(self.ln_cache)}________{gflops}")
                 return gflops
 
 
@@ -106,7 +106,7 @@ class Evaluator:
         
 
     def get_actions_q_policy(self, agent)-> dict:
-        print("Policy model_________________________")
+        # print("Policy model_________________________")
         available_actions = agent.get_available_actions()
         logits = self.get_actions_q_policy_tensor(agent)
         actions_q = { self.env.action_space_str[a_id]: float(a_q) for a_id, a_q in enumerate(logits) if self.env.action_space_str[a_id] in available_actions }

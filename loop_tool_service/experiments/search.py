@@ -30,6 +30,7 @@ from ray.rllib.models import ModelCatalog
 import random
 
 import loop_tool_service
+from loop_tool_service.models.evaluator import Evaluator
 # from loop_tool_service.models.rllib.rllib_torch import load_datasets, make_env
 import loop_tool_service.models.rllib.my_net_rl as my_net_rl
 from loop_tool_service.paths import LOOP_TOOL_ROOT
@@ -50,6 +51,8 @@ import wandb
 To download network from wandb say: dejang/loop_stack_cost_model/k4ztid39
 '''
 weights_path = LOOP_TOOL_ROOT/"loop_tool_service/models/weights"
+experiment_path = LOOP_TOOL_ROOT/"loop_tool_service/experiments"
+
 
 # Training settings
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
@@ -446,14 +449,24 @@ if __name__ == '__main__':
     print(args)
     policy_path = resolve_policy(args.policy)
     cost_path = resolve_cost(args.cost)
-    # register_env()
-    benchmark = str(args.benchmark)
+
+    evaluator = Evaluator(steps=args.steps, cost_path=cost_path, policy_path=policy_path)
 
     with make_env() as env:
+        benchmark = str(args.benchmark)
         if benchmark in env.datasets.datasets():
-            eval_benchmarks(env, benchmark)
+            benchmarks = env.datasets[benchmark].benchmarks()
         elif benchmark in env.datasets.benchmarks():
-            eval_benchmark(env, benchmark)
-        else:
-            print('benchmark cannot be found')
-            breakpoint()
+            benchmarks = [benchmark]
+        
+        evaluator.evaluate(env, benchmarks, evaluator.searches)
+        evaluator.save(path=experiment_path)
+
+    # with make_env() as env:
+    #     if benchmark in env.datasets.datasets():
+    #         eval_benchmarks(env, benchmark)
+    #     elif benchmark in env.datasets.benchmarks():
+    #         eval_benchmark(env, benchmark)
+    #     else:
+    #         print('benchmark cannot be found')
+    #         breakpoint()

@@ -79,6 +79,7 @@ class Environment:
         ir = lt.deserialize(benchmark.program.contents)
         self.agent = lt.LoopTreeAgent(lt.LoopTree(ir))#.merge_all()
         self.agent.set_action_space(self.action_space_str)
+        self.agent_start = self.agent.copy()
         logging.info(self.agent)
         self.lt_changed = False
         self.agent_saved = None
@@ -94,6 +95,8 @@ class Environment:
         self.beambeam_searcher = BeamBeamSearcher(self.evaluator)
 
 
+    def reset_agent(self):
+        self.agent = self.agent_start
     ##############################################################
     # Apply action
     ##############################################################

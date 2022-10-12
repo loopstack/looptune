@@ -1,7 +1,7 @@
 import random
 import networkx as nx
 
-class BeamSearcher:
+class BeamSearcherCore:
     def __init__(self, evaluator):
         self.evaluator = evaluator
 
@@ -78,7 +78,7 @@ class BeamSearcher:
 class GreedySearcher:
     def __init__(self, evaluator):
         self.evaluator = evaluator
-        self.beam_search = BeamSearcher(evaluator=evaluator)
+        self.beam_search = BeamSearcherCore(evaluator=evaluator)
 
     def search(self, agent, num_steps, lookahead, search_width, eval_mode, debug=False): # actions, reward
         agent_copy = agent.copy()
@@ -97,14 +97,28 @@ class GreedySearcher:
 
         return agent_copy.actions, new_reward
 
-    
+
+class BeamSearcher:
+    """ Uses policy beam search first to find n best candidates. For each candidate apply another beam search.
+    """
+    def __init__(self, evaluator):
+        self.evaluator = evaluator
+        self.beam_search = BeamSearcherCore(evaluator=evaluator)
+
+    def search(self, agent, num_steps, search_width, eval_mode, debug=False):
+        graph = nx.MultiDiGraph() if debug else None
+        actions_rewards = self.beam_search.search_n(agent=agent, num_steps=num_steps, search_width=search_width, n=search_width, eval_mode=eval_mode, graph=graph)
+        if debug:        
+            print(nx.nx_pydot.to_pydot(graph))
+        return max(actions_rewards, key=lambda x: x[1]) 
+
 
 class BeamBeamSearcher:
     """ Uses policy beam search first to find n best candidates. For each candidate apply another beam search.
     """
     def __init__(self, evaluator):
         self.evaluator = evaluator
-        self.beam_search = BeamSearcher(evaluator=evaluator)
+        self.beam_search = BeamSearcherCore(evaluator=evaluator)
 
           
     def search(self, agent, num_steps1, eval_mode1, search_width1, num_steps2, eval_mode2, search_width2, debug=False): # actions, reward

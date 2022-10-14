@@ -1,10 +1,12 @@
+import wandb
+import os
 import json
 import pandas as pd
 from matplotlib import pyplot as plt
 import time
 from tqdm import tqdm
 import random
-
+import numpy as np
 
 class Evaluator:
     """ Evaluator runs specified searches on full dataset or single benchmark 
@@ -19,6 +21,7 @@ class Evaluator:
         self.cost_path = cost_path
         self.policy_path = policy_path
         self.steps = steps
+        
         self.searches = {
             'greedy1_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=loop_nest',
             'greedy1_cost': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=cost',
@@ -42,48 +45,15 @@ class Evaluator:
             searches (dict): dict {search_name: search_cmd}. Check handle_session_parameter for format
         """
         self.df_gflops, self.df_time, self.df_actions = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
         for benchmark in tqdm(benchmarks):
             results_gflops, results_time, results_actions = self.evaluate_single_benchmark(env, benchmark, searches)
             self.df_gflops = pd.concat([self.df_gflops, pd.DataFrame([results_gflops])], axis=0)
             self.df_time = pd.concat([self.df_time, pd.DataFrame([results_time])], axis=0)
             self.df_actions = pd.concat([self.df_actions, pd.DataFrame([results_actions])], axis=0)
 
-
-        return self.df_gflops, self.df_time, self.df_actions
+        return { 'gflops': self.df_gflops, 'time': self.df_time, 'actions': self.df_actions }
         
-
-    def save(self, path):
-        fig, axs = plt.subplots(2, 1)
-        num_bench = min(len(self.df_gflops), 100)
-        figsize = ((num_bench + 1) // 2, 5)
-        indexes = sorted(random.sample(range(len(self.df_gflops)), num_bench))
-
-        axs[0] = self.df_gflops.iloc[indexes].plot(x=self.df_gflops.columns[0], y=self.df_gflops.columns[1:], kind='bar', figsize=figsize, width=0.8, align='edge', ax=axs[0])
-        axs[0].minorticks_on()
-        axs[0].grid(which='both', axis='y')
-        axs[0].set_ylabel('GFLOPS')
-        
-        axs[1] = self.df_time.iloc[indexes].plot(x=self.df_time.columns[0], y=self.df_time.columns[1:], kind='bar', figsize=figsize, width=0.8, align='edge', ax=axs[1])
-        axs[1].minorticks_on()
-        axs[1].grid(which='both', axis='y')
-        axs[1].set_ylabel('seconds')
-        axs[1].set_yscale('log')
-        
-
-        fig.suptitle(f'Benchmarks evaluation', fontsize=16)
-        fig.autofmt_xdate()
-
-        axs[0].legend(title='Searches',loc='center left', bbox_to_anchor=(1, 0.5))
-        axs[1].get_legend().remove()
-
-        fig.savefig(f'{path}/results.png', bbox_inches = 'tight')
-        pd.concat( [self.df_gflops, self.df_time, self.df_actions], axis=1).to_csv(f'{path}/results.csv')
-
-        for index, row in self.df_actions.iterrows():
-            print(f"\n_______________________________________________________________")
-            for search, actions in row.items():
-                print(f"\t{search}, {actions}")
-       
 
     def evaluate_single_benchmark(self, env, benchmark, searches):
         """ Run set of searches on single benchmark
@@ -115,6 +85,87 @@ class Evaluator:
             
         return results_gflops, results_time, results_actions
 
+
+    def save(self, path):
+        self.plot_bars(path)
+        self.plot_violin(path)
+        pd.concat( [self.df_gflops, self.df_time, self.df_actions], axis=1).to_csv(f'{path}.csv')
+
+        for _, row in self.df_actions.iterrows():
+            print(f"\n_______________________________________________________________")
+            for search, actions in row.items():
+                print(f"\t{search}, {actions}")
+       
+
+    def plot_bars(self, path):
+        fig, axs = plt.subplots(2, 1)
+        num_bench = min(len(self.df_gflops), 100)
+        figsize = ((num_bench + 1) // 2, 5)
+        indexes = sorted(random.sample(range(len(self.df_gflops)), num_bench))
+
+        axs[0] = self.df_gflops.iloc[indexes].plot(x=self.df_gflops.columns[0], y=self.df_gflops.columns[1:], kind='bar', figsize=figsize, width=0.8, align='edge', ax=axs[0])
+        axs[0].minorticks_on()
+        axs[0].grid(which='both', axis='y')
+        axs[0].set_ylabel('GFLOPS')
+        
+        axs[1] = self.df_time.iloc[indexes].plot(x=self.df_time.columns[0], y=self.df_time.columns[1:], kind='bar', figsize=figsize, width=0.8, align='edge', ax=axs[1])
+        axs[1].minorticks_on()
+        axs[1].grid(which='both', axis='y')
+        axs[1].set_ylabel('seconds')
+        axs[1].set_yscale('log')
+        
+        fig.suptitle(f'Benchmarks evaluation', fontsize=16)
+        fig.autofmt_xdate()
+
+        axs[0].legend(title='Searches',loc='center left', bbox_to_anchor=(1, 0.5))
+        axs[1].get_legend().remove()
+
+        fig.savefig(f'{path}_bars.png', bbox_inches = 'tight')
+
+
+    def plot_violin(self, path):
+        # Analyse results
+        fig, axs = plt.subplots()
+        labels = self.df_gflops.columns[2:]
+        axs.violinplot(
+            dataset = [ 
+                self.df_gflops[col].astype(float) / self.df_gflops['base'].astype(float) 
+                for col in labels # no benchmark, base columns
+            ],
+            showmedians=True
+        )
+        axs.set_xticks(np.arange(1, len(labels) + 1))
+        axs.set_xticklabels(labels)
+        axs.set_xlim(0.25, len(labels) + 0.75)
+        axs.tick_params(labelrotation=45)
+
+        axs.set_title('Speedup distribution')
+        axs.yaxis.grid(True)
+        axs.set_xlabel('Models')
+        fig.savefig(f"{path}_violin.png", bbox_inches = 'tight')
+
+
+
+    def send_to_wandb(self, path, wandb_run_id, wandb_dict):
+        wandb_dict['group_id'] = wandb_run_id.split('_')[0]
+        wandb_dict['run_id'] = wandb_run_id
+
+        cwd = os.getcwd()
+        os.chdir(path)
+        wandb_uri = f'dejang/loop_tool_agent_split/{wandb_run_id}'
+        print(f'Wandb page = https://wandb.ai/{wandb_uri}')
+        api = wandb.Api()
+        wandb_run = api.run(wandb_uri)
+
+        for root, dirs, files in os.walk(path):
+            if dirs == []: dirs = ['.']
+            for file in files:
+                wandb_run.upload_file("/".join(dirs) + '/' + file)        
+
+        for key, value in wandb_dict.items(): 
+            wandb_run.summary[key] = value
+        wandb_run.summary.update()
+        os.chdir(cwd)
 
     #############################################################
     # Private
@@ -149,5 +200,3 @@ class Evaluator:
         actions_ids = [ env.action_space.from_string(a) for a in actions_str ]
         env.multistep(actions_ids)
         return env.observation['flops_loop_nest']
-
- 

@@ -49,7 +49,7 @@ class LoopToolDataset(Dataset):
         self.df = df
 
     def __getitem__(self, i):
-        stride_freq_log_0 = np.log2(self.df['program_tensor'].iloc[i] + 1)
+        stride_freq_log_0 = np.log2(self.df['stride_tensor'].iloc[i] + 1)
         label = self.df['gflops'].iloc[i]
         return torch.flatten(stride_freq_log_0.float()).to(device), torch.tensor([label]).float().to(device)
 
@@ -73,7 +73,7 @@ def load_dataset(config):
     trainLoad = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True)
     testLoad = DataLoader(test_set, batch_size=config['batch_size'], shuffle=True)
 
-    config['size_in'] = len(torch.flatten(df['program_tensor'].iloc[0]))
+    config['size_in'] = len(torch.flatten(df['stride_tensor'].iloc[0]))
     config['size_out'] = 1
     
     return trainLoad, testLoad
@@ -205,8 +205,8 @@ df = pd.read_pickle(data_path)
 diff = []
 model.eval()
 for index, row in df.iterrows():
-    # print(row['program_tensor'])
-    stride_freq_log_0 = np.log2(df['program_tensor'].iloc[index] + 1)
+    # print(row['stride_tensor'])
+    stride_freq_log_0 = np.log2(df['stride_tensor'].iloc[index] + 1)
     
     state = torch.flatten(stride_freq_log_0).float().to(device)
     label = row['gflops']

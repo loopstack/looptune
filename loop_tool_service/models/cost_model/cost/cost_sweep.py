@@ -25,31 +25,6 @@ from loop_tool_service.paths import LOOP_TOOL_ROOT
 import pdb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument(
-    "--sweep",  type=int, nargs='?', const=2, default=1, help="Run with wandb sweeps"
-)
-args = parser.parse_args()
-
-
-default_config = {
-    "name" : "Cost-sweep",
-    "method": "random",
-    "metric": {
-        "name": "final_performance",
-        "goal": "maximize",
-    },
-    "parameters" : {
-        "layers" : { "value": 8},
-        "hidden_size" : { "value": 500},
-        'lr': { "value": 1e-6},
-        "epochs": { "value" : 10000 },
-        "batch_size": { "value" : 50 },
-        "dropout": { "value" : 0.2 }, # dropout cannot be 0 for some reason
-        "data_size": { "value" : 10 },
-    }
-}
 
 class LoopToolDataset(Dataset):
     def __init__(
@@ -59,7 +34,7 @@ class LoopToolDataset(Dataset):
         self.df = df
 
     def __getitem__(self, i):
-        stride_freq_log_0 = np.log2(self.df['program_tensor'].iloc[i] + 1)
+        stride_freq_log_0 = np.log2(self.df['stride_tensor'].iloc[i] + 1)
         label = self.df['gflops'].iloc[i]
         return torch.flatten(stride_freq_log_0.float()).to(device), torch.tensor(label).float().to(device)
 
@@ -69,13 +44,12 @@ class LoopToolDataset(Dataset):
 
 def load_dataset(config):
     from loop_tool_service.paths import LOOP_TOOL_ROOT
-    data_path = str(LOOP_TOOL_ROOT) + "/loop_tool_service/models/datasets/tensor_dataset_noanot.pkl"
+    data_path = str(LOOP_TOOL_ROOT) + "/loop_tool_service/benchmarks/observations_db/mm8_16_8_16_8_16_db.pkl"
     if config['data_size'] < 0:
         df = pd.read_pickle(data_path)
     else:
         df = pd.read_pickle(data_path).iloc[:config['data_size'], :]
 
-    breakpoint()
     loop_tool_dataset = LoopToolDataset(df=df)
 
     test_size = len(loop_tool_dataset.df) // 5
@@ -87,7 +61,7 @@ def load_dataset(config):
     trainLoad = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True)
     testLoad = DataLoader(test_set, batch_size=config['batch_size'], shuffle=True)
 
-    config['size_in'] = len(torch.flatten(df['program_tensor'].iloc[0]))
+    config['size_in'] = len(torch.flatten(df['stride_tensor'].iloc[0]))
     config['size_out'] = 1
     
     return trainLoad, testLoad
@@ -234,7 +208,31 @@ def update_default_config(sweep_config=None):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
 
+    parser.add_argument(
+        "--sweep",  type=int, nargs='?', const=2, default=1, help="Run with wandb sweeps"
+    )
+    args = parser.parse_args()
+
+
+    default_config = {
+        "name" : "Cost-sweep",
+        "method": "random",
+        "metric": {
+            "name": "final_performance",
+            "goal": "maximize",
+        },
+        "parameters" : {
+            "layers" : { "value": 8},
+            "hidden_size" : { "value": 500},
+            'lr': { "value": 1e-6},
+            "epochs": { "value" : 10000 },
+            "batch_size": { "value" : 50 },
+            "dropout": { "value" : 0.2 }, # dropout cannot be 0 for some reason
+            "data_size": { "value" : 10 },
+        }
+    }
     os.environ['WANDB_NOTEBOOK_NAME'] = 'cost_sweep.ipynb'
 
     sweep_config = {

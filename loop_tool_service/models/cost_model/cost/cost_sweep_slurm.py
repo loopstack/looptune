@@ -24,7 +24,7 @@ import pdb
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-sweep_count = 2
+sweep_count = 1
 sweep_config = {
     "name" : "Cost-sweep",
     "method": "random",
@@ -33,24 +33,24 @@ sweep_config = {
         "goal": "maximize",
     },
     "parameters" : {
-        "hidden_size" : {"values": [ 300, 400 ]},
+        "hidden_size" : {"values": [ 30, 300 ]},
         "layers" : {"values": [ 5, 10]},
         'lr': {
         'distribution': 'log_uniform_values',
-        'min': 0.000001,
-        'max': 0.01
+        'min': 1e-7,
+        'max': 1e-5
         },
-        "epochs": { "value" : 5 },
-        "batch_size": { "value" : 100 },
+        "epochs": { "value" : 10000 },
+        "batch_size": { "value" : 1000 },
         "dropout": { "value" : 0.2 },
-        "data_size": { "value" : 10 },
-        "timeout_min": { "value": 10}
+        "data_size": { "value" : 100000 },
+        "timeout_min": { "value": 180}
     }
 }
 
 
 
-from cost_sweep import train
+from loop_tool_service.models.cost_model.cost.cost_sweep import train
 
 def submit_job():
         executor = SubmititJobSubmitter(
@@ -63,5 +63,5 @@ def submit_job():
 
 if __name__ == "__main__":
 
-    sweep_id = wandb.sweep(sweep_config, project="loop_tool")
+    sweep_id = wandb.sweep(sweep_config, project="loop_stack_cost_model")
     wandb.agent(sweep_id=sweep_id, function=submit_job, count=sweep_count)

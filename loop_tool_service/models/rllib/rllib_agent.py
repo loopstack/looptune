@@ -127,9 +127,9 @@ default_config = {
     # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
     "num_gpus": torch.cuda.device_count(),
     # "num_workers": -1,  # parallelism
-    "rollout_fragment_length": 100, 
-    "train_batch_size": 7900, # train_batch_size == num_workers * rollout_fragment_length
-    "num_sgd_iter": 50,
+    "rollout_fragment_length": 10, 
+    "train_batch_size": 790, # train_batch_size == num_workers * rollout_fragment_length
+    "num_sgd_iter": 10,
     # "evaluation_interval": 5, # num of training iter between evaluations
     # "evaluation_duration": 10, # num of episodes run per evaluation period
     "explore": True,
@@ -142,11 +142,14 @@ default_config = {
 torch, nn = try_import_torch()
 max_episode_steps = 20
 
+dataset_global = None
+
 def make_env():
     """Make the reinforcement learning environment for this experiment."""
-    
+    # if dataset == []:
     env = loop_tool_service.make(
         "loop_tool_env-v0",
+        dataset=dataset_global,
         observation_space="loops_tensor",
         reward_space="flops_loop_nest_tensor",
     )
@@ -155,7 +158,10 @@ def make_env():
     return env
 
 class RLlibAgent:
-    def __init__(self, use_wandb=True) -> None:
+    def __init__(self, dataset, use_wandb=True) -> None:
+        global dataset_global
+        dataset_global = dataset
+        self.dataset = dataset
         self.env = make_env()
         self.train_iter = max_episode_steps
         self.last_run_path=LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
@@ -168,6 +174,8 @@ class RLlibAgent:
             "my_model", my_net_rl.TorchCustomModel
         )
 
+    def make_env(self):
+        return make_env()
 
     def register_benchmark(self, train_benchmark):
         def make_training_env(*args): 
@@ -175,20 +183,19 @@ class RLlibAgent:
             return CycleOverBenchmarks(make_env(), train_benchmark)
         tune.register_env("compiler_gym", make_training_env)
         
-    def load_datasets(self, datasets, data_size):
+    def load_datasets(self, data_size):
         train_benchmarks = []
         val_benchmarks = []
-        for dataset in self.env.datasets.datasets():
-            if dataset.name not in datasets:
-                continue
-            self.wandb_dict['dataset'] = dataset.name
-            benchmarks = random.sample(list(dataset.benchmarks()), min(len(dataset), data_size))
+        dataset =  self.env.datasets[f'benchmark://{self.dataset}-v0']
 
-            train_perc = 0.8
-            train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
-            train_benchmarks.extend(benchmarks[:train_size]) 
-            val_benchmarks.extend(benchmarks[train_size:])
-            # train_benchmarks, val_benchmarks = torch.utils.data.random_split(benchmarks, [train_size, len(benchmarks) - train_size])
+        self.wandb_dict['dataset'] = dataset.name
+        benchmarks = random.sample(list(dataset.benchmarks()), min(len(dataset), data_size))
+
+        train_perc = 0.8
+        train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
+        train_benchmarks.extend(benchmarks[:train_size]) 
+        val_benchmarks.extend(benchmarks[train_size:])
+        # train_benchmarks, val_benchmarks = torch.utils.data.random_split(benchmarks, [train_size, len(benchmarks) - train_size])
 
         print("Number of benchmarks for training:", len(train_benchmarks))
         print("Number of benchmarks for validation:", len(val_benchmarks))
@@ -296,10 +303,9 @@ def wandb_update_df(wandb_dict, res_dict, prefix):
 def train(config, train_iter, sweep_count=1, policy_model_path=''):
     print(f'Train params: ', config, train_iter, policy_model_path)
     
-    agent = RLlibAgent(use_wandb=True)
+    agent = RLlibAgent(dataset='mm128_128_128', use_wandb=True)
 
     train_benchmarks, val_benchmarks = agent.load_datasets(
-        datasets=['benchmark://mm128_128_128-v0'],
         data_size=10000
     )
     breakpoint()
@@ -310,7 +316,7 @@ def train(config, train_iter, sweep_count=1, policy_model_path=''):
         sweep_count=sweep_count
     )
 
-    env = make_env()
+    env = agent.make_env()
     for trial_id, policy_model in models.items():
         evaluator = Evaluator(steps=2, cost_path="", policy_path=policy_model['policy_path'])
 
@@ -364,6 +370,10 @@ if __name__ == '__main__':
         ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
 
+    print(f"Num of CPUS = {int(ray.cluster_resources()['CPU'])}")
+    print(f'Num of GPUS = {torch.cuda.device_count()}, ray = {ray.get_gpu_ids()}')
+
+
     if 'num_workers' not in default_config: 
         default_config['num_workers'] = int(ray.cluster_resources()['CPU']) - 1
 
@@ -384,10 +394,10 @@ if __name__ == '__main__':
     ############### Train ###############
     print(f'Train params: ', default_config, args.iter, args.policy)
     
-    agent = RLlibAgent(use_wandb=True)
+    agent = RLlibAgent(dataset='mm128_128_128', use_wandb=True)
+
 
     train_benchmarks, val_benchmarks = agent.load_datasets(
-        datasets=['benchmark://mm128_128_128-v0'],
         data_size=10000
     )
 
@@ -398,7 +408,7 @@ if __name__ == '__main__':
         sweep_count=sweep_count
     )
 
-    env = make_env()
+    env = agent.make_env()
     for trial_id, policy_model in models.items():
         evaluator = Evaluator(steps=2, cost_path="", policy_path=policy_model['policy_path'])
         
@@ -407,7 +417,6 @@ if __name__ == '__main__':
 
         df_val = evaluator.evaluate(env, val_benchmarks, { k:v for k, v in evaluator.searches.items() if 'cost' not in k })
         evaluator.save(path=agent.last_run_path/trial_id/"validation")
-        breakpoint()
         wandb_update_df(policy_model['config'], df_train, prefix='train_')
         wandb_update_df(policy_model['config'], df_val, prefix='')
         evaluator.send_to_wandb(path=agent.last_run_path/trial_id, wandb_run_id=trial_id, wandb_dict=policy_model['config'])

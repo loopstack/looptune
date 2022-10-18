@@ -212,11 +212,14 @@ from compiler_gym.envs.llvm.datasets import (
 from compiler_gym.util.runfiles_path import site_data_path
 
 import loop_tool_service
-from loop_tool_service.service_py.datasets import mm128_128_128, mm8_16_128_128, mm8_16_8_16_128, mm8_16_8_16_8_16
+from loop_tool_service.service_py.datasets import mm32_8_16_8_4_16, mm128_128_128, mm8_16_128_128, mm8_16_8_16_128, mm8_16_8_16_8_16
 from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward
+import importlib
 
 
-def register_env():
+def register_env(dataset):
+    bench_module = importlib.import_module(f"loop_tool_service.service_py.datasets.{dataset}")
+
     register(
         id="loop_tool_env-v0",
         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
@@ -228,19 +231,22 @@ def register_env():
                 flops_loop_nest_reward.NormRewardTensor(),
                 ],
             "datasets": [   
-                mm128_128_128.Dataset(),
+                bench_module.Dataset(),
+                # mm128_128_128.Dataset(),
+                # mm32_8_16_8_4_16.Dataset(),
                 # mm8_16_128_128.Dataset(),
                 # mm8_16_8_16_128.Dataset(),
                 # mm8_16_8_16_8_16.Dataset(),
             ],
         },
     )
-register_env()
 
 
 
-def make(id: str, **kwargs):
+def make(id: str, dataset='mm128_128_128', **kwargs):
     """Equivalent to :code:`compiler_gym.make()`."""
+    register_env(dataset)
+
     import compiler_gym
     return compiler_gym.make(id, **kwargs)
 

@@ -2,17 +2,16 @@ import argparse
 import loop_tool as lt
 
 import numpy as np
+import pandas as pd
 import pdb
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--bench", type=str, help="Benchmark to generate", required=True
+    "--bench", type=str, help="Benchmark to read", required=True
 )
 
 args = parser.parse_args()
-
-
 
 
 def mm(A, B):
@@ -30,10 +29,14 @@ def gen_mm():
 
     return C
 
+if args.bench.endswith('.pkl'):
+    df = pd.read_pickle(args.bench) 
+    df.head()
+    breakpoint()
+else:
+    with open(args.bench, 'r') as f: ir = lt.deserialize(f.read())
+    C = gen_mm()
+    C = C.set(ir)
 
-with open(args.bench, 'r') as f: ir = lt.deserialize(f.read())
-C = gen_mm()
-C = C.set(ir)
-
-with lt.Backend("loop_nest"):
-    C = lt.ui(C, "/tmp/woo.c")
+    with lt.Backend("loop_nest"):
+        C = lt.ui(C, "/tmp/woo.c")

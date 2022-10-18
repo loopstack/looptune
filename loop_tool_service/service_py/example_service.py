@@ -405,7 +405,7 @@ class LoopToolCompilationSession(CompilationSession):
         new_action_space = False
         end_of_session = False
         action_had_effect = False
-
+        
         choice_index = action.int64_value
         if choice_index < 0 or choice_index >= self.action_space_size:
             raise ValueError("Out-of-range")
@@ -455,9 +455,9 @@ class LoopToolCompilationSession(CompilationSession):
     def get_observation(self, observation_space: ObservationSpace) -> Event:
         logging.info(f"Computing observation from space {observation_space.name}")  
 
-        if observation_space.name in self.prev_observation:            
-            logging.info(f"get_observation: Fast return prev_observation {self.prev_observation}")
-            return self.prev_observation[observation_space.name]
+        # if observation_space.name in self.prev_observation:            
+        #     logging.info(f"get_observation: Fast return prev_observation {self.prev_observation}")
+        #     return self.prev_observation[observation_space.name]
 
         if observation_space.name == "runtime":
             observation = self.env.get_runtime()
@@ -500,20 +500,20 @@ class LoopToolCompilationSession(CompilationSession):
         return self.prev_observation[observation_space.name]
 
 
-    def fork(self) -> CompilationSession:
-        # There is a problem with forking.
-        # from copy import deepcopy
-        # new_fork = deepcopy(self)
-        # new_fork = super().fork()
-        # print(new_fork)
+    # def fork(self) -> CompilationSession:
+    #     # There is a problem with forking.
+    #     # from copy import deepcopy
+    #     # new_fork = deepcopy(self)
+    #     # new_fork = super().fork()
+    #     # print(new_fork)
 
-        return LoopToolCompilationSession(
-            working_directory=self.working_dir,
-            action_space=self.action_space,
-            benchmark=self.benchmark,
-            save_state=self.save_state,
-            env=self.env,
-        )
+    #     return LoopToolCompilationSession(
+    #         working_directory=self.working_dir,
+    #         action_space=self.action_space,
+    #         benchmark=self.benchmark,
+    #         save_state=self.save_state,
+    #         env=self.env,
+    #     )
 
 
 if __name__ == "__main__":

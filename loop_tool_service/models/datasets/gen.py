@@ -18,8 +18,6 @@ def conv1d(a, b):
     a = a.to(ci, no, constraints=[(no, ni + k)])
     return (a * b.to(ci, co, k)).sum(ci, k)
 
-lt.nn.conv(X, W, spatial_dims, window_dims, stride, channel_reduce)
-
 def gen_mm(m, n, k, msplits, ksplits, nsplits):
     A = lt.Tensor(m, k)
     B = lt.Tensor(k, n)
@@ -178,7 +176,7 @@ from tqdm import tqdm
 
 
 def generate_loop_trees(has_annotations=True):
-  df = pd.DataFrame(columns=['ir', 'loops_tensor', 'program_tensor', 'gflops'])
+  df = pd.DataFrame(columns=['ir', 'loops_tensor', 'stride_tensor', 'gflops'])
   count = 0
   examples_count = []
 
@@ -190,7 +188,7 @@ def generate_loop_trees(has_annotations=True):
           if new_lt is not None:
             count += 1            
             # breakpoint()
-            df_example = pd.DataFrame(create_permutations_db(new_lt, has_annotations),columns=['ir', 'loops_tensor', 'program_tensor', 'gflops'])
+            df_example = pd.DataFrame(create_permutations_db(new_lt, has_annotations),columns=['ir', 'loops_tensor', 'stride_tensor', 'gflops'])
             df = pd.concat([df, df_example])
             examples_count.append(df_example.shape[0])
 

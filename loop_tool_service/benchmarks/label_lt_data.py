@@ -1,13 +1,12 @@
-from cgi import test
-from math import ceil
+'''
+    This programs measures GFLOPS and adds on existing IR file. Run:
+    
+    python label_lt_data.py path_to_data
+
+'''
 import sys
 import os 
 import loop_tool as lt
-import random
-import shutil
-import pickle
-import pdb
-from pathlib import Path
 import re
 
 def label_data(path_to_data):
@@ -36,7 +35,7 @@ def main():
     
     print(sys.argv)
     if len(sys.argv) != 2:
-        print('Format: label_lt.data.py path_to_data')
+        print('Format: label_lt_data.py path_to_data')
         return 
 
     path_to_data = sys.argv[1]

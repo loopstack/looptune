@@ -14,12 +14,6 @@ For CLI options:
 $ python custom_env.py --help
 """
 import argparse
-import ast
-from distutils.command.config import config
-from math import ceil, floor
-import gym
-from itertools import islice
-from gym.spaces import Discrete, Box
 import numpy as np
 import os
 import random
@@ -27,14 +21,11 @@ import shutil
 import json
 from matplotlib import pyplot as plt
 from pathlib import Path
-from datetime import datetime
 import pandas as pd
-from copy import deepcopy
 
 import ray
 from ray import tune
 # from ray.rllib.algorithms import ppo
-from ray.rllib.env.env_context import EnvContext
 from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_tf, try_import_torch
 from ray.rllib.utils.test_utils import check_learning_achieved
@@ -91,16 +82,16 @@ default_config = {
         # "no_final_linear":
         # "free_log_std":
     },
-    # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
+    # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0. <<<<<<<<<<<<<<<<<<<<<<<,, TODO: Keep in mind! This was the key
     "num_gpus": torch.cuda.device_count(),
     # "num_workers": -1,  # parallelism
-    "rollout_fragment_length": 100, 
-    "train_batch_size": 7900, # train_batch_size == num_workers * rollout_fragment_length
-    "num_sgd_iter": 50,
+    "rollout_fragment_length": 10, 
+    "train_batch_size": 790, # train_batch_size == num_workers * rollout_fragment_length
+    "num_sgd_iter": 30,
     # "evaluation_interval": 5, # num of training iter between evaluations
     # "evaluation_duration": 10, # num of episodes run per evaluation period
     "explore": True,
-    "gamma": 0.9,
+    "gamma": 0.8,
     "lr": 1e-6,
 }
 wandb_log = {}
@@ -123,7 +114,7 @@ parser.add_argument(
     help="Run on slurm"
 )
 parser.add_argument(
-    "--iter", type=int, default=20, help="Number of iterations to train."
+    "--iter", type=int, default=1, help="Number of iterations to train."
 )
 parser.add_argument("--size", type=int, nargs='?', default=1000000, help="Size of benchmarks to evaluate")
 
@@ -470,10 +461,15 @@ def train(config, stop_criteria, sweep_count=1, policy_model_path=''):
 
     for trial_id, policy_model in models.items():
         # Evaluate agent performance on the train and validation set.
+        print(f"TRIAL: {trial_id} TRAIN___________________________")
         df_gflops_train = run_agent_on_benchmarks(policy_model["model"], train_benchmarks)
+        print(f"TRIAL: {trial_id} VALIDATION____________________________")
         df_gflops_val = run_agent_on_benchmarks(policy_model["model"], val_benchmarks)
 
+        
+        print(f"TRIAL: {trial_id} SAVE___________________________")
         save_results(df_gflops_train=df_gflops_train, df_gflops_val=df_gflops_val, wandb_run_id=trial_id)
+        print(f"TRIAL: {trial_id} FINALIZE___________________________")
         finalize_wandb(
             wandb_run_id=trial_id, 
             df_gflops_train=df_gflops_train, 
@@ -497,12 +493,12 @@ def update_default_config(sweep_config=None):
     
 
 if __name__ == '__main__':
-    # init_logging(level=logging.DEBUG)
+    init_logging(level=logging.DEBUG)
     if ray.is_initialized(): ray.shutdown()
 
     print(f"Running with following CLI options: {args}")
 
-    stop_criteria['training_iteration'] = 2 if args.debug or False else args.iter
+    stop_criteria['training_iteration'] = args.iter
     sweep_count = args.sweep
 
     
@@ -517,7 +513,7 @@ if __name__ == '__main__':
 
 
     if 'num_workers' not in default_config: 
-        default_config['num_workers'] = int(ray.cluster_resources()['CPU']) - 1
+        default_config['num_workers'] = 79 # int(ray.cluster_resources()['CPU']) - 1
 
     if sweep_count and args.policy == '':
         hiddens_layers = [4]
@@ -533,4 +529,8 @@ if __name__ == '__main__':
         default_config = update_default_config(sweep_config)
 
     
+    print(f"Num of CPUS = {int(ray.cluster_resources()['CPU'])}")
+    print(f'Num of GPUS = {torch.cuda.device_count()}, ray = {ray.get_gpu_ids()}')
+
+
     train(config=default_config, stop_criteria=stop_criteria, sweep_count=sweep_count, policy_model_path=args.policy)

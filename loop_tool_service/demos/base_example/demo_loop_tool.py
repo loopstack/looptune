@@ -90,8 +90,8 @@ def main():
                         observation_spaces=["loops_tensor"],
                         reward_spaces=["flops_loop_nest_tensor"],
                     )
-                except ServiceError:
-                    print("AGENT: Timeout Error Step")
+                except ServiceError as e:
+                    print(f"AGENT: Timeout Error Step: {e}")
                     continue
                 
                 print(f"{observation}\n")

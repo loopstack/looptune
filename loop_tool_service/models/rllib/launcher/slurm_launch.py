@@ -103,7 +103,7 @@ parser.add_argument(
     "--time",
     "-t",
     type=str,
-    default="1:00",
+    default="5:00",
     help="Set a limit on the total run time of the job allocation. "
     "Acceptable time formats include "
     "`minutes`, `minutes:seconds`, `hours:minutes:seconds`, `days-hours`, "

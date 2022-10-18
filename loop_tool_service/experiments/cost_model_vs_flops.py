@@ -1,17 +1,7 @@
 '''
 In this experiment we want to compare time and accuracy of cost model to getting ground truth with FLOPS() method
 '''
-# Copyright (c) Facebook, Inc. and its affiliates.
-#
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-"""This script demonstrates how the Python example service without needing
-to use the bazel build system. Usage:
 
-    $ python example_compiler_gym_service/demo_without_bazel.py
-
-It is equivalent in behavior to the demo.py script in this directory.
-"""
 import logging
 from pathlib import Path
 from typing import Iterable

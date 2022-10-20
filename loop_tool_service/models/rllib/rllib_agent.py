@@ -30,6 +30,7 @@ from pathlib import Path
 from datetime import datetime
 import pandas as pd
 from copy import deepcopy
+import yaml
 
 import ray
 from ray import tune
@@ -38,7 +39,7 @@ from ray.rllib.env.env_context import EnvContext
 from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_tf, try_import_torch
 from ray.rllib.utils.test_utils import check_learning_achieved
-from ray.rllib.agents.ppo import PPOTrainer
+from ray.rllib.agents.ppo import PPOTrainer, DEFAULT_CONFIG
 
 import compiler_gym
 from compiler_gym.wrappers import CycleOverBenchmarks
@@ -60,7 +61,10 @@ import loop_tool_service.models.rllib.my_net_rl as my_net_rl
 import torch
 from ray.tune.integration.wandb import WandbLoggerCallback
 from loop_tool_service.paths import LOOP_TOOL_ROOT
+from os.path import exists
+import wandb
 
+import tempfile
 
 # Run this with: 
 # python launcher/slurm_launch.py -e launcher/exp.yaml -n 1 -t 3:00   ### slurm_launch.py internaly calls rllib_torch.py
@@ -96,12 +100,7 @@ parser.add_argument("--size", type=int, nargs='?', default=1000000, help="Size o
 # parser.add_argument(
 #     "--stop-reward", type=float, default=100, help="Reward at which we stop training."
 # )
-parser.add_argument(
-    "--debug",
-    default=False,
-    action="store_true",
-    help="Debuging",
-)
+
 parser.add_argument(
     "--local-mode",
     default=False,
@@ -133,23 +132,23 @@ default_config = {
     # "evaluation_interval": 5, # num of training iter between evaluations
     # "evaluation_duration": 10, # num of episodes run per evaluation period
     "explore": True,
-    "gamma": 0.9,
+    "gamma": 0.7,
     "lr": 1e-6,
 }
 
 
 
 torch, nn = try_import_torch()
-max_episode_steps = 20
+max_episode_steps = 5
 
-dataset_global = None
+datasets_global = None
 
 def make_env():
     """Make the reinforcement learning environment for this experiment."""
     # if dataset == []:
     env = loop_tool_service.make(
         "loop_tool_env-v0",
-        dataset=dataset_global,
+        datasets=datasets_global,
         observation_space="loops_tensor",
         reward_space="flops_loop_nest_tensor",
     )
@@ -158,64 +157,73 @@ def make_env():
     return env
 
 class RLlibAgent:
-    def __init__(self, dataset, use_wandb=True) -> None:
-        global dataset_global
-        dataset_global = dataset
+    def __init__(self, algorithm, dataset, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+        global datasets_global
+        self.algorithm = algorithm
+        datasets_global = [ dataset ]
         self.dataset = dataset
         self.env = make_env()
         self.train_iter = max_episode_steps
         self.last_run_path=LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.use_wandb = use_wandb
+        self.wandb_key_path = wandb_key_path
         self.wandb_dict = {}
-
-
+        self.policy_model = None
+        self.train_benchmarks = []
+        self.validation_benchmarks = []
+        self.checkpoint_start = None
+        self.tempdir = tempfile.mkdtemp()
+        self.init()
+    
+    def init(self):
         ModelCatalog.register_custom_model(
             "my_model", my_net_rl.TorchCustomModel
         )
+        dataset =  self.env.datasets[f'benchmark://{self.dataset}-v0']
+        self.wandb_dict['dataset'] = dataset.name
+        benchmarks = list(dataset.benchmarks())
+
+        train_perc = 0.8
+        train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
+        self.train_benchmarks = benchmarks[:train_size]
+        self.validation_benchmarks = benchmarks[train_size:]
+
+        print("Number of benchmarks for training:", len(self.train_benchmarks))
+        print("Number of benchmarks for validation:", len(self.validation_benchmarks))
+
+        def make_training_env(*args): 
+            del args
+            return CycleOverBenchmarks(make_env(), benchmarks[:train_size])
+        tune.register_env("compiler_gym", make_training_env)
 
     def make_env(self):
         return make_env()
 
-    def register_benchmark(self, train_benchmark):
-        def make_training_env(*args): 
-            del args
-            return CycleOverBenchmarks(make_env(), train_benchmark)
-        tune.register_env("compiler_gym", make_training_env)
-        
-    def load_datasets(self, data_size):
-        train_benchmarks = []
-        val_benchmarks = []
-        dataset =  self.env.datasets[f'benchmark://{self.dataset}-v0']
 
-        self.wandb_dict['dataset'] = dataset.name
-        benchmarks = random.sample(list(dataset.benchmarks()), min(len(dataset), data_size))
+    def load_model(self, wandb_uri):
+        try:
+            api = wandb.Api()
+            wandb_run = api.run(wandb_uri)
+            self.wandb_dict['wandb_start'] = wandb_uri
+            self.checkpoint_start = wandb_run.summary
+            
 
-        train_perc = 0.8
-        train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
-        train_benchmarks.extend(benchmarks[:train_size]) 
-        val_benchmarks.extend(benchmarks[train_size:])
-        # train_benchmarks, val_benchmarks = torch.utils.data.random_split(benchmarks, [train_size, len(benchmarks) - train_size])
+            for f in wandb_run.files(): 
+                if f.name.startswith('checkpoint'):
+                    f.download(root=self.tempdir, replace=True)
 
-        print("Number of benchmarks for training:", len(train_benchmarks))
-        print("Number of benchmarks for validation:", len(val_benchmarks))
+            # wandb.restore('config.yaml', run_path=policy_path)
+            # policy_model = torch.load('policy_model.pt')
+            # with open('config.yaml', 'r') as f: config = yaml.load(f, Loader=yaml.BaseLoader)
 
-        self.register_benchmark(train_benchmark=train_benchmarks)
-
-        return train_benchmarks, val_benchmarks
-
-    # from ray.tune import Callback
-    # class MyCallback(Callback):
-    #     def on_trial_result(self, iteration, trials, trial, result, **info):
-    #         # breakpoint()
-    #         print(f"Got result:")
+        except:
+            print('Policy not found')
 
 
-    def train(self, algorithm, config, train_iter, sweep_count=1):
+    def train(self, config, train_iter, sweep_count=1):
         """Training with RLlib agent.
 
         Args:
-            algorithm (PPO.Trainer): PPO trainer.
             config (dict): config to run.
             train_iter (int): training iterations
             sweep_count (int, optional): number of sweeps. Defaults to 1.
@@ -225,22 +233,19 @@ class RLlibAgent:
         """
         print(f'Before tune.run, stop = {train_iter}')
         models = {}
-        callbacks = []
         self.train_iter = train_iter
-        self.wandb_dict['algorithm'] = algorithm._name
+        self.wandb_dict['algorithm'] = self.algorithm._name
         self.wandb_dict['actions'] = ",".join(self.env.action_space.names)
 
-        if self.use_wandb:
-            callbacks.append(WandbLoggerCallback(
-                project="loop_tool_agent_split",
-                # group=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
-                api_key_file=str(LOOP_TOOL_ROOT) + "/wandb_key.txt",
-                log_config=False,
-                )
-            )
+        checkpoint_path = None
+        if self.checkpoint_start != None:
+            train_iter += self.checkpoint_start['training_iteration']
+            checkpoint_path = f"{self.tempdir}/{self.checkpoint_start['checkpoint']}"
+            config['model']['fcnet_hiddens'] = [self.checkpoint_start['layers_width']] * self.checkpoint_start['layers_num']
 
         analysis = tune.run(
-            algorithm,
+            self.algorithm,
+            restore=checkpoint_path,
             metric="episode_reward_mean", # "final_performance",
             mode="max",
             reuse_actors=False,
@@ -249,7 +254,14 @@ class RLlibAgent:
             config=config, 
             num_samples=max(1, sweep_count),
             stop={'training_iteration': train_iter},    
-            callbacks=callbacks,
+            callbacks=[
+                WandbLoggerCallback(
+                    project="loop_tool_agent_split",
+                    # group=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
+                    api_key_file=self.wandb_key_path,
+                    log_config=False,
+                )
+            ],
         )
         print("hhh2______________________")
 
@@ -261,12 +273,13 @@ class RLlibAgent:
         for trial in analysis.trials:
             config = trial.config
             config["explore"] = False
-            agent = algorithm(
+            agent = self.algorithm(
                 env="compiler_gym",
                 config=config
             )
-            best_checkpoint = trial.checkpoint
-            agent.restore(best_checkpoint.value)
+
+            checkpoint_path = Path(trial.checkpoint.value)
+            agent.restore(str(checkpoint_path))
             policy_model = agent.get_policy().model
 
             trial_dict = self.wandb_dict.copy()
@@ -274,17 +287,18 @@ class RLlibAgent:
                 trial_dict['layers_num'] = len(config['model']['fcnet_hiddens'])
                 trial_dict['layers_width'] = config['model']['fcnet_hiddens'][0]
 
+            trial_dict['checkpoint'] = os.path.relpath(checkpoint_path, checkpoint_path.parent.parent)
+            
             models[trial.trial_id] = { 
                 "policy_path": self.last_run_path/trial.trial_id/'policy_model.pt', 
                 "config": trial_dict
-            }
-            
+            }          
+
+            # Save policy and checkpoint for wandb
             os.makedirs(models[trial.trial_id]["policy_path"].parent)
             torch.save(policy_model,  models[trial.trial_id]["policy_path"])
-
-            # weights_policy_path = LOOP_TOOL_ROOT/'loop_tool_service/models/weights/policy.pt'
-            # if os.path.exists(weights_policy_path): os.remove(weights_policy_path)
-            # os.symlink(self.last_run_path/'policy_model.pt', weights_policy_path)
+            shutil.copytree(checkpoint_path.parent, self.last_run_path/trial.trial_id/checkpoint_path.parent.name)
+  
 
         return models
 
@@ -303,14 +317,13 @@ def wandb_update_df(wandb_dict, res_dict, prefix):
 def train(config, train_iter, sweep_count=1, policy_model_path=''):
     print(f'Train params: ', config, train_iter, policy_model_path)
     
-    agent = RLlibAgent(dataset='mm128_128_128', use_wandb=True)
+    agent = RLlibAgent(algorithm=PPOTrainer, dataset='mm128_128_128')
 
     train_benchmarks, val_benchmarks = agent.load_datasets(
         data_size=10000
     )
-    breakpoint()
-    models = agent.train(
-        algorithm=PPOTrainer, 
+
+    models = agent.train( 
         config=config, 
         train_iter=train_iter, 
         sweep_count=sweep_count
@@ -319,8 +332,6 @@ def train(config, train_iter, sweep_count=1, policy_model_path=''):
     env = agent.make_env()
     for trial_id, policy_model in models.items():
         evaluator = Evaluator(steps=2, cost_path="", policy_path=policy_model['policy_path'])
-
-        breakpoint()
         
         train_dict = evaluator.evaluate(env, train_benchmarks, { k:v for k, v in evaluator.searches.items() if 'cost' not in k })
         evaluator.save(path=agent.last_run_path/trial_id/"train")
@@ -382,7 +393,7 @@ if __name__ == '__main__':
         hiddens_width = [100, 500, 1000]
         sweep_config = {
             'lr': tune.uniform(1e-4, 1e-7),
-            "gamma": tune.uniform(0.5, 0.99),
+            "gamma": tune.uniform(0.5, 0.8),
             'model': {
                 "fcnet_hiddens": tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]),
             },
@@ -393,16 +404,13 @@ if __name__ == '__main__':
     
     ############### Train ###############
     print(f'Train params: ', default_config, args.iter, args.policy)
-    
-    agent = RLlibAgent(dataset='mm128_128_128', use_wandb=True)
 
+    agent = RLlibAgent(algorithm=PPOTrainer, dataset='mm128_128_128')
 
-    train_benchmarks, val_benchmarks = agent.load_datasets(
-        data_size=10000
-    )
+    if args.policy:
+        agent.load_model(args.policy)
 
     models = agent.train(
-        algorithm=PPOTrainer, 
         config=default_config, 
         train_iter=args.iter, 
         sweep_count=sweep_count
@@ -410,12 +418,12 @@ if __name__ == '__main__':
 
     env = agent.make_env()
     for trial_id, policy_model in models.items():
-        evaluator = Evaluator(steps=2, cost_path="", policy_path=policy_model['policy_path'])
+        evaluator = Evaluator(steps=max_episode_steps, cost_path="", policy_path=policy_model['policy_path'])
         
-        df_train = evaluator.evaluate(env, train_benchmarks, { k:v for k, v in evaluator.searches.items() if 'cost' not in k })
+        df_train = evaluator.evaluate(env, agent.train_benchmarks, { k:v for k, v in evaluator.searches.items() if 'cost' not in k })
         evaluator.save(path=agent.last_run_path/trial_id/"train")
 
-        df_val = evaluator.evaluate(env, val_benchmarks, { k:v for k, v in evaluator.searches.items() if 'cost' not in k })
+        df_val = evaluator.evaluate(env, agent.validation_benchmarks, { k:v for k, v in evaluator.searches.items() if 'cost' not in k })
         evaluator.save(path=agent.last_run_path/trial_id/"validation")
         wandb_update_df(policy_model['config'], df_train, prefix='train_')
         wandb_update_df(policy_model['config'], df_val, prefix='')

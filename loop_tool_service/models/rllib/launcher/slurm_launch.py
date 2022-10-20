@@ -42,13 +42,16 @@ parser.add_argument(
     "--app",  type=str, help="Application to run"
 )
 parser.add_argument(
-    "--sweep",  type=int, nargs='?', const=0, default=0, help="Run with wandb sweeps"
+    "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps"
 )
 parser.add_argument(
     "--iter", 
     type=int, 
     default=2, 
     help="Number of iterations to train."
+)
+parser.add_argument(
+    "--policy",  type=str, default='', help="Wandb url of trained model"
 )
 
 parser.add_argument(
@@ -137,7 +140,7 @@ def submit_job():
     log_dir = repo_dir / Path("results") / "runs"
 
     log_dir.mkdir(parents=True, exist_ok=True)
-    command = f"python -u {args.app} --slurm --iter={args.iter} --sweep={args.sweep}" 
+    command = f"python -u {args.app} --slurm --iter={args.iter} --policy={args.policy} --sweep={args.sweep}" 
     # command = f"python -u main.py" 
 
     exp_name = f"run_{datetime.now():%m_%d_%H_%M}"

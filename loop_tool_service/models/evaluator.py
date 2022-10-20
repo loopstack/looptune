@@ -157,10 +157,11 @@ class Evaluator:
         api = wandb.Api()
         wandb_run = api.run(wandb_uri)
 
+
         for root, dirs, files in os.walk(path):
-            if dirs == []: dirs = ['.']
             for file in files:
-                wandb_run.upload_file("/".join(dirs) + '/' + file)        
+                print(f"{root}/{file}")
+                wandb_run.upload_file(f"{root}/{file}")        
 
         for key, value in wandb_dict.items(): 
             wandb_run.summary[key] = value

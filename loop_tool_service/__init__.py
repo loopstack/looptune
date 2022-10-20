@@ -217,9 +217,7 @@ from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_r
 import importlib
 
 
-def register_env(dataset):
-    bench_module = importlib.import_module(f"loop_tool_service.service_py.datasets.{dataset}")
-
+def register_env(datasets):
     register(
         id="loop_tool_env-v0",
         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
@@ -227,31 +225,26 @@ def register_env(dataset):
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                # flops_loop_nest_reward.RewardTensor(),
                 flops_loop_nest_reward.NormRewardTensor(),
                 ],
-            "datasets": [   
-                bench_module.Dataset(),
-                # mm128_128_128.Dataset(),
-                # mm32_8_16_8_4_16.Dataset(),
-                # mm8_16_128_128.Dataset(),
-                # mm8_16_8_16_128.Dataset(),
-                # mm8_16_8_16_8_16.Dataset(),
-            ],
+            "datasets": [ 
+                importlib.import_module(f"loop_tool_service.service_py.datasets.{dataset}").Dataset() for dataset in datasets 
+                ],
         },
     )
 
 
 
-def make(id: str, dataset='mm128_128_128', **kwargs):
+def make(id: str, datasets, **kwargs):
     """Equivalent to :code:`compiler_gym.make()`."""
-    register_env(dataset)
+    if len(datasets):
+        register_env(datasets)
 
     import compiler_gym
     return compiler_gym.make(id, **kwargs)
 
 
-def make_env(id, logging=False, **kwargs):
-    return LoopToolCompilerEnvWrapper(make(id, **kwargs), logging=logging)
+def make_env(id, datasets=[], logging=False, **kwargs):
+    return LoopToolCompilerEnvWrapper(make(id, datasets, **kwargs), logging=logging)
 
 

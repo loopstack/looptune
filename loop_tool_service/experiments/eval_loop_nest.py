@@ -43,7 +43,7 @@ def main():
                 if gflops == 0: continue
 
                 agent_str = env.send_param("print_looptree", "") 
-                print(gflops)
+                # print(gflops)
                 if agent_str in flops:
                     flops[agent_str]['gflops'].append(gflops)
                     flops[agent_str]['time'].append(mtime)

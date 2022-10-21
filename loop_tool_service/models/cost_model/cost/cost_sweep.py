@@ -213,6 +213,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "--sweep",  type=int, nargs='?', const=2, default=1, help="Run with wandb sweeps"
     )
+    parser.add_argument(
+        "--cost",  type=str, nargs='?', default='', help="Load cost network from wandb."
+    )
     args = parser.parse_args()
 
 

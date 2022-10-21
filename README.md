@@ -108,6 +108,17 @@ python loop_tool_service/demos/search/search.py --cost --policy --benchmark
 # Datasets
 Datasets are important part of training RL agent. It is important that they are organized from easy to hard. To generate dataset go to loop_tool_service/benchmarks directory and run generator.py. This will create an example or all permutations of matrix multiplication or convolution. With reader.py you can visualise each of these benchmarks.
 
+```
+python loop_tool_service/benchmarks/generator.py --kind=mm --dimA=128,128 --dimB=128,128 --out=$LOOP_TOOL_ROOT/loop_tool_service/benchmarks/mm128_16_8_128 --permute
+
+# To register dataset run
+python setup.py install
+```
+
+To examine any created benchmark just run:
+```
+python loop_tool_service/benchmarks/reader.py --bench=$LOOP_TOOL_ROOT/loop_tool_service/benchmarks/mm128_16_8_128/0123.txt
+```
 
 Format Matrix Multiply: 
 - mm{loop0_size}\_{loop1_size}...\_{loopN_size}
@@ -148,3 +159,33 @@ for m_8757 in 8
   for n_8796 in 128
    %4[m_8757, n_8796] <- write(%3)
 ```
+
+
+
+## Training with RLlib
+
+Once we are created benchmark dataset we are ready to train agent to optimize it with RLlib. For the logging of the training we use Weights and Biases and to make program working copy your wandb key in
+wandb_key.txt folder in LOOP_TOOL_ROOT directory.
+
+To launch traning locally run:
+
+```
+cd loop_tool_service/models/rllib
+python rllib_agent.py --iter=10 --dataset=mm128_16_8_128
+```
+
+Additionally, you can retrain the model by calling
+```
+cd loop_tool_service/models/rllib
+python rllib_agent.py --iter=10 --dataset=mm128_16_8_128 --wandb_url=wandb_run_path
+```
+
+To run this on SLURM use:
+```
+python launcher/slurm_launch.py --app=rllib_agent.py --time=5:00 -nc=80 -ng=2 --iter=10 --sweep --dataset=mm128_8_16_128
+```
+All results from the experiment will be logged on Wandb permanently and localy at:
+$LOOP_TOOL_ROOT/loop_tool_service/models/rllib/my_artifacts 
+
+For SLURM output check:
+$LOOP_TOOL_ROOT/loop_tool_service/models/rllib/results 

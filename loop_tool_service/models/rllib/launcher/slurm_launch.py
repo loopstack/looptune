@@ -51,7 +51,10 @@ parser.add_argument(
     help="Number of iterations to train."
 )
 parser.add_argument(
-    "--policy",  type=str, default='', help="Wandb url of trained model"
+    "--wandb_url",  type=str, default='', help="Wandb url of trained model"
+)
+parser.add_argument(
+    "--dataset",  type=str, nargs='?', help="Dataset [mm128_128_128] to run must be defined in loop_tool_service.service_py.datasets."
 )
 
 parser.add_argument(
@@ -140,8 +143,7 @@ def submit_job():
     log_dir = repo_dir / Path("results") / "runs"
 
     log_dir.mkdir(parents=True, exist_ok=True)
-    command = f"python -u {args.app} --slurm --iter={args.iter} --policy={args.policy} --sweep={args.sweep}" 
-    # command = f"python -u main.py" 
+    command = f"python -u {args.app} --slurm --iter={args.iter} --wandb_url={args.wandb_url} --dataset={args.dataset} --sweep={args.sweep}" 
 
     exp_name = f"run_{datetime.now():%m_%d_%H_%M}"
     job_name = f"job_{exp_name}"

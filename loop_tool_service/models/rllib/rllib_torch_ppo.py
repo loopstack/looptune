@@ -381,10 +381,10 @@ def save_results(df_gflops_train, df_gflops_val, wandb_run_id):
 
 def send_to_wandb(last_run_path, wandb_log):
     os.chdir(last_run_path)
-    wandb_uri = f'dejang/loop_tool_agent_split/{wandb_log["run_id"]}'
-    print(f'Wandb page = https://wandb.ai/{wandb_uri}')
+    wandb_url = f'dejang/loop_tool_agent_split/{wandb_log["run_id"]}'
+    print(f'Wandb page = https://wandb.ai/{wandb_url}')
     api = wandb.Api()
-    wandb_run = api.run(wandb_uri)
+    wandb_run = api.run(wandb_url)
     wandb_run.upload_file('policy_model.pt')
     wandb_run.upload_file('benchmarks_gflops.png')
     wandb_run.upload_file('benchmarks_rank.png')

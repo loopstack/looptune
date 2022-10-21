@@ -152,10 +152,9 @@ class Evaluator:
 
         cwd = os.getcwd()
         os.chdir(path)
-        wandb_uri = f'dejang/loop_tool_agent_split/{wandb_run_id}'
-        print(f'Wandb page = https://wandb.ai/{wandb_uri}')
+        wandb_url = f'dejang/loop_tool_agent_split/{wandb_run_id}'
         api = wandb.Api()
-        wandb_run = api.run(wandb_uri)
+        wandb_run = api.run(wandb_url)
 
 
         for root, dirs, files in os.walk(path):
@@ -167,6 +166,8 @@ class Evaluator:
             wandb_run.summary[key] = value
         wandb_run.summary.update()
         os.chdir(cwd)
+        
+        print(f'\nWandb page = https://wandb.ai/{wandb_url}')
 
     #############################################################
     # Private

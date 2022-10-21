@@ -14,7 +14,10 @@ import numpy as np
 
 from itertools import combinations, permutations
 import os
+import shutil
+from pathlib import Path
 
+from loop_tool_service.paths import LOOP_TOOL_ROOT
 
 
 parser = argparse.ArgumentParser(description='Generate dataset of permutation for the constructed looptree.')
@@ -23,10 +26,10 @@ parser.add_argument(
     '--kind', choices=['mm', 'conv'], help='Kind of computation.', required=True
 )
 parser.add_argument(
-    "--dimA",  type=str, help="Dimensions of the tensor A.", required=True
+    "--dimA",  type=str, help="Dimensions of the tensor A in csv format.", required=True
 )
 parser.add_argument(
-    "--dimB",  type=str, help="Dimensions of the tensor B.", required=True
+    "--dimB",  type=str, help="Dimensions of the tensor B in csv format.", required=True
 )
 parser.add_argument(
     "--out", type=str, help="Path to folder with permutations to generate.", required=True
@@ -145,6 +148,10 @@ def main():
     else:
         with open(args.out, "w") as f:
             f.write(C.ir.serialize())
+        
+    # Register benchmark for CompilerGym
+    base_dataset_py = LOOP_TOOL_ROOT/'loop_tool_service/service_py/datasets/mm128_128_128.py'
+    shutil.copyfile(base_dataset_py, base_dataset_py.parent/f'{Path(args.out).name}.py')
 
 if __name__ == '__main__':
     main()

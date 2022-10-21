@@ -192,8 +192,9 @@ class RLlibAgent:
 
         train_perc = 0.8
         train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
-        self.train_benchmarks = benchmarks[:train_size]
-        self.validation_benchmarks = benchmarks[train_size:]
+        random.shuffle(benchmarks)
+        self.train_benchmarks = sorted(benchmarks[:train_size])
+        self.validation_benchmarks = sorted(benchmarks[train_size:])
 
         print("Number of benchmarks for training:", len(self.train_benchmarks))
         print("Number of benchmarks for validation:", len(self.validation_benchmarks))

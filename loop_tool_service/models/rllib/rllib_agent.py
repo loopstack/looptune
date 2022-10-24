@@ -94,7 +94,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--dataset",  type=str, nargs='?', help="Dataset [mm128_128_128] to run must be defined in loop_tool_service.service_py.datasets."
+    "--dataset",  type=str, nargs='?', help="Dataset [mm128_128_128] to run must be defined in loop_tool_service.service_py.datasets.", required=True
 )
 
 parser.add_argument(
@@ -119,11 +119,13 @@ parser.add_argument(
 default_config = {
     "log_level": "ERROR",
     "env": "compiler_gym", 
+    "observation_space": "loops_tensor",
     "framework": 'torch',
     "model": {
         "custom_model": "my_model",
+        "custom_model_config": {"action_mask": [1, 0, 0, 0]},
         "vf_share_layers": True,
-        "fcnet_hiddens": [512] * 4,
+        "fcnet_hiddens": [1000] * 4,
         # "post_fcnet_hiddens":
         # "fcnet_activation": 
         # "post_fcnet_activation":
@@ -131,16 +133,16 @@ default_config = {
         # "free_log_std":
     },
     # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
-    "num_gpus": torch.cuda.device_count(),
+    "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "0")), #torch.cuda.device_count(),
     # "num_workers": -1,  # parallelism
     "rollout_fragment_length": 10, 
     "train_batch_size": 790, # train_batch_size == num_workers * rollout_fragment_length
-    "num_sgd_iter": 10,
+    "num_sgd_iter": 30,
     # "evaluation_interval": 5, # num of training iter between evaluations
     # "evaluation_duration": 10, # num of episodes run per evaluation period
     "explore": True,
-    "gamma": 0.7,
-    "lr": 1e-6,
+    "gamma": 0.7689098370203395,
+    "lr": 3.847293324197388e-7,
 }
 
 
@@ -184,17 +186,19 @@ class RLlibAgent:
     
     def init(self):
         ModelCatalog.register_custom_model(
-            "my_model", my_net_rl.TorchCustomModel
+            "my_model", my_net_rl.TorchActionMaskModel #if False else my_net_rl.TorchCustomModel
         )
         dataset =  self.env.datasets[f'benchmark://{self.dataset}-v0']
-        self.wandb_dict['dataset'] = dataset.name
         benchmarks = list(dataset.benchmarks())
-
+        self.wandb_dict['dataset'] = dataset.name
+        
         train_perc = 0.8
         train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
         random.shuffle(benchmarks)
         self.train_benchmarks = sorted(benchmarks[:train_size])
         self.validation_benchmarks = sorted(benchmarks[train_size:])
+        self.wandb_dict['train_size'] = len(self.train_benchmarks)
+        self.wandb_dict['test_size'] = len(self.validation_benchmarks)
 
         print("Number of benchmarks for training:", len(self.train_benchmarks))
         print("Number of benchmarks for validation:", len(self.validation_benchmarks))
@@ -242,7 +246,7 @@ class RLlibAgent:
         print(f'Before tune.run, stop = {train_iter}')
         models = {}
         self.train_iter = train_iter
-        self.wandb_dict['algorithm'] = self.algorithm._name
+        self.wandb_dict['algorithm'] = self.algorithm.__name__
         self.wandb_dict['actions'] = ",".join(self.env.action_space.names)
 
         checkpoint_path = None
@@ -265,13 +269,13 @@ class RLlibAgent:
             callbacks=[
                 WandbLoggerCallback(
                     project="loop_tool_agent_split",
-                    # group=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
                     api_key_file=self.wandb_key_path,
                     log_config=False,
                 )
             ],
         )
         print("hhh2______________________")
+        breakpoint()
 
         if os.path.exists(self.my_artifacts):
             shutil.rmtree(self.my_artifacts)
@@ -286,7 +290,7 @@ class RLlibAgent:
                 config=config
             )
 
-            checkpoint_path = Path(trial.checkpoint.value)
+            checkpoint_path = Path(trial.checkpoint.dir_or_data)
             agent.restore(str(checkpoint_path))
             policy_model = agent.get_policy().model
 
@@ -319,7 +323,6 @@ def wandb_update_df(wandb_dict, res_dict, prefix):
     wandb_dict[f'{prefix}final_performance'] = float(np.mean(res_dict['gflops']['greedy1_policy'] / res_dict['gflops']['greedy1_ln']))
     wandb_dict[f'{prefix}avg_search_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1_ln'] / res_dict['gflops']['base']))
     wandb_dict[f'{prefix}avg_network_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1_policy'] / res_dict['gflops']['base']))
-    wandb_dict[f'{prefix}data_size'] = float(len(res_dict['gflops']))
     wandb_dict[f'{prefix}search_actions_num'] = float(np.mean(res_dict['actions']['greedy1_ln'].str.len()))
     wandb_dict[f'{prefix}network_actions_num'] = float(np.mean(res_dict['actions']['greedy1_policy'].str.len()))
 
@@ -360,7 +363,7 @@ def train(config, dataset, iter, wandb_url, sweep_count):
         df_val = evaluator.evaluate(env, agent.validation_benchmarks, { k:v for k, v in evaluator.searches.items() if 'cost' not in k })
         evaluator.save(path=agent.my_artifacts/trial_id/"validation")
         wandb_update_df(policy_model['config'], df_train, prefix='train_')
-        wandb_update_df(policy_model['config'], df_val, prefix='')
+        wandb_update_df(policy_model['config'], df_val, prefix='test_')
         evaluator.send_to_wandb(path=agent.my_artifacts/trial_id, wandb_run_id=trial_id, wandb_dict=policy_model['config'])
 
 
@@ -396,7 +399,7 @@ if __name__ == '__main__':
         hiddens_width = [100, 500, 1000]
         sweep_config = {
             'lr': tune.uniform(1e-6, 1e-8),
-            "gamma": tune.uniform(0.5, 0.9),
+            "gamma": tune.uniform(0.7, 0.99),
             'model': {
                 "fcnet_hiddens": tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]),
             },

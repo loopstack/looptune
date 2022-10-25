@@ -1,5 +1,7 @@
 import random
 import networkx as nx
+from loop_tool_service.service_py.utils import timed_fn
+
 
 class BeamSearcherCore:
     def __init__(self, evaluator):

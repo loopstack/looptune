@@ -28,10 +28,10 @@ import argparse
 
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
 
-parser.add_argument("--data_set", type=str, nargs='?', default="benchmark://loop_tool_test-v0", help="Data set.")
+parser.add_argument("--data_set", type=str, nargs='?', default="benchmark://mm128_128_128-v0", help="Data set.")
 parser.add_argument("--cost_model", type=str, nargs='?', const=f"{str(LOOP_TOOL_ROOT)}/loop_tool_service/models/weights/model_cost.pth", default='', help="Path to the RLlib optimized network.")
 parser.add_argument("--policy_model", type=str, nargs='?', const=f"{str(LOOP_TOOL_ROOT)}/loop_tool_service/models/weights/policy_model.pt", default='', help="Path to the RLlib optimized network.")
-parser.add_argument("--search", type=str, nargs='?', default='policy_cost', help="Kind of search to run.")
+parser.add_argument("--search", type=str, nargs='?', default='greedy', help="Kind of search to run.")
 
 
 parser.add_argument("--bench_count", type=int, nargs='?', default=2, help="The number of benchmarks.")
@@ -48,21 +48,6 @@ from loop_tool_service.service_py.rewards import flops_loop_nest_reward
 from loop_tool_service.service_py.datasets import loop_tool_test_dataset, loop_tool_dataset
 
 
-def register_env():
-    register(
-        id="loop_tool-v0",
-        entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
-        kwargs={
-            "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
-            "rewards": [
-                flops_loop_nest_reward.RewardScalar(),
-                ],
-            "datasets": [
-                loop_tool_test_dataset.Dataset(),
-                loop_tool_dataset.Dataset(),
-            ],
-        },
-    )
 
 
 
@@ -74,9 +59,7 @@ def main():
     logging.basicConfig(level=logging.CRITICAL, force=True)
     # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
 
-    register_env()
-
-    with loop_tool_service.make_env("loop_tool-v0") as env:
+    with loop_tool_service.make_env("loop_tool_env-v0", datasets=['mm128_128_128']) as env:
 
         data_set = env.datasets[args.data_set]
         i = 0

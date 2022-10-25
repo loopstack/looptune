@@ -59,6 +59,7 @@ from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_r
 import loop_tool_service.models.rllib.my_net_rl as my_net_rl
 
 import torch
+import importlib
 from ray.tune.integration.wandb import WandbLoggerCallback
 from loop_tool_service.paths import LOOP_TOOL_ROOT
 from os.path import exists
@@ -94,7 +95,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--steps", type=int, default=10, help="Number of actions to find."
+)
+
+parser.add_argument(
     "--dataset",  type=str, nargs='?', help="Dataset [mm128_128_128] to run must be defined in loop_tool_service.service_py.datasets.", required=True
+)
+
+parser.add_argument(
+    '--network', choices=['TorchActionMaskModel', 'TorchBatchNormModel', 'TorchCustomModel'], default='TorchCustomModel', help='Deep network model.'
 )
 
 parser.add_argument(
@@ -123,7 +132,7 @@ default_config = {
     "framework": 'torch',
     "model": {
         "custom_model": "my_model",
-        "custom_model_config": {"action_mask": [1, 0, 0, 0]},
+        "custom_model_config": {"action_mask": [1, 1, 1, 1]},
         "vf_share_layers": True,
         "fcnet_hiddens": [1000] * 4,
         # "post_fcnet_hiddens":
@@ -148,13 +157,12 @@ default_config = {
 
 
 torch, nn = try_import_torch()
-max_episode_steps = 4
 
-datasets_global = None
 
 def make_env():
     """Make the reinforcement learning environment for this experiment."""
-    # if dataset == []:
+    global datasets_global, max_episode_steps
+
     env = loop_tool_service.make(
         "loop_tool_env-v0",
         datasets=datasets_global,
@@ -166,31 +174,38 @@ def make_env():
     return env
 
 class RLlibAgent:
-    def __init__(self, algorithm, dataset, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
-        global datasets_global
-        self.algorithm = algorithm
+    def __init__(self, algorithm, dataset, network, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+        self.wandb_dict = {}
+
+        global datasets_global, max_episode_steps
         datasets_global = [ dataset ]
+        self.max_episode_steps = max_episode_steps
+        self.algorithm = algorithm
         self.dataset = dataset
+        self.network = getattr(importlib.import_module(f"loop_tool_service.models.rllib.my_net_rl"), network)
+        self.wandb_dict['network'] = network
         self.env = make_env()
-        self.train_iter = max_episode_steps
-        self.my_artifacts=LOOP_TOOL_ROOT/"loop_tool_service/models/rllib/my_artifacts"
+        my_artifacts = Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
+        self.my_artifacts_start = my_artifacts/'start'
+        self.my_artifacts_end = my_artifacts/'end'
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.wandb_key_path = wandb_key_path
-        self.wandb_dict = {}
         self.policy_model = None
         self.train_benchmarks = []
         self.validation_benchmarks = []
         self.checkpoint_start = None
-        self.tempdir = tempfile.mkdtemp()
         self.init()
     
     def init(self):
+        os.mkdir(self.my_artifacts_start)
+        os.mkdir(self.my_artifacts_end)
         ModelCatalog.register_custom_model(
-            "my_model", my_net_rl.TorchActionMaskModel #if False else my_net_rl.TorchCustomModel
+            "my_model", self.network #my_net_rl.TorchBatchNormModel #if False else my_net_rl.TorchCustomModel
         )
         dataset =  self.env.datasets[f'benchmark://{self.dataset}-v0']
         benchmarks = list(dataset.benchmarks())
         self.wandb_dict['dataset'] = dataset.name
+        self.wandb_dict['max_episode_steps'] = self.max_episode_steps
         
         train_perc = 0.8
         train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
@@ -222,7 +237,7 @@ class RLlibAgent:
 
             for f in wandb_run.files(): 
                 if f.name.startswith('checkpoint'):
-                    f.download(root=self.tempdir, replace=True)
+                    f.download(root=self.my_artifacts_start, replace=True)
 
             # wandb.restore('config.yaml', run_path=policy_path)
             # policy_model = torch.load('policy_model.pt')
@@ -245,25 +260,24 @@ class RLlibAgent:
         """
         print(f'Before tune.run, stop = {train_iter}')
         models = {}
-        self.train_iter = train_iter
         self.wandb_dict['algorithm'] = self.algorithm.__name__
         self.wandb_dict['actions'] = ",".join(self.env.action_space.names)
 
         checkpoint_path = None
         if self.checkpoint_start != None:
             train_iter += self.checkpoint_start['training_iteration']
-            checkpoint_path = f"{self.tempdir}/{self.checkpoint_start['checkpoint']}"
+            checkpoint_path = f"{self.my_artifacts_start}/{self.checkpoint_start['checkpoint']}"
             config['model']['fcnet_hiddens'] = [self.checkpoint_start['layers_width']] * self.checkpoint_start['layers_num']
 
         analysis = tune.run(
             self.algorithm,
+            config=config, 
             restore=checkpoint_path,
             metric="episode_reward_mean", # "final_performance",
             mode="max",
             reuse_actors=False,
             checkpoint_freq=10,
             checkpoint_at_end=True,
-            config=config, 
             num_samples=max(1, sweep_count),
             stop={'training_iteration': train_iter},    
             callbacks=[
@@ -275,12 +289,7 @@ class RLlibAgent:
             ],
         )
         print("hhh2______________________")
-        breakpoint()
 
-        if os.path.exists(self.my_artifacts):
-            shutil.rmtree(self.my_artifacts)
-
-        os.makedirs(self.my_artifacts)
 
         for trial in analysis.trials:
             config = trial.config
@@ -290,7 +299,7 @@ class RLlibAgent:
                 config=config
             )
 
-            checkpoint_path = Path(trial.checkpoint.dir_or_data)
+            checkpoint_path = Path(trial.checkpoint.value) # .value -> .dir_or_data for ray 2.1
             agent.restore(str(checkpoint_path))
             policy_model = agent.get_policy().model
 
@@ -302,14 +311,14 @@ class RLlibAgent:
             trial_dict['checkpoint'] = os.path.relpath(checkpoint_path, checkpoint_path.parent.parent)
             
             models[trial.trial_id] = { 
-                "policy_path": self.my_artifacts/trial.trial_id/'policy_model.pt', 
+                "policy_path": self.my_artifacts_end/trial.trial_id/'policy_model.pt', 
                 "config": trial_dict
             }          
 
             # Save policy and checkpoint for wandb
             os.makedirs(models[trial.trial_id]["policy_path"].parent)
             torch.save(policy_model,  models[trial.trial_id]["policy_path"])
-            my_artifacts_checkpoint_dir = self.my_artifacts/trial.trial_id/checkpoint_path.parent.name
+            my_artifacts_checkpoint_dir = self.my_artifacts_end/trial.trial_id/checkpoint_path.parent.name
             shutil.copytree(checkpoint_path.parent, my_artifacts_checkpoint_dir)
             with open(my_artifacts_checkpoint_dir/'config.json', "w") as f: json.dump(trial.config, f)
 
@@ -338,11 +347,11 @@ def update_default_config(sweep_config=None):
     return default_config
     
 
-def train(config, dataset, iter, wandb_url, sweep_count):
+def train(config, dataset, network, iter, wandb_url, sweep_count):
     ############### Train ###############
     print(f'Train params: ', config, iter, wandb_url)
 
-    agent = RLlibAgent(algorithm=PPOTrainer, dataset=dataset)
+    agent = RLlibAgent(algorithm=PPOTrainer, dataset=dataset, network=network)
 
     if wandb_url:
         agent.load_model(wandb_url)
@@ -353,18 +362,21 @@ def train(config, dataset, iter, wandb_url, sweep_count):
         sweep_count=sweep_count
     )
 
+    evaluator = Evaluator(steps=agent.max_episode_steps)
     env = agent.make_env()
-    for trial_id, policy_model in models.items():
-        evaluator = Evaluator(steps=max_episode_steps, cost_path="", policy_path=policy_model['policy_path'])
-        
-        df_train = evaluator.evaluate(env, agent.train_benchmarks, { k:v for k, v in evaluator.searches.items() if 'cost' not in k })
-        evaluator.save(path=agent.my_artifacts/trial_id/"train")
+    searches = { k:v for k, v in evaluator.searches.items() if 'cost' not in k and 'bruteforce' not in k}
+    max_eval = 100
 
-        df_val = evaluator.evaluate(env, agent.validation_benchmarks, { k:v for k, v in evaluator.searches.items() if 'cost' not in k })
-        evaluator.save(path=agent.my_artifacts/trial_id/"validation")
+    for trial_id, policy_model in models.items():
+        evaluator.set_policy_path(policy_model['policy_path'])
+        df_train = evaluator.evaluate(env, agent.train_benchmarks[:max_eval], searches, timeout_s=5)
+        evaluator.save(path=agent.my_artifacts_end/trial_id/"train")
+        df_val = evaluator.evaluate(env, agent.validation_benchmarks[:max_eval], searches, timeout_s=5)
+        evaluator.save(path=agent.my_artifacts_end/trial_id/"validation")
+    
         wandb_update_df(policy_model['config'], df_train, prefix='train_')
         wandb_update_df(policy_model['config'], df_val, prefix='test_')
-        evaluator.send_to_wandb(path=agent.my_artifacts/trial_id, wandb_run_id=trial_id, wandb_dict=policy_model['config'])
+        evaluator.send_to_wandb(path=agent.my_artifacts_end/trial_id, wandb_run_id=trial_id, wandb_dict=policy_model['config'])
 
 
 
@@ -372,10 +384,14 @@ def train(config, dataset, iter, wandb_url, sweep_count):
 if __name__ == '__main__':
     args = parser.parse_args()
     print(f"Running with following CLI options: {args}")
+    
+    global max_episode_steps
+    max_episode_steps = args.steps
+
 
     # init_logging(level=logging.DEBUG)
     if ray.is_initialized(): ray.shutdown()
-
+    global max_num_steps
     
     if args.slurm:
         ray_address = os.environ["RAY_ADDRESS"] if "RAY_ADDRESS" in os.environ else "auto"
@@ -406,7 +422,7 @@ if __name__ == '__main__':
         }
         default_config = update_default_config(sweep_config)
 
-    train(config=default_config, dataset=args.dataset, iter=args.iter, wandb_url=args.wandb_url, sweep_count=args.sweep)
+    train(config=default_config, dataset=args.dataset, network=args.network, iter=args.iter, wandb_url=args.wandb_url, sweep_count=args.sweep)
 
 
     ray.shutdown()

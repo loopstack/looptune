@@ -7,6 +7,8 @@ import time
 from tqdm import tqdm
 import random
 import numpy as np
+from loop_tool_service.service_py.utils import timed_fn
+
 
 class Evaluator:
     """ Evaluator runs specified searches on full dataset or single benchmark 
@@ -36,7 +38,13 @@ class Evaluator:
             'policy_cost': f'beambeam_search --steps1={self.steps//2} --width1=2 --eval1=policy --steps2={self.steps - self.steps//2} --width2=2 --eval2=cost',
         }
         
-    def evaluate(self, env, benchmarks: list, searches: dict):
+    def set_cost_path(self, path):
+        self.cost_path = path
+
+    def set_policy_path(self, path):
+        self.policy_path = path
+
+    def evaluate(self, env, benchmarks: list, searches: dict, timeout_s: int = 5):
         """ Run run and plot searches on benchmarks
 
         Args:
@@ -47,7 +55,7 @@ class Evaluator:
         self.df_gflops, self.df_time, self.df_actions = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
         for benchmark in tqdm(benchmarks):
-            results_gflops, results_time, results_actions = self.evaluate_single_benchmark(env, benchmark, searches)
+            results_gflops, results_time, results_actions = self.evaluate_single_benchmark(env, benchmark, searches, timeout_s)
             self.df_gflops = pd.concat([self.df_gflops, pd.DataFrame([results_gflops])], axis=0)
             self.df_time = pd.concat([self.df_time, pd.DataFrame([results_time])], axis=0)
             self.df_actions = pd.concat([self.df_actions, pd.DataFrame([results_actions])], axis=0)
@@ -55,7 +63,7 @@ class Evaluator:
         return { 'gflops': self.df_gflops, 'time': self.df_time, 'actions': self.df_actions }
         
 
-    def evaluate_single_benchmark(self, env, benchmark, searches):
+    def evaluate_single_benchmark(self, env, benchmark, searches, timeout_s):
         """ Run set of searches on single benchmark
 
         Args:
@@ -81,7 +89,7 @@ class Evaluator:
         print(f"Base performance = {results_gflops['base']}")
 
         for search_name, search_cmd in searches.items():
-            results_gflops[search_name], results_time[search_name], results_actions[search_name] = self.search_performance(env, search_cmd)
+            results_gflops[search_name], results_time[search_name], results_actions[search_name] = self.search_performance(env, search_cmd, timeout_s)
             
         return results_gflops, results_time, results_actions
 
@@ -183,17 +191,19 @@ class Evaluator:
         return gflops, time.time() - start, ""
 
 
-    def search_performance(self, env, search):
+    def search_performance(self, env, search, timeout_s):
         search_cmd, search_args = search.split(" ", 1)
         env.send_param("reset_agent", '')
-        try:
-            start = time.time()
-            actions_reward = json.loads(env.send_param(search_cmd, search_args))
-            search_time = time.time() - start
+        start = time.time()
+        res = timed_fn(fn=env.send_param, args=[search_cmd, search_args], seconds=timeout_s)
+        search_time = time.time() - start
+
+        if res != None:
+            actions_reward = json.loads(res)
             gflops = self.move_and_eval(env, actions_str=actions_reward[0])
-        except TimeoutError:
-            gflops, search_time = 0, 0
-            actions_reward = "failed"
+        else:
+            actions_reward = ["failed", 0]
+            gflops = 0
 
         return gflops, search_time, actions_reward[0]
 

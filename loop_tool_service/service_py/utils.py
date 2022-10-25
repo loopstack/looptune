@@ -11,6 +11,31 @@ from subprocess import Popen, run
 from typing import List
 import logging
 
+
+import signal
+
+class timeout:
+    def __init__(self, seconds=1, error_message='Timeout'):
+        self.seconds = seconds
+        self.error_message = error_message
+    def handle_timeout(self, signum, frame):
+        raise TimeoutError(self.error_message)
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
+
+
+def timed_fn(fn, args, seconds):
+    try:
+        with timeout(seconds=seconds):
+            return fn(*args)
+    except TimeoutError:
+        return None
+
+
+
 def run_command(cmd: List[str], timeout: int, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
     if '<' in cmd:
         pos_less = cmd.index('<')

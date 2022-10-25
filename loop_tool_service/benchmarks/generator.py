@@ -122,7 +122,7 @@ def main():
 
     args = parser.parse_args()
     dimA = [ int(item) for item in args.dimA.split(',') ]
-    dimB = [ int(item) for item in args.dimA.split(',') ] 
+    dimB = [ int(item) for item in args.dimB.split(',') ] 
 
     if args.kind == "mm":
         C = gen_mm(dimA, dimB)

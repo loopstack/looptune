@@ -77,7 +77,7 @@ class Environment:
         self.timeout_sec = timeout_sec        
 
         ir = lt.deserialize(benchmark.program.contents)
-        self.agent = lt.LoopTreeAgent(lt.LoopTree(ir))#.merge_all()
+        self.agent = lt.LoopTreeAgent(lt.LoopTree(ir)).merge_all()
         self.agent.set_action_space(self.action_space_str)
         self.agent_start = self.agent.copy()
         logging.info(self.agent)

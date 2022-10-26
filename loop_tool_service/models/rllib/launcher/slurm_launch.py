@@ -58,6 +58,10 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--steps", type=int, default=10, help="Number of actions to find."
+)
+
+parser.add_argument(
     '--network', choices=['TorchActionMaskModel', 'TorchBatchNormModel', 'TorchCustomModel'], default='TorchCustomModel', help='Deep network model.'
 )
 
@@ -147,7 +151,7 @@ def submit_job():
     log_dir = repo_dir / Path("results") / "runs"
 
     log_dir.mkdir(parents=True, exist_ok=True)
-    command = f"python -u {args.app} --slurm --iter={args.iter} --wandb_url={args.wandb_url} --dataset={args.dataset} --network={args.network} --sweep={args.sweep}" 
+    command = f"python -u {args.app} --slurm --iter={args.iter} --wandb_url={args.wandb_url} --dataset={args.dataset} --network={args.network} --steps={args.steps} --sweep={args.sweep}" 
 
     exp_name = f"run_{datetime.now():%m_%d_%H_%M}"
     job_name = f"job_{exp_name}"

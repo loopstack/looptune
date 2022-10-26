@@ -34,14 +34,11 @@ import yaml
 
 import ray
 from ray import tune
-# from ray.rllib.algorithms import ppo
 from ray.rllib.env.env_context import EnvContext
 from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_tf, try_import_torch
 from ray.rllib.utils.test_utils import check_learning_achieved
-from ray.rllib.agents.ppo import PPOTrainer, DEFAULT_CONFIG
 
-import compiler_gym
 from compiler_gym.wrappers import CycleOverBenchmarks
 from compiler_gym.util.registration import register
 from compiler_gym.wrappers import TimeLimit
@@ -50,25 +47,23 @@ from compiler_gym.util.logging import init_logging
 from ray.tune.logger import Logger
 
 import loop_tool_service
-from loop_tool_service import paths
 from loop_tool_service.models.evaluator import Evaluator
 
-from loop_tool_service.service_py.datasets import mm128_128_128
-
-from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward, runtime_reward
-import loop_tool_service.models.rllib.my_net_rl as my_net_rl
 
 import torch
 import importlib
+import inspect
+
 from ray.tune.integration.wandb import WandbLoggerCallback
 from loop_tool_service.paths import LOOP_TOOL_ROOT
 from os.path import exists
 import wandb
 
 import tempfile
-
+import loop_tool as lt
 # Run this with: 
-# python launcher/slurm_launch.py -e launcher/exp.yaml -n 1 -t 3:00   ### slurm_launch.py internaly calls rllib_torch.py
+# python rllib_agent.py --iter=2 --dataset=mm64_256_16_range
+# python launcher/slurm_launch.py --app=rllib_agent.py --time=300:00 -nc=80 -ng=2 --iter=5000 --dataset=mm64_256_16_range --sweep  --steps=3
 # python
 
 
@@ -76,7 +71,7 @@ import tempfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--run", type=str, default="PPO", help="The RLlib-registered algorithm to use."
+    "--trainer", type=str, default="ppo.PPOTrainer", help="The RLlib-registered trainer to use. Store config in rllib/config directory."
 )
 parser.add_argument(
     "--wandb_url",  type=str, nargs='?', default='', help="Wandb uri to load policy network."
@@ -125,39 +120,8 @@ parser.add_argument(
 )
 
 
-default_config = {
-    "log_level": "ERROR",
-    "env": "compiler_gym", 
-    "observation_space": "loops_tensor",
-    "framework": 'torch',
-    "model": {
-        "custom_model": "my_model",
-        "custom_model_config": {"action_mask": [1, 1, 1, 1]},
-        "vf_share_layers": True,
-        "fcnet_hiddens": [1000] * 4,
-        # "post_fcnet_hiddens":
-        # "fcnet_activation": 
-        # "post_fcnet_activation":
-        # "no_final_linear":
-        # "free_log_std":
-    },
-    # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
-    "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "0")), #torch.cuda.device_count(),
-    # "num_workers": -1,  # parallelism
-    "rollout_fragment_length": 10, 
-    "train_batch_size": 790, # train_batch_size == num_workers * rollout_fragment_length
-    "num_sgd_iter": 30,
-    # "evaluation_interval": 5, # num of training iter between evaluations
-    # "evaluation_duration": 10, # num of episodes run per evaluation period
-    "explore": True,
-    "gamma": 0.7689098370203395,
-    "lr": 3.847293324197388e-7,
-}
-
-
-
 torch, nn = try_import_torch()
-
+import ray.rllib.agents.trainer_template
 
 def make_env():
     """Make the reinforcement learning environment for this experiment."""
@@ -174,13 +138,15 @@ def make_env():
     return env
 
 class RLlibAgent:
-    def __init__(self, algorithm, dataset, network, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+    def __init__(self, trainer, dataset, network, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
         self.wandb_dict = {}
 
         global datasets_global, max_episode_steps
         datasets_global = [ dataset ]
         self.max_episode_steps = max_episode_steps
-        self.algorithm = algorithm
+        algorithm, trainer = trainer.split('.')
+        self.trainer = getattr(importlib.import_module(f'ray.rllib.agents.{algorithm}'), trainer)
+        self.config = importlib.import_module(f"loop_tool_service.models.rllib.config.{trainer}").get_config()
         self.dataset = dataset
         self.network = getattr(importlib.import_module(f"loop_tool_service.models.rllib.my_net_rl"), network)
         self.wandb_dict['network'] = network
@@ -214,9 +180,15 @@ class RLlibAgent:
         self.validation_benchmarks = sorted(benchmarks[train_size:])
         self.wandb_dict['train_size'] = len(self.train_benchmarks)
         self.wandb_dict['test_size'] = len(self.validation_benchmarks)
+        
+        self.wandb_dict['max_loops'] = lt.LoopTreeAgent.max_loops()
+        self.wandb_dict['num_loop_features'] = lt.LoopTreeAgent.num_loop_features()
+        self.wandb_dict['trainer'] = self.trainer.__name__
+        self.wandb_dict['actions'] = ",".join(self.env.action_space.names)
 
         print("Number of benchmarks for training:", len(self.train_benchmarks))
         print("Number of benchmarks for validation:", len(self.validation_benchmarks))
+                    
 
         def make_training_env(*args): 
             del args
@@ -239,15 +211,11 @@ class RLlibAgent:
                 if f.name.startswith('checkpoint'):
                     f.download(root=self.my_artifacts_start, replace=True)
 
-            # wandb.restore('config.yaml', run_path=policy_path)
-            # policy_model = torch.load('policy_model.pt')
-            # with open('config.yaml', 'r') as f: config = yaml.load(f, Loader=yaml.BaseLoader)
-
         except:
             print('Policy not found')
 
 
-    def train(self, config, train_iter, sweep_count=1):
+    def train(self, train_iter, sweep_count=1):
         """Training with RLlib agent.
 
         Args:
@@ -258,20 +226,16 @@ class RLlibAgent:
         Returns:
             dict: [trial_id] = { "policy_path": policy_path, "config": config } after training
         """
-        print(f'Before tune.run, stop = {train_iter}')
         models = {}
-        self.wandb_dict['algorithm'] = self.algorithm.__name__
-        self.wandb_dict['actions'] = ",".join(self.env.action_space.names)
-
         checkpoint_path = None
         if self.checkpoint_start != None:
             train_iter += self.checkpoint_start['training_iteration']
             checkpoint_path = f"{self.my_artifacts_start}/{self.checkpoint_start['checkpoint']}"
-            config['model']['fcnet_hiddens'] = [self.checkpoint_start['layers_width']] * self.checkpoint_start['layers_num']
+            self.config['model']['fcnet_hiddens'] = [self.checkpoint_start['layers_width']] * self.checkpoint_start['layers_num']
 
         analysis = tune.run(
-            self.algorithm,
-            config=config, 
+            self.trainer,
+            config=self.config, 
             restore=checkpoint_path,
             metric="episode_reward_mean", # "final_performance",
             mode="max",
@@ -294,7 +258,7 @@ class RLlibAgent:
         for trial in analysis.trials:
             config = trial.config
             config["explore"] = False
-            agent = self.algorithm(
+            agent = self.trainer(
                 env="compiler_gym",
                 config=config
             )
@@ -334,30 +298,16 @@ def wandb_update_df(wandb_dict, res_dict, prefix):
     wandb_dict[f'{prefix}avg_network_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1_policy'] / res_dict['gflops']['base']))
     wandb_dict[f'{prefix}search_actions_num'] = float(np.mean(res_dict['actions']['greedy1_ln'].str.len()))
     wandb_dict[f'{prefix}network_actions_num'] = float(np.mean(res_dict['actions']['greedy1_policy'].str.len()))
-
-
-def update_default_config(sweep_config=None):
-    for key, val in default_config.items():
-        if key in sweep_config:
-            if type(val) == dict:
-                val.update(sweep_config[key])
-            else:
-                default_config[key] = sweep_config[key]
-
-    return default_config
     
 
-def train(config, dataset, network, iter, wandb_url, sweep_count):
-    ############### Train ###############
-    print(f'Train params: ', config, iter, wandb_url)
+def train(trainer, dataset, network, iter, wandb_url, sweep_count):
 
-    agent = RLlibAgent(algorithm=PPOTrainer, dataset=dataset, network=network)
+    agent = RLlibAgent(trainer=trainer, dataset=dataset, network=network)
 
     if wandb_url:
         agent.load_model(wandb_url)
 
     models = agent.train(
-        config=config, 
         train_iter=iter, 
         sweep_count=sweep_count
     )
@@ -403,26 +353,7 @@ if __name__ == '__main__':
         ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
 
-    print(f"Num of CPUS = {int(ray.cluster_resources()['CPU'])}")
-    print(f'Num of GPUS = {torch.cuda.device_count()}, ray = {ray.get_gpu_ids()}')
-
-
-    if 'num_workers' not in default_config: 
-        default_config['num_workers'] = int(ray.cluster_resources()['CPU']) - 1
-
-    if args.sweep:
-        hiddens_layers = [8, 16]
-        hiddens_width = [100, 500, 1000]
-        sweep_config = {
-            'lr': tune.uniform(1e-6, 1e-8),
-            "gamma": tune.uniform(0.7, 0.99),
-            'model': {
-                "fcnet_hiddens": tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]),
-            },
-        }
-        default_config = update_default_config(sweep_config)
-
-    train(config=default_config, dataset=args.dataset, network=args.network, iter=args.iter, wandb_url=args.wandb_url, sweep_count=args.sweep)
+    train(trainer=args.trainer, dataset=args.dataset, network=args.network, iter=args.iter, wandb_url=args.wandb_url, sweep_count=args.sweep)
 
 
     ray.shutdown()

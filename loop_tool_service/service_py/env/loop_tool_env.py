@@ -172,7 +172,7 @@ class Environment:
         if agent == None: agent = self.agent
         feature_vector = [x for loop_vector in agent.get_loops_tensor() for x in loop_vector]
         dim0, dim1 = self.observation_spaces['loops_tensor'].float_box.high.shape
-        assert(len(feature_vector) < dim1), f'get_loops_tensor:LoopTool dimension doesnt correspond to environment dimensions {len(feature_vector)} !< {dim1}'
+        assert(len(feature_vector) <= dim1), f'get_loops_tensor:LoopTool dimension doesnt correspond to environment dimensions {len(feature_vector)} !< {dim1}'
         feature_vector.extend([0] * (dim1 - len(feature_vector)))
         return Event(float_tensor=FloatTensor(shape=[dim0, dim1], value=feature_vector))
     

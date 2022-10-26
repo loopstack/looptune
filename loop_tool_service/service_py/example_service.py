@@ -178,7 +178,7 @@ class LoopToolCompilationSession(CompilationSession):
             space=Space(
                 float_box=FloatBox(
                     low = FloatTensor(shape = [1, 32], value=[0] * 32),
-                    high = FloatTensor(shape = [1, 32], value=[int(1e6)] * 32),
+                    high = FloatTensor(shape = [1, 32], value=[int(1e3)] * 32),
                 )
             ),
             deterministic=False,
@@ -227,7 +227,8 @@ class LoopToolCompilationSession(CompilationSession):
             space=Space(
                 float_box=FloatBox(
                     low = FloatTensor(shape = [1, max_loops * num_loop_features], value=[0] * max_loops * num_loop_features),
-                    high = FloatTensor(shape = [1, max_loops * num_loop_features], value=([1] + [1] * max_loops + [int(1e6), int(1e6), 1, 1, 1] + [1] * 32) * max_loops),
+                    # high = FloatTensor(shape = [1, max_loops * num_loop_features], value=([1] + [1] * max_loops + [int(1e6), int(1e6), 1, 1, 1] + [1] * 32) * max_loops),
+                    high = FloatTensor(shape = [1, max_loops * num_loop_features], value=([1] + [int(1e6), int(1e6), 1] + [1] * 16) * max_loops),
                 )
             ),
             deterministic=False,
@@ -315,7 +316,13 @@ class LoopToolCompilationSession(CompilationSession):
             else: # restore
                 self.env.agent = self.env.agent_saved.copy() #deepcopy(self.env.agent_saved)
             return "Succeeded"
-        
+
+        elif key == "max_loops":            
+            return str(max_loops)
+
+        elif key == "num_loop_features":            
+            return str(num_loop_features)
+
         elif key == "reset_agent":
             self.env.reset_agent()
             return ""

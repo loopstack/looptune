@@ -137,6 +137,27 @@ def make_env():
     env = TimeLimit(env, max_episode_steps=max_episode_steps) # <<<< Must be here
     return env
 
+
+from ray.tune import Callback
+class MyCallback(Callback):
+    def __init__(self, agent):
+        Callback.__init__(self)
+        self.agent = agent
+        self.once = []
+
+    def on_trial_result(self, iteration, trials, trial, result, **info):
+        if trial in self.once: 
+            return
+
+        self.once.append(trial)
+        if 'fcnet_hiddens' in trial.config['model']:
+            self.agent.wandb_dict['layers_num'] = len(trial.config['model']['fcnet_hiddens'])
+            self.agent.wandb_dict['layers_width'] = trial.config['model']['fcnet_hiddens'][0]
+
+        self.agent.evaluator.send_to_wandb(wandb_run_id=trial.trial_id, wandb_dict=self.agent.wandb_dict)
+        
+
+
 class RLlibAgent:
     def __init__(self, algorithm, trainer, dataset, network, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
         self.wandb_dict = {}
@@ -159,6 +180,9 @@ class RLlibAgent:
         self.train_benchmarks = []
         self.validation_benchmarks = []
         self.checkpoint_start = None
+        self.analysis = None
+        self.evaluator = Evaluator(steps=max_episode_steps)
+        self.max_eval = 100
         self.init()
     
     def init(self):
@@ -213,7 +237,7 @@ class RLlibAgent:
         except:
             print('Policy not found')
 
-
+            
     def train(self, train_iter, sweep_count=1):
         """Training with RLlib agent.
 
@@ -232,18 +256,19 @@ class RLlibAgent:
             checkpoint_path = f"{self.my_artifacts_start}/{self.checkpoint_start['checkpoint']}"
             self.config['model']['fcnet_hiddens'] = [self.checkpoint_start['layers_width']] * self.checkpoint_start['layers_num']
 
-        analysis = tune.run(
+        self.analysis = tune.run(
             self.trainer,
             config=self.config, 
             restore=checkpoint_path,
             metric="episode_reward_mean", # "final_performance",
             mode="max",
             reuse_actors=False,
-            checkpoint_freq=10,
+            checkpoint_freq=1,
             checkpoint_at_end=True,
             num_samples=max(1, sweep_count),
             stop={'training_iteration': train_iter},    
             callbacks=[
+                MyCallback(self),
                 WandbLoggerCallback(
                     project="loop_tool_agent_split",
                     api_key_file=self.wandb_key_path,
@@ -254,79 +279,68 @@ class RLlibAgent:
         print("hhh2______________________")
 
 
-        for trial in analysis.trials:
+    def evaluate(self, trials=None):
+        if trials == None:
+            if self.analysis:
+                trials = self.analysis.trials
+            else:
+                print('RLlibAgent: No analysis found. Run train method first.')
+                return
+
+
+        searches = { k:v for k, v in self.evaluator.searches.items() if 'cost' not in k and 'bruteforce' not in k}
+
+        for trial in trials:
             config = trial.config
+            checkpoint_path = Path(trial.checkpoint.value) # .value -> .dir_or_data for ray 2.1
+            if checkpoint_path == None:
+                continue
+            
             config["explore"] = False
             agent = self.trainer(
                 env="compiler_gym",
                 config=config
             )
 
-            checkpoint_path = Path(trial.checkpoint.value) # .value -> .dir_or_data for ray 2.1
             agent.restore(str(checkpoint_path))
             policy_model = agent.get_policy().model
 
-            trial_dict = self.wandb_dict.copy()
             if 'fcnet_hiddens' in config['model']:
-                trial_dict['layers_num'] = len(config['model']['fcnet_hiddens'])
-                trial_dict['layers_width'] = config['model']['fcnet_hiddens'][0]
+                self.wandb_dict['layers_num'] = len(config['model']['fcnet_hiddens'])
+                self.wandb_dict['layers_width'] = config['model']['fcnet_hiddens'][0]
 
-            trial_dict['checkpoint'] = os.path.relpath(checkpoint_path, checkpoint_path.parent.parent)
-            
-            models[trial.trial_id] = { 
-                "policy_path": self.my_artifacts_end/trial.trial_id/'policy_model.pt', 
-                "config": trial_dict
-            }          
+            self.wandb_dict['checkpoint'] = os.path.relpath(checkpoint_path, checkpoint_path.parent.parent)
 
             # Save policy and checkpoint for wandb
-            os.makedirs(models[trial.trial_id]["policy_path"].parent)
-            torch.save(policy_model,  models[trial.trial_id]["policy_path"])
+            policy_path = self.my_artifacts_end/trial.trial_id/'policy_model.pt'
+            os.makedirs(policy_path.parent)
+            torch.save(policy_model,  policy_path)
             my_artifacts_checkpoint_dir = self.my_artifacts_end/trial.trial_id/checkpoint_path.parent.name
             shutil.copytree(checkpoint_path.parent, my_artifacts_checkpoint_dir)
             with open(my_artifacts_checkpoint_dir/'config.json', "w") as f: json.dump(trial.config, f)
 
+            self.evaluator.send_to_wandb(wandb_run_id=trial.trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial.trial_id)
 
-        return models
+            # Evaluate trial
+            self.evaluator.set_policy_path(policy_path)
+            df_train = self.evaluator.evaluate(self.env, self.train_benchmarks[:self.max_eval], searches, timeout_s=5)
+            self.evaluator.save(path=self.my_artifacts_end/trial.trial_id/"train")
+            df_val = self.evaluator.evaluate(self.env, self.validation_benchmarks[:self.max_eval], searches, timeout_s=5)
+            self.evaluator.save(path=self.my_artifacts_end/trial.trial_id/"validation")
+        
+            self.wandb_update_df(df_train, prefix='train_')
+            self.wandb_update_df(df_val, prefix='test_')
+            self.evaluator.send_to_wandb(wandb_run_id=trial.trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial.trial_id)
 
 
+    def wandb_update_df(self, res_dict, prefix):
+        self.wandb_dict[f'{prefix}final_performance'] = float(np.mean(res_dict['gflops']['greedy1_policy'] / res_dict['gflops']['greedy1_ln']))
+        self.wandb_dict[f'{prefix}avg_search_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1_ln'] / res_dict['gflops']['base']))
+        self.wandb_dict[f'{prefix}avg_network_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1_policy'] / res_dict['gflops']['base']))
+        self.wandb_dict[f'{prefix}search_actions_num'] = float(np.mean(res_dict['actions']['greedy1_ln'].str.len()))
+        self.wandb_dict[f'{prefix}network_actions_num'] = float(np.mean(res_dict['actions']['greedy1_policy'].str.len()))
 
 #################################################################################
-def wandb_update_df(wandb_dict, res_dict, prefix):
-    wandb_dict[f'{prefix}final_performance'] = float(np.mean(res_dict['gflops']['greedy1_policy'] / res_dict['gflops']['greedy1_ln']))
-    wandb_dict[f'{prefix}avg_search_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1_ln'] / res_dict['gflops']['base']))
-    wandb_dict[f'{prefix}avg_network_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1_policy'] / res_dict['gflops']['base']))
-    wandb_dict[f'{prefix}search_actions_num'] = float(np.mean(res_dict['actions']['greedy1_ln'].str.len()))
-    wandb_dict[f'{prefix}network_actions_num'] = float(np.mean(res_dict['actions']['greedy1_policy'].str.len()))
-    
-
-def train(trainer, dataset, network, iter, wandb_url, sweep_count):
-    algorithm, trainer = trainer.split('.') # expected: algorithm.trainer
-    agent = RLlibAgent(algorithm=algorithm, trainer=trainer, dataset=dataset, network=network)
-
-    if wandb_url:
-        agent.load_model(wandb_url)
-
-    models = agent.train(
-        train_iter=iter, 
-        sweep_count=sweep_count
-    )
-
-    evaluator = Evaluator(steps=agent.max_episode_steps)
-    env = agent.make_env()
-    searches = { k:v for k, v in evaluator.searches.items() if 'cost' not in k and 'bruteforce' not in k}
-    max_eval = 100
-
-    for trial_id, policy_model in models.items():
-        evaluator.set_policy_path(policy_model['policy_path'])
-        df_train = evaluator.evaluate(env, agent.train_benchmarks[:max_eval], searches, timeout_s=5)
-        evaluator.save(path=agent.my_artifacts_end/trial_id/"train")
-        df_val = evaluator.evaluate(env, agent.validation_benchmarks[:max_eval], searches, timeout_s=5)
-        evaluator.save(path=agent.my_artifacts_end/trial_id/"validation")
-    
-        wandb_update_df(policy_model['config'], df_train, prefix='train_')
-        wandb_update_df(policy_model['config'], df_val, prefix='test_')
-        evaluator.send_to_wandb(path=agent.my_artifacts_end/trial_id, wandb_run_id=trial_id, wandb_dict=policy_model['config'])
-
 
 
 
@@ -352,8 +366,17 @@ if __name__ == '__main__':
         ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
 
-    train(trainer=args.trainer, dataset=args.dataset, network=args.network, iter=args.iter, wandb_url=args.wandb_url, sweep_count=args.sweep)
+    algorithm, trainer = args.trainer.split('.') # expected: algorithm.trainer
+    agent = RLlibAgent(algorithm=algorithm, trainer=trainer, dataset=args.dataset, network=args.network)
 
+    if args.wandb_url:
+        agent.load_model(args.wandb_url)
+
+    agent.train(
+        train_iter=args.iter, 
+        sweep_count=args.sweep
+    )
+    agent.evaluate()
 
     ray.shutdown()
     print("Return from train!")

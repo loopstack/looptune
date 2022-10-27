@@ -29,6 +29,6 @@ def get_config(sweep=False):
         # "evaluation_interval": 5, # num of training iter between evaluations
         # "evaluation_duration": 10, # num of episodes run per evaluation period
         "explore": True,
-        "gamma": ray.tune.uniform(0.7, 0.99) if sweep else 0.95,
-        "lr": ray.tune.uniform(1e-6, 1e-8) if sweep else 3.847293324197388e-3,
+        "gamma": ray.tune.uniform(0.7, 0.99) if sweep else 0.85,
+        "lr": ray.tune.uniform(1e-6, 1e-8) if sweep else 3.847293324197388e-7,
     }

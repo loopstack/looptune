@@ -154,26 +154,28 @@ class Evaluator:
 
 
 
-    def send_to_wandb(self, path, wandb_run_id, wandb_dict):
+    def send_to_wandb(self, wandb_run_id, wandb_dict=None, path=None):
         wandb_dict['group_id'] = wandb_run_id.split('_')[0]
         wandb_dict['run_id'] = wandb_run_id
 
-        cwd = os.getcwd()
-        os.chdir(path)
         wandb_url = f'dejang/loop_tool_agent_split/{wandb_run_id}'
         api = wandb.Api()
         wandb_run = api.run(wandb_url)
 
+        
+        if wandb_dict: # Upload wandb dict
+            for key, value in wandb_dict.items(): 
+                wandb_run.summary[key] = value
+            wandb_run.summary.update()
 
-        for root, dirs, files in os.walk(path):
-            for file in files:
-                print(f"{root}/{file}")
-                wandb_run.upload_file(f"{root}/{file}")        
-
-        for key, value in wandb_dict.items(): 
-            wandb_run.summary[key] = value
-        wandb_run.summary.update()
-        os.chdir(cwd)
+        if path: # Upload wandb plots
+            cwd = os.getcwd()
+            os.chdir(path)
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    print(f"{root}/{file}")
+                    wandb_run.upload_file(f"{root}/{file}")        
+            os.chdir(cwd)
         
         print(f'\nWandb page = https://wandb.ai/{wandb_url}')
 

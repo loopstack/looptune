@@ -71,7 +71,7 @@ import loop_tool as lt
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--trainer", type=str, default="ppo.PPOTrainer", help="The RLlib-registered trainer to use. Store config in rllib/config directory."
+    '--trainer', choices=['ppo.PPOTrainer', 'ppo.APPOTrainer'], default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
 )
 parser.add_argument(
     "--wandb_url",  type=str, nargs='?', default='', help="Wandb uri to load policy network."
@@ -138,15 +138,14 @@ def make_env():
     return env
 
 class RLlibAgent:
-    def __init__(self, trainer, dataset, network, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+    def __init__(self, algorithm, trainer, dataset, network, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
         self.wandb_dict = {}
 
         global datasets_global, max_episode_steps
         datasets_global = [ dataset ]
         self.max_episode_steps = max_episode_steps
-        algorithm, trainer = trainer.split('.')
         self.trainer = getattr(importlib.import_module(f'ray.rllib.agents.{algorithm}'), trainer)
-        self.config = importlib.import_module(f"loop_tool_service.models.rllib.config.{trainer}").get_config()
+        self.config = importlib.import_module(f"loop_tool_service.models.rllib.config.{algorithm}.{trainer}").get_config()
         self.dataset = dataset
         self.network = getattr(importlib.import_module(f"loop_tool_service.models.rllib.my_net_rl"), network)
         self.wandb_dict['network'] = network
@@ -301,8 +300,8 @@ def wandb_update_df(wandb_dict, res_dict, prefix):
     
 
 def train(trainer, dataset, network, iter, wandb_url, sweep_count):
-
-    agent = RLlibAgent(trainer=trainer, dataset=dataset, network=network)
+    algorithm, trainer = trainer.split('.') # expected: algorithm.trainer
+    agent = RLlibAgent(algorithm=algorithm, trainer=trainer, dataset=dataset, network=network)
 
     if wandb_url:
         agent.load_model(wandb_url)

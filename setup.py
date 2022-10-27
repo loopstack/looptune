@@ -35,6 +35,7 @@ setuptools.setup(
         "loop_tool_service.models.cost_model.cost",
         "loop_tool_service.models.rllib",        
         "loop_tool_service.models.rllib.config",
+        "loop_tool_service.models.rllib.config.ppo",
         "loop_tool_service.models.q_agents",
         # "loop_tool_service.models.llvm_autotuning.autotuners",        
     ],

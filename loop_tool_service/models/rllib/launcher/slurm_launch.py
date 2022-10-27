@@ -42,6 +42,9 @@ parser.add_argument(
     "--app",  type=str, help="Application to run"
 )
 parser.add_argument(
+    '--trainer', choices=['ppo.PPOTrainer', 'ppo.APPOTrainer'], default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
+)
+parser.add_argument(
     "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps"
 )
 parser.add_argument(
@@ -151,7 +154,7 @@ def submit_job():
     log_dir = repo_dir / Path("results") / "runs"
 
     log_dir.mkdir(parents=True, exist_ok=True)
-    command = f"python -u {args.app} --slurm --iter={args.iter} --wandb_url={args.wandb_url} --dataset={args.dataset} --network={args.network} --steps={args.steps} --sweep={args.sweep}" 
+    command = f"python -u {args.app} --slurm --iter={args.iter} --wandb_url={args.wandb_url} --trainer={args.trainer} --dataset={args.dataset} --network={args.network} --steps={args.steps} --sweep={args.sweep}" 
 
     exp_name = f"run_{datetime.now():%m_%d_%H_%M}"
     job_name = f"job_{exp_name}"

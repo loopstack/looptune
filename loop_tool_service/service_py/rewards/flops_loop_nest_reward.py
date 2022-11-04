@@ -99,10 +99,11 @@ class NormRewardTensor(Reward):
     to compute incremental reward.
     """
 
-    def __init__(self):
+    def __init__(self, obs='flops_loop_nest_tensor'):
+        self.obs = obs
         super().__init__(
-            id="flops_loop_nest_tensor",
-            observation_spaces=["flops_loop_nest_tensor"],
+            id=obs,
+            observation_spaces=[obs],
             default_value=0,
             default_negates_returns=True,
             deterministic=False,
@@ -112,12 +113,10 @@ class NormRewardTensor(Reward):
         self.prev_flops = 0
 
     def reset(self, benchmark: str, observation_view):
-        # print("Reward flops_loop_nest_tensor: reset")
         del benchmark  # unused
-        self.prev_flops = observation_view["flops_loop_nest_tensor"]
+        self.prev_flops = observation_view[self.obs]
 
     def update(self, action, observations, observation_view):
-        # print("Reward flops_loop_nest_tensor: update")
         del action
         del observation_view
         

@@ -88,6 +88,7 @@ class Environment:
         self.policy_model = None
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.eval_cost_fn = self.eval_ln_flops
+        self.cache = {}
 
         self.evaluator = Evaluator(self)
         self.beam_searcher = BeamSearcher(self.evaluator)
@@ -129,12 +130,13 @@ class Environment:
         return Event(float_value=self.agent.eval("FLOPS") / 1e9)
 
     def get_flops_loop_nest(self) -> Event:
-        start = time.time()
         flops = self.eval_ln_flops(self.agent)
-        end = time.time()
-        # print(f'LoopNest = {end - start}')
         return Event(float_value=flops)
-            
+
+    def get_flops_loop_nest_cached(self) -> Event:
+        flops = self.eval_ln_flops_cached(self.agent)
+        return Event(float_value=flops)
+
     def get_gflops_cost(self) -> Event:
         gflops_cost = self.evaluator.eval_gflops(self.agent, 'cost')
         return Event(float_value=gflops_cost)
@@ -146,6 +148,12 @@ class Environment:
 
     def get_flops_loop_nest_tensor(self) -> Event:
         flops = self.eval_ln_flops(self.agent)
+        tensor = DoubleTensor(shape = [1], value=[flops])
+        logging.info(f'<<<<<<<<<<<<<<< Reward = {tensor.value[0]} GFLOPS >>>>>>>>>>>>>>>')
+        return Event(double_tensor=tensor)
+
+    def get_flops_loop_nest_tensor_cached(self) -> Event:
+        flops = self.eval_ln_flops_cached(self.agent)
         tensor = DoubleTensor(shape = [1], value=[flops])
         logging.info(f'<<<<<<<<<<<<<<< Reward = {tensor.value[0]} GFLOPS >>>>>>>>>>>>>>>')
         return Event(double_tensor=tensor)
@@ -189,6 +197,13 @@ class Environment:
         last_actions_vector.extend([0] * (dim1 - len(last_actions_vector)))
 
         return Event(float_tensor=FloatTensor(shape=[dim0, dim1], value=last_actions_vector))
+
+    def eval_ln_flops_cached(self, agent):
+        lt_hash = hash(str(self.agent.lt))
+        if lt_hash not in self.cache:
+            self.cache[lt_hash] = max([ self.eval_ln_flops(agent) for _ in range(10) ])
+        return self.cache[lt_hash]
+
 
     def eval_ln_flops(self, agent):
         try:

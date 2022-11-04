@@ -42,7 +42,7 @@ parser.add_argument(
     "--app",  type=str, help="Application to run"
 )
 parser.add_argument(
-    '--trainer', choices=['ppo.PPOTrainer', 'ppo.APPOTrainer'], default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
+    '--trainer', choices=['ppo.PPOTrainer', 'ppo.APPOTrainer', 'dqn.DQNTrainer'], default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
 )
 parser.add_argument(
     "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps"
@@ -54,10 +54,16 @@ parser.add_argument(
     help="Number of iterations to train."
 )
 parser.add_argument(
+    "--stop_reward", type=float, default=1, help="Reward at which we stop training."
+)
+parser.add_argument(
     "--wandb_url",  type=str, default='', help="Wandb url of trained model"
 )
 parser.add_argument(
     "--dataset",  type=str, nargs='?', help="Dataset [mm128_128_128] to run must be defined in loop_tool_service.service_py.datasets."
+)
+parser.add_argument(
+    "--size", type=int, nargs='?', default=1000000, help="Size of benchmarks to evaluate."
 )
 
 parser.add_argument(
@@ -154,7 +160,7 @@ def submit_job():
     log_dir = repo_dir / Path("results") / "runs"
 
     log_dir.mkdir(parents=True, exist_ok=True)
-    command = f"python -u {args.app} --slurm --iter={args.iter} --wandb_url={args.wandb_url} --trainer={args.trainer} --dataset={args.dataset} --network={args.network} --steps={args.steps} --sweep={args.sweep}" 
+    command = f"python -u {args.app} --slurm --iter={args.iter} --stop_reward={args.stop_reward} --wandb_url={args.wandb_url} --trainer={args.trainer} --dataset={args.dataset} --size={args.size} --network={args.network} --steps={args.steps} --sweep={args.sweep}" 
 
     exp_name = f"run_{datetime.now():%m_%d_%H_%M}"
     job_name = f"job_{exp_name}"

@@ -58,5 +58,8 @@ def main():
         for x in sorted(stat):
             print(','.join( [ str(item) for item in x] ))    
 
+        breakpoint()
+        pass
+
 if __name__ == "__main__":
     main()

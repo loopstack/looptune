@@ -33,7 +33,7 @@ experiment_path = LOOP_TOOL_ROOT/"loop_tool_service/experiments"
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
 parser.add_argument("--policy", type=str, nargs='?', const=f"{weights_path}/policy.pt", default='', help="Path to the RLlib optimized network.")
 parser.add_argument("--cost", type=str, nargs='?', const=f"{weights_path}/cost.pt", default='', help="Path to the cost model network.")
-parser.add_argument("--benchmark", type=str, nargs='?', const='benchmark://loop_tool_test-v0/mm_127x127x127_36_40_20', default='benchmark://loop_tool_test-v0', help="Benchmark to run the search")
+parser.add_argument("--benchmark", type=str, nargs='?', const='benchmark://mm128_128_128-v0/012', default='benchmark://mm128_128_128-v0', help="Benchmark to run the search")
 parser.add_argument("--size", type=int, nargs='?', default=10, help="Size of benchmarks to evaluate")
 parser.add_argument("--steps", type=int, default=10, help="Length of sequence of actions to evaluate")
 
@@ -41,11 +41,12 @@ args = parser.parse_args()
 cost_path, policy_path = None, None
 
 
-def make_env() -> compiler_gym.envs.CompilerEnv:
+def make_env(datasets) -> compiler_gym.envs.CompilerEnv:
     """Make the reinforcement learning environment for this experiment."""
     
     env = loop_tool_service.make(
         "loop_tool_env-v0",
+        datasets=datasets,
         observation_space="loops_tensor",
         reward_space="flops_loop_nest_tensor",
     )
@@ -87,7 +88,7 @@ if __name__ == '__main__':
 
     evaluator = Evaluator(steps=args.steps, cost_path=cost_path, policy_path=policy_path)
 
-    with make_env() as env:
+    with make_env(datasets=['mm128_128_128']) as env:
         benchmark = str(args.benchmark)
         if benchmark in env.datasets.datasets():
             benchmarks = env.datasets[benchmark].benchmarks()

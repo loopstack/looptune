@@ -71,7 +71,8 @@ import loop_tool as lt
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '--trainer', choices=['ppo.PPOTrainer', 'ppo.APPOTrainer'], default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
+    '--trainer', choices=['ppo.PPOTrainer', 'ppo.APPOTrainer', 'dqn.DQNTrainer', 'dqn.'], 
+    default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
 )
 parser.add_argument(
     "--wandb_url",  type=str, nargs='?', default='', help="Wandb uri to load policy network."
@@ -108,9 +109,10 @@ parser.add_argument(
 # parser.add_argument(
 #     "--stop-timesteps", type=int, default=100, help="Number of timesteps to train."
 # )
-# parser.add_argument(
-#     "--stop-reward", type=float, default=100, help="Reward at which we stop training."
-# )
+
+parser.add_argument(
+    "--stop_reward", type=float, default=1, help="Reward at which we stop training."
+)
 
 parser.add_argument(
     "--local-mode",
@@ -131,7 +133,7 @@ def make_env():
         "loop_tool_env-v0",
         datasets=datasets_global,
         observation_space="loops_tensor",
-        reward_space="flops_loop_nest_tensor",
+        reward_space="flops_loop_nest_tensor_cached",# "flops_loop_nest_tensor",
     )
 
     env = TimeLimit(env, max_episode_steps=max_episode_steps) # <<<< Must be here
@@ -143,34 +145,32 @@ class MyCallback(Callback):
     def __init__(self, agent):
         Callback.__init__(self)
         self.agent = agent
-        self.once = []
 
     def on_trial_result(self, iteration, trials, trial, result, **info):
-        if trial in self.once: 
-            return
-
-        self.once.append(trial)
         if 'fcnet_hiddens' in trial.config['model']:
             self.agent.wandb_dict['layers_num'] = len(trial.config['model']['fcnet_hiddens'])
             self.agent.wandb_dict['layers_width'] = trial.config['model']['fcnet_hiddens'][0]
 
         self.agent.evaluator.send_to_wandb(wandb_run_id=trial.trial_id, wandb_dict=self.agent.wandb_dict)
-        
 
 
 class RLlibAgent:
-    def __init__(self, algorithm, trainer, dataset, network, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+    def __init__(self, trainer, dataset, size, network, sweep_count, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
         self.wandb_dict = {}
 
         global datasets_global, max_episode_steps
         datasets_global = [ dataset ]
         self.max_episode_steps = max_episode_steps
-        self.trainer = getattr(importlib.import_module(f'ray.rllib.agents.{algorithm}'), trainer)
-        self.config = importlib.import_module(f"loop_tool_service.models.rllib.config.{algorithm}.{trainer}").get_config()
+        self.trainer_name = trainer
+        self.algorithm, trainer = trainer.split('.') # expected: algorithm.trainer
+        self.trainer = getattr(importlib.import_module(f'ray.rllib.agents.{self.algorithm}'), trainer)
+        self.config = importlib.import_module(f"loop_tool_service.models.rllib.config.{self.algorithm}.{trainer}").get_config(sweep_count)
         self.dataset = dataset
+        self.size = size
         self.network = getattr(importlib.import_module(f"loop_tool_service.models.rllib.my_net_rl"), network)
         self.wandb_dict['network'] = network
         self.env = make_env()
+        self.reward = list(self.env.reward.spaces.keys())[0]
         my_artifacts = Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
         self.my_artifacts_start = my_artifacts/'start'
         self.my_artifacts_end = my_artifacts/'end'
@@ -181,7 +181,7 @@ class RLlibAgent:
         self.validation_benchmarks = []
         self.checkpoint_start = None
         self.analysis = None
-        self.evaluator = Evaluator(steps=max_episode_steps)
+        self.evaluator = Evaluator(steps=max_episode_steps, reward=self.reward)
         self.max_eval = 100
         self.init()
     
@@ -193,17 +193,20 @@ class RLlibAgent:
         )
         dataset =  self.env.datasets[f'benchmark://{self.dataset}-v0']
         benchmarks = list(dataset.benchmarks())
+        random.shuffle(benchmarks)
+        benchmarks = benchmarks[:self.size]
         self.wandb_dict['dataset'] = dataset.name
         self.wandb_dict['max_episode_steps'] = self.max_episode_steps
         
         train_perc = 0.8
         train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
-        random.shuffle(benchmarks)
+        
         self.train_benchmarks = sorted(benchmarks[:train_size])
         self.validation_benchmarks = sorted(benchmarks[train_size:])
         self.wandb_dict['train_size'] = len(self.train_benchmarks)
         self.wandb_dict['test_size'] = len(self.validation_benchmarks)
-        
+        self.wandb_dict['reward'] = self.reward
+
         self.wandb_dict['max_loops'] = lt.LoopTreeAgent.max_loops()
         self.wandb_dict['num_loop_features'] = lt.LoopTreeAgent.num_loop_features()
         self.wandb_dict['trainer'] = self.trainer.__name__
@@ -238,7 +241,7 @@ class RLlibAgent:
             print('Policy not found')
 
             
-    def train(self, train_iter, sweep_count=1):
+    def train(self, train_iter, stop_reward=1, sweep_count=1):
         """Training with RLlib agent.
 
         Args:
@@ -249,7 +252,6 @@ class RLlibAgent:
         Returns:
             dict: [trial_id] = { "policy_path": policy_path, "config": config } after training
         """
-        models = {}
         checkpoint_path = None
         if self.checkpoint_start != None:
             train_iter += self.checkpoint_start['training_iteration']
@@ -263,10 +265,10 @@ class RLlibAgent:
             metric="episode_reward_mean", # "final_performance",
             mode="max",
             reuse_actors=False,
-            checkpoint_freq=1,
+            checkpoint_freq=10,
             checkpoint_at_end=True,
             num_samples=max(1, sweep_count),
-            stop={'training_iteration': train_iter},    
+            stop={'training_iteration': train_iter, 'episode_reward_mean': stop_reward},   
             callbacks=[
                 MyCallback(self),
                 WandbLoggerCallback(
@@ -288,8 +290,9 @@ class RLlibAgent:
                 return
 
 
-        searches = { k:v for k, v in self.evaluator.searches.items() if 'cost' not in k and 'bruteforce' not in k}
-
+        # searches = { k:v for k, v in self.evaluator.searches.items() if 'cost' not in k and 'bruteforce' not in k}
+        searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'greedy1_policy']} 
+        
         for trial in trials:
             config = trial.config
             checkpoint_path = Path(trial.checkpoint.value) # .value -> .dir_or_data for ray 2.1
@@ -314,7 +317,6 @@ class RLlibAgent:
             # Save policy and checkpoint for wandb
             policy_path = self.my_artifacts_end/trial.trial_id/'policy_model.pt'
             os.makedirs(policy_path.parent)
-            torch.save(policy_model,  policy_path)
             my_artifacts_checkpoint_dir = self.my_artifacts_end/trial.trial_id/checkpoint_path.parent.name
             shutil.copytree(checkpoint_path.parent, my_artifacts_checkpoint_dir)
             with open(my_artifacts_checkpoint_dir/'config.json', "w") as f: json.dump(trial.config, f)
@@ -322,7 +324,12 @@ class RLlibAgent:
             self.evaluator.send_to_wandb(wandb_run_id=trial.trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial.trial_id)
 
             # Evaluate trial
-            self.evaluator.set_policy_path(policy_path)
+            if self.algorithm in ['ppo']:
+                torch.save(policy_model,  policy_path)
+                self.evaluator.set_policy_path(policy_path)
+            else:
+                self.evaluator.set_policy_agent(agent)
+
             df_train = self.evaluator.evaluate(self.env, self.train_benchmarks[:self.max_eval], searches, timeout_s=5)
             self.evaluator.save(path=self.my_artifacts_end/trial.trial_id/"train")
             df_val = self.evaluator.evaluate(self.env, self.validation_benchmarks[:self.max_eval], searches, timeout_s=5)
@@ -366,15 +373,15 @@ if __name__ == '__main__':
         ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
 
-    algorithm, trainer = args.trainer.split('.') # expected: algorithm.trainer
-    agent = RLlibAgent(algorithm=algorithm, trainer=trainer, dataset=args.dataset, network=args.network)
+    agent = RLlibAgent(trainer=args.trainer, dataset=args.dataset, size=args.size, network=args.network, sweep_count=args.sweep)
 
     if args.wandb_url:
         agent.load_model(args.wandb_url)
 
     agent.train(
         train_iter=args.iter, 
-        sweep_count=args.sweep
+        stop_reward=args.stop_reward,
+        sweep_count=args.sweep,
     )
     agent.evaluate()
 

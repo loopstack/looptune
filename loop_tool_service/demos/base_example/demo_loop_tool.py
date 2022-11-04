@@ -35,7 +35,7 @@ from compiler_gym.service.connection import ServiceError
 
 
 import loop_tool_service
-from loop_tool_service.service_py.datasets import loop_tool_dataset, mm128_128_128
+from loop_tool_service.service_py.datasets import mm128_128_128
 from loop_tool_service.service_py.rewards import  flops_loop_nest_reward
 
 

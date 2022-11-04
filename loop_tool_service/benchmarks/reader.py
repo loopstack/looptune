@@ -45,8 +45,13 @@ else:
     agent = lt.LoopTreeAgent(lt.LoopTree(ir)).merge_all()
     for action in json.loads(args.actions.replace("'", '"')):
         agent.apply_action(action)
+        print(agent)
 
     C = C.set(agent.lt.ir)
 
+    breakpoint()
+
     with lt.Backend("loop_nest"):
         C = lt.ui(C, "/tmp/woo.c")
+
+    breakpoint()

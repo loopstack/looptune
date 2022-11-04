@@ -87,17 +87,17 @@ class Arena():
   
 
     def train_agent(self, agent):
-    '''
-        Submit SLURM job to train the agent
-    '''
-        if wandb_url:
-            agent.load_model(wandb_url)
+        # Submit SLURM job to train the agent
 
-        models = agent.train(
-            config=config, 
-            train_iter=iter, 
-            sweep_count=sweep_count
-        )
+        # if wandb_url:
+        #     agent.load_model(wandb_url)
+
+        # models = agent.train(
+        #     config=config, 
+        #     train_iter=iter, 
+        #     sweep_count=sweep_count
+        # )
+        pass
 
 
     def evaluate_agent(self, agent, env):

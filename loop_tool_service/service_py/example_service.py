@@ -79,14 +79,14 @@ class LoopToolCompilationSession(CompilationSession):
                         "down", 
                         "swap_up", 
                         "swap_down", 
-                        "split_2",
+                        # "split_2",
                         # "split_3", 
                         "split_4",
-                        "split_5",
+                        # "split_5",
                         # "split_6",
                         # "split_7",
                         "split_8", 
-                        # "split_16", 
+                        "split_16", 
                         # "split_32", 
                         # "split_64", 
                         # "split_128", 
@@ -149,6 +149,15 @@ class LoopToolCompilationSession(CompilationSession):
             ),
         ),
         ObservationSpace(
+            name="flops_loop_nest_cached",
+            space=Space(double_value=DoubleRange()),
+            deterministic=False,
+            platform_dependent=True,
+            default_observation=Event(
+                double_value=0,
+            ),
+        ),
+        ObservationSpace(
             name="flops_loop_nest_tensor",
             space=Space(
                 double_box=DoubleBox(
@@ -162,7 +171,20 @@ class LoopToolCompilationSession(CompilationSession):
                 double_value=0,
             ),
         ),
-
+        ObservationSpace(
+            name="flops_loop_nest_tensor_cached",
+            space=Space(
+                double_box=DoubleBox(
+                    low = DoubleTensor(shape = [1], value=[0]),
+                    high = DoubleTensor(shape = [1], value=[float("inf")]),
+                )
+            ),
+            deterministic=False,
+            platform_dependent=True,
+            default_observation=Event(
+                double_value=0,
+            ),
+        ),
         ObservationSpace(
             name="gflops_cost",
             space=Space(double_value=DoubleRange()),
@@ -476,12 +498,16 @@ class LoopToolCompilationSession(CompilationSession):
             observation = self.env.get_flops()
         elif observation_space.name == "flops_loop_nest":
             observation = self.env.get_flops_loop_nest()
+        elif observation_space.name == "flops_loop_nest_cached":
+            observation = self.env.get_flops_loop_nest_cached()
         elif observation_space.name == "gflops_cost":
             return self.env.get_gflops_cost()
         elif observation_space.name == "q_policy":
             return self.env.get_q_policy()
         elif observation_space.name == "flops_loop_nest_tensor":
             return self.env.get_flops_loop_nest_tensor()
+        elif observation_space.name == "flops_loop_nest_tensor_cached":
+            return self.env.get_flops_loop_nest_tensor_cached()
         elif observation_space.name == "ir":
             observation = self.env.get_ir()
             return observation

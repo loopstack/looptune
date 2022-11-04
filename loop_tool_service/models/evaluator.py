@@ -8,7 +8,7 @@ from tqdm import tqdm
 import random
 import numpy as np
 from loop_tool_service.service_py.utils import timed_fn
-
+import torch
 
 class Evaluator:
     """ Evaluator runs specified searches on full dataset or single benchmark 
@@ -19,11 +19,12 @@ class Evaluator:
     #############################################################
     # Public
     #############################################################
-    def __init__(self, steps=10, cost_path='', policy_path=''):
-        self.cost_path = cost_path
-        self.policy_path = policy_path
+    def __init__(self, steps=10, cost_path='', rllib_model_path='', agent=None, reward="flops_loop_nest"):
+        self.set_cost_path(cost_path)
+        self.set_policy_path(rllib_model_path)
+        self.agent = agent
         self.steps = steps
-        
+        self.reward = reward
         self.searches = {
             'greedy1_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=loop_nest',
             'greedy1_cost': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=cost',
@@ -39,10 +40,13 @@ class Evaluator:
         }
         
     def set_cost_path(self, path):
-        self.cost_path = path
+        self.cost_path = str(path)
 
     def set_policy_path(self, path):
-        self.policy_path = path
+        self.policy_path = str(path)
+
+    def set_policy_agent(self, agent):
+        self.agent = agent
 
     def evaluate(self, env, benchmarks: list, searches: dict, timeout_s: int = 5):
         """ Run run and plot searches on benchmarks
@@ -79,8 +83,8 @@ class Evaluator:
         results_actions = {'benchmark': benchmark}
 
         env.reset(benchmark=benchmark)
-        env.send_param('load_cost_model', str(self.cost_path))
-        env.send_param('load_policy_model', str(self.policy_path))        
+        env.send_param('load_cost_model', self.cost_path)
+        env.send_param('load_policy_model', self.policy_path)  
         
         results_gflops['base'], results_time['base'], results_actions['base'] = self.base_performance(env, eval_mode='loop_nest')
 
@@ -89,7 +93,10 @@ class Evaluator:
         print(f"Base performance = {results_gflops['base']}")
 
         for search_name, search_cmd in searches.items():
-            results_gflops[search_name], results_time[search_name], results_actions[search_name] = self.search_performance(env, search_cmd, timeout_s)
+            if search_name == 'greedy1_policy' and self.agent:
+                results_gflops[search_name], results_time[search_name], results_actions[search_name] = self.rllib_search(env)
+            else:    
+                results_gflops[search_name], results_time[search_name], results_actions[search_name] = self.search_performance(env, search_cmd, timeout_s)
             
         return results_gflops, results_time, results_actions
 
@@ -185,9 +192,9 @@ class Evaluator:
     def base_performance(self, env, eval_mode='loop_nest'):
         start = time.time()
         if eval_mode == 'loop_nest':
-            gflops = env.observation['flops_loop_nest']
+            gflops = float(env.observation[self.reward])
         elif eval_mode == 'cost':
-            gflops = env.observation['gflops_cost']
+            gflops = float(env.observation['gflops_cost'])
         else:
             assert(0), 'base performance eval_mode must be loop_nest or cost'
         return gflops, time.time() - start, ""
@@ -210,7 +217,23 @@ class Evaluator:
         return gflops, search_time, actions_reward[0]
 
 
+    def rllib_search(self, env):
+        actions = []
+        start = time.time()
+        feature_vector = env.observation["loops_tensor"]
+
+        for _ in range(self.steps):
+            feature_vector = torch.Tensor(feature_vector).unsqueeze(0)
+            a_id = self.agent.compute_action(feature_vector)
+            actions.append(env.action_space.to_string(a_id))
+            env.step(a_id)
+            feature_vector = env.observation["loops_tensor"]
+        search_time = time.time() - start
+
+        return env.observation[self.reward][0], search_time, actions
+
+
     def move_and_eval(self, env, actions_str):
         actions_ids = [ env.action_space.from_string(a) for a in actions_str ]
         env.multistep(actions_ids)
-        return env.observation['flops_loop_nest']
+        return float(env.observation[self.reward])

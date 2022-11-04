@@ -217,7 +217,7 @@ from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_r
 import importlib
 
 
-def register_env(datasets):
+def register_env(datasets, obs='flops_loop_nest_tensor'):
     register(
         id="loop_tool_env-v0",
         entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
@@ -225,7 +225,7 @@ def register_env(datasets):
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [
-                flops_loop_nest_reward.NormRewardTensor(),
+                flops_loop_nest_reward.NormRewardTensor(obs=obs), #NormRewardTensor
                 ],
             "datasets": [ 
                 importlib.import_module(f"loop_tool_service.service_py.datasets.{dataset}").Dataset() for dataset in datasets 
@@ -238,7 +238,7 @@ def register_env(datasets):
 def make(id: str, datasets, **kwargs):
     """Equivalent to :code:`compiler_gym.make()`."""
     if len(datasets):
-        register_env(datasets)
+        register_env(datasets=datasets, obs=kwargs['reward_space'])
 
     import compiler_gym
     return compiler_gym.make(id, **kwargs)

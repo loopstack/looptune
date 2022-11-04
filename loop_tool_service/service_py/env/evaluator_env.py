@@ -3,11 +3,6 @@ import numpy as np
 import loop_tool as lt
 import time
 
-from compiler_gym.service.proto import (
-    Event,
-    ByteTensor,
-    FloatTensor,
-)
 
 class Evaluator:
     def __init__(self, env):

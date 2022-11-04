@@ -71,8 +71,7 @@ import loop_tool as lt
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '--trainer', choices=['ppo.PPOTrainer', 'ppo.APPOTrainer', 'dqn.DQNTrainer', 'dqn.'], 
-    default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
+    '--trainer', type=str, default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
 )
 parser.add_argument(
     "--wandb_url",  type=str, nargs='?', default='', help="Wandb uri to load policy network."
@@ -330,9 +329,9 @@ class RLlibAgent:
             else:
                 self.evaluator.set_policy_agent(agent)
 
-            df_train = self.evaluator.evaluate(self.env, self.train_benchmarks[:self.max_eval], searches, timeout_s=5)
+            df_train = self.evaluator.evaluate(self.env, self.train_benchmarks[:self.max_eval], searches, timeout_s=10)
             self.evaluator.save(path=self.my_artifacts_end/trial.trial_id/"train")
-            df_val = self.evaluator.evaluate(self.env, self.validation_benchmarks[:self.max_eval], searches, timeout_s=5)
+            df_val = self.evaluator.evaluate(self.env, self.validation_benchmarks[:self.max_eval], searches, timeout_s=10)
             self.evaluator.save(path=self.my_artifacts_end/trial.trial_id/"validation")
         
             self.wandb_update_df(df_train, prefix='train_')

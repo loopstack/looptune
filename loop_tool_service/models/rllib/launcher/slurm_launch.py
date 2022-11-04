@@ -42,7 +42,7 @@ parser.add_argument(
     "--app",  type=str, help="Application to run"
 )
 parser.add_argument(
-    '--trainer', choices=['ppo.PPOTrainer', 'ppo.APPOTrainer', 'dqn.DQNTrainer'], default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
+    '--trainer', type=str, default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
 )
 parser.add_argument(
     "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps"

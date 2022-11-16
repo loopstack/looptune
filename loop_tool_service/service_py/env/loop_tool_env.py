@@ -98,6 +98,7 @@ class Environment:
 
     def reset_agent(self):
         self.agent = self.agent_start.copy()
+        self.cache = {}
     ##############################################################
     # Apply action
     ##############################################################
@@ -198,8 +199,9 @@ class Environment:
 
         return Event(float_tensor=FloatTensor(shape=[dim0, dim1], value=last_actions_vector))
 
-    def eval_ln_flops_cached(self, agent):
-        lt_hash = hash(str(self.agent.lt))
+    def eval_ln_flops_cached(self, agent=None):
+        if agent == None: agent = self.agent
+        lt_hash = hash(str(agent.lt))
         if lt_hash not in self.cache:
             self.cache[lt_hash] = max([ self.eval_ln_flops(agent) for _ in range(10) ])
         return self.cache[lt_hash]

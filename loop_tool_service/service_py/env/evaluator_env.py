@@ -80,16 +80,16 @@ class Evaluator:
                 # self.inputs.append(state_tensor)
                 return pred_gflops
         else:
-            if tree_hash in self.ln_cache: 
-                return self.ln_cache[tree_hash]
-            else:
-                start = time.time()
-                gflops = self.env.eval_ln_flops(agent)
-                end = time.time()
-                self.time_spent.append(end - start)
-                self.ln_cache[tree_hash] = gflops
-                # print(f"LoopNest model______{end - start}_________cache__{len(self.ln_cache)}________{gflops}")
-                return gflops
+            # if tree_hash in self.ln_cache: 
+            #     return self.ln_cache[tree_hash]
+            # else:
+            start = time.time()
+            gflops = self.env.eval_ln_flops_cached(agent)
+            end = time.time()
+            self.time_spent.append(end - start)
+            # self.ln_cache[tree_hash] = gflops
+            # print(f"LoopNest model______{end - start}_________cache__{len(self.ln_cache)}________{gflops}")
+            return gflops
 
 
     def get_actions_q_policy_tensor(self, agent):
@@ -98,7 +98,7 @@ class Evaluator:
         logits, _ = self.policy_model({"obs": feature_vector}) 
         assert (len(logits.flatten()) == len(agent.action_space)), f"Policy_model_output == {len(logits.flatten())}, while action_space = {agent.action_space}"
         return logits.flatten()
-        
+
 
     def get_actions_q_policy(self, agent)-> dict:
         # print("Policy model_________________________")

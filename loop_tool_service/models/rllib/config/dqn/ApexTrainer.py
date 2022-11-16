@@ -11,7 +11,7 @@ def get_config(sweep=False):
         "framework": 'torch',
         "model": {
             "vf_share_layers": True,
-            "fcnet_hiddens": ray.tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]) if sweep else [1000] * 8,
+            "fcnet_hiddens": ray.tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]) if sweep else [1000] * 10,
             # "post_fcnet_hiddens":
             # "fcnet_activation": 
             # "post_fcnet_activation":
@@ -24,8 +24,8 @@ def get_config(sweep=False):
         "rollout_fragment_length": 10, 
         "train_batch_size": 790, # train_batch_size == num_workers * rollout_fragment_length
         "explore": True,
-        "gamma": ray.tune.uniform(0.9, 0.99) if sweep else 0.85,
-        "lr": ray.tune.uniform(1e-6, 1e-9) if sweep else 3.847293324197388e-7,
+        "gamma": ray.tune.uniform(0.9, 0.99) if sweep else 0.95,
+        "lr": ray.tune.uniform(1e-6, 1e-8) if sweep else 1e-6,
         # DQN specific parameters
         # "replay_buffer_config": {
         #     "type": "MultiAgentPrioritizedReplayBuffer",

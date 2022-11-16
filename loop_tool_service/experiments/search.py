@@ -4,6 +4,12 @@ several searches and plot:
     - executable GFLOPS 
     - compile_time
     - executable actions
+
+On the graph:
+    - blue nodes are terminal nodes
+    - red circle node is start node
+
+    python search.py --benchmark=benchmark://mm64_256_16_range-v0/mm208_112_80
 '''
 
 import argparse
@@ -26,16 +32,19 @@ import wandb
 To download network from wandb say: dejang/loop_stack_cost_model/k4ztid39
 '''
 weights_path = LOOP_TOOL_ROOT/"loop_tool_service/models/weights"
-experiment_path = LOOP_TOOL_ROOT/"loop_tool_service/experiments"
+experiment_path = LOOP_TOOL_ROOT/"loop_tool_service/experiments/demo"
 
 
 # Training settings
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
+parser.add_argument("--searches", type=str, default='greedy1_ln', help="Searches to try. Format csv. Ex. bruteforce_ln,greedy1_ln,greedy2_ln")
 parser.add_argument("--policy", type=str, nargs='?', const=f"{weights_path}/policy.pt", default='', help="Path to the RLlib optimized network.")
 parser.add_argument("--cost", type=str, nargs='?', const=f"{weights_path}/cost.pt", default='', help="Path to the cost model network.")
 parser.add_argument("--benchmark", type=str, nargs='?', const='benchmark://mm128_128_128-v0/012', default='benchmark://mm128_128_128-v0', help="Benchmark to run the search")
 parser.add_argument("--size", type=int, nargs='?', default=10, help="Size of benchmarks to evaluate")
 parser.add_argument("--steps", type=int, default=10, help="Length of sequence of actions to evaluate")
+parser.add_argument("--timeout", type=int, default=10, help="Timeout per benchmark search")
+parser.add_argument("--debug", default=False, action="store_true", help="Debuging")
 
 args = parser.parse_args()
 cost_path, policy_path = None, None
@@ -86,18 +95,20 @@ if __name__ == '__main__':
     policy_path = resolve_policy(args.policy)
     cost_path = resolve_cost(args.cost)
 
-    evaluator = Evaluator(steps=args.steps, cost_path=cost_path, policy_path=policy_path)
+    evaluator = Evaluator(steps=args.steps, cost_path=cost_path, policy_path=policy_path, debug=args.debug)
 
-    with make_env(datasets=['mm128_128_128']) as env:
+    with make_env(datasets=['mm64_256_16_range']) as env:
         benchmark = str(args.benchmark)
         if benchmark in env.datasets.datasets():
-            benchmarks = env.datasets[benchmark].benchmarks()
+            benchmarks = list(env.datasets[benchmark].benchmarks())[:args.size]
         elif benchmark in env.datasets.benchmarks():
             benchmarks = [benchmark]
         else:
             print(f"Benchmark: {benchmark} doesn't exist")
             exit()
         
-        # evaluator.evaluate(env, benchmarks, {'bruteforce_ln': evaluator.searches['bruteforce_ln']})
-        evaluator.evaluate(env, benchmarks, evaluator.searches)
+        searches = { k:v for k, v in evaluator.searches.items() if k in args.searches.split(',')}
+
+        res = evaluator.evaluate(env, benchmarks, searches, timeout_s=args.timeout)
         evaluator.save(path=experiment_path)
+        breakpoint()

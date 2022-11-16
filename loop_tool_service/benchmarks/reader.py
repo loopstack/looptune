@@ -44,8 +44,9 @@ else:
 
     agent = lt.LoopTreeAgent(lt.LoopTree(ir)).merge_all()
     for action in json.loads(args.actions.replace("'", '"')):
-        agent.apply_action(action)
-        print(agent)
+        if action in agent.get_available_actions():
+            agent.apply_action(action)
+            print(agent)
 
     C = C.set(agent.lt.ir)
 

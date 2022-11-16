@@ -102,6 +102,9 @@ This combines cost and policy models and compares them to greedy and handtune.
 ```
 python loop_tool_service/demos/search/search.py --cost --policy --benchmark
 ```
+If you copy graph to online graphviz you can see visualization of 
+searches :)
+
 
 
 
@@ -189,3 +192,138 @@ $LOOP_TOOL_ROOT/loop_tool_service/models/rllib/my_artifacts
 
 For SLURM output check:
 $LOOP_TOOL_ROOT/loop_tool_service/models/rllib/results 
+
+
+
+```python
+
+
+1. for i in 256: <<<<<<<<< agent
+2.  for j in 256:
+3.   for k in 256:
+4.    T0[i, j, k] <- multiply(A, B) 
+5.    T1[i, k] <- add(T0) 
+6.  for k in 256:
+7.   C[i, k] <- write(T1)
+
+
+1. for i in 16: <<<<<<<<< agent
+2.  for i in 16:
+3.   for j in 256:
+4.    for k in 256:
+5.     T0[i, j, k] <- multiply(A, B) 
+6.     T1[i, k] <- add(T0) 
+7.   for k in 256:
+8.    C[i, k] <- write(T1)
+
+
+1. for i in 16:
+2.  for j in 16: <<<<<<<<< agent
+3.   for i in 16:
+4.    for j in 4:
+5.     for k in 16:
+6.      for j in 4:
+7.       for k in 16:
+8.        T0[i, j, k] <- multiply(A, B)  
+9.        T1[i, k] <- add(T0)  
+10. for i in 16: 
+11.  for k in 256:
+12.   C[i, k] <- write(T1)  
+
+
+for i in 256 : L0 
+ for j in 256 : L1 <<<<<<<<< agent 
+  for k in 256 : L2 
+   T0[i, j, k] <- multiply(A, B) 
+   T1[i, k] <- add(T0) 
+ for k in 256 : L5 
+  C[i, k] <- write(T1)
+
+
+for i in 256 : L0 
+ for j in 16 : L1 <<<<<<<<< agent 
+  for j in 16 : L1
+   for k in 256 : L2 
+    T0[i, j, k] <- multiply(A, B) 
+    T1[i, k] <- add(T0) 
+  for k in 256 : L5 
+   C[i, k] <- write(T1)
+
+
+
+
+20.14 GFLOPS
+1. for i in 112: <<<<<< agent
+2.  for k in 192: 
+3.   for j in 128: 
+4.    T0[i, k, j] <- multiply(A, B)  
+5.    T1[i, j] <- add(T0)  
+6.  for j in 128:
+7.   C[i, j] <- write(T1) 
+
+
+['split_4']
+20.96 GFLOPS
+1. for i in 28: <<<<<< agent
+2.  for i in 4:
+3.   for k in 192:
+4.    for j in 128:
+5.     T0[i, k, j] <- multiply(A, B)
+6.     T1[i, j] <- add(T0)
+7.   for j in 128:
+8.    C[i, j] <- write(T1)
+
+
+['split_4', 'swap_down', 'swap_down', 'down', 'split_16', 'swap_up', 'swap_up']
+78.51 GFLOPS
+1. for i in 28:
+2.  for j in 8:
+3.   for k in 192:
+4.    for i in 4:
+5.     for j in 16:
+6.      T0[i, k, j] <- multiply(A, B)
+7.      T1[i, j] <- add(T0)
+8.  for i in 4:
+9.   for j in 128:
+10.   C[i, j] <- write(T1)
+  
+  ```
+
+digraph G {
+ node [fontname = "courier", fontsize=12];
+L0 [shape=record,label="for i in 256 r 0",feature_dict="{'cursor':1,'size':256,'tail':0,'type':1,'unroll':0,'vectorize':0,}"];
+L0 -> L1 [color="black",label="",feature_dict="{'type':3,}"];
+L0 -> L5 [color="black",label="",feature_dict="{'type':3,}"];
+L1 [shape=record,label="for j in 256 r 0",feature_dict="{'cursor':0,'size':256,'tail':0,'type':1,'unroll':0,'vectorize':0,}"];
+L1 -> L2 [color="black",label="",feature_dict="{'type':3,}"];
+L2 [shape=record,label="for k in 128 r 0",feature_dict="{'cursor':0,'size':128,'tail':0,'type':1,'unroll':0,'vectorize':0,}"];
+L2 -> L3 [color="black",label="",feature_dict="{'type':3,}"];
+L2 -> L4 [color="black",label="",feature_dict="{'type':3,}"];
+L3 [shape=hexagon,label="multiply(A, B)",feature_dict="{'cursor':0,'type':0,}"];
+D0 [shape=ellipse,label="A[i, j]",feature_dict="{'type':2,}"];
+L0 -> D0 [color="red",label="256",feature_dict="{'stride':1,'type':4,}"];
+L1 -> D0 [color="red",label="1",feature_dict="{'stride':1,'type':4,}"];
+L2 -> D0 [color="red",label="0",feature_dict="{'stride':1,'type':4,}"];
+D0 -> L3 [color="blue",label="",feature_dict="{'stride':1,'type':4,}"];
+D1 [shape=ellipse,label="B[j, k]",feature_dict="{'type':2,}"];
+L0 -> D1 [color="red",label="0",feature_dict="{'stride':1,'type':4,}"];
+L1 -> D1 [color="red",label="128",feature_dict="{'stride':1,'type':4,}"];
+L2 -> D1 [color="red",label="1",feature_dict="{'stride':1,'type':4,}"];
+D1 -> L3 [color="blue",label="",feature_dict="{'stride':1,'type':4,}"];
+D2 [shape=ellipse,label="T[i, j, k]",feature_dict="{'type':2,}"];
+L3 -> D2 [color="blue",label="",feature_dict="{'stride':1,'type':4,}"];
+L4 [shape=hexagon,label="add<j>(T)",feature_dict="{'cursor':0,'type':0,}"];
+D2 -> L4 [color="blue",label="",feature_dict="{'stride':1,'type':4,}"];
+D3 [shape=ellipse,label="T'[i, k]",feature_dict="{'type':2,}"];
+L1 -> D3 [color="red",label="0",feature_dict="{'stride':1,'type':4,}"];
+L2 -> D3 [color="red",label="1",feature_dict="{'stride':1,'type':4,}"];
+L4 -> D3 [color="blue",label="",feature_dict="{'stride':1,'type':4,}"];
+L5 [shape=record,label="for k in 128 r 0",feature_dict="{'cursor':0,'size':128,'tail':0,'type':1,'unroll':0,'vectorize':0,}"];
+L5 -> L6 [color="black",label="",feature_dict="{'type':3,}"];
+L6 [shape=hexagon,label="%write(T')",feature_dict="{'cursor':0,'type':0,}"];
+D3 -> L6 [color="blue",label="",feature_dict="{'stride':1,'type':4,}"];
+D4 [shape=ellipse,label="C[i, k]",feature_dict="{'type':2,}"];
+L0 -> D4 [color="red",label="128",feature_dict="{'stride':1,'type':4,}"];
+L5 -> D4 [color="red",label="1",feature_dict="{'stride':1,'type':4,}"];
+L6 -> D4 [color="blue",label="",feature_dict="{'stride':1,'type':4,}"];
+}

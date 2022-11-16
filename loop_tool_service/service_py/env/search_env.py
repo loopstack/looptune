@@ -1,7 +1,7 @@
 import random
 import networkx as nx
 from loop_tool_service.service_py.utils import timed_fn
-
+import time
 
 class BeamSearcherCore:
     def __init__(self, evaluator):
@@ -34,7 +34,7 @@ class BeamSearcherCore:
             eval_mode=eval_mode,
             graph=graph,
         )
-        # breakpoint()
+
         return sorted(actions_reward, key=lambda x: x[1], reverse=True)[:n]
 
 
@@ -44,12 +44,15 @@ class BeamSearcherCore:
             real_flops = self.evaluator.eval_gflops(agent, 'loop_nest')
             graph.add_node(
                 node_key,
-                label=f'FLOPS = {real_flops:9.4f}\nPRED = {cumulative_reward:9.4f}\n' + agent.dump().replace(':', ';')
+                label=f'FLOPS = {real_flops:9.4f}\n' + agent.dump().replace(':', ';')
             )
             if len(graph.nodes()) == 1:
-                graph.nodes[node_key]['color'] = 'red'
+                graph.nodes[node_key]['color'] = 'green'
                 graph.nodes[node_key]['penwidth'] = 5
 
+            if real_flops > 80:
+                graph.nodes[node_key]['penwidth'] = 5
+                graph.nodes[node_key]['color'] = 'red'
 
         if search_depth == 0:
             if graph != None:
@@ -83,21 +86,39 @@ class GreedySearcher:
         self.beam_search = BeamSearcherCore(evaluator=evaluator)
 
     def search(self, agent, num_steps, lookahead, search_width, eval_mode, debug=False): # actions, reward
+        print(f'GreedySearch_________________START______________________________{lookahead}')
+        print(agent)
         agent_copy = agent.copy()
         agent_copy.clear_actions()
         new_reward = 0
         graph = nx.MultiDiGraph() if debug else None
-
+        search_table = [['', self.evaluator.eval_gflops(agent, 'loop_nest'), 0]] # [[action, cur_gflops, cur_search_time],..]
+        start_time = time.time()
 
         for i in range(num_steps):
             best_actions, new_reward = self.beam_search.search(agent=agent_copy, num_steps=lookahead, search_width=search_width, eval_mode=eval_mode, graph=graph)
+            
             if len(best_actions) == 0: breakpoint()
-            agent_copy.apply_action(best_actions[0])
+            if i == num_steps - lookahead: # if we noticed that we are lookahead steps before end, just apply actions you have
+                for action in best_actions:
+                    agent_copy.apply_action(action)                    
+                    search_table.append([action, self.evaluator.eval_gflops(agent, 'loop_nest'), time.time() - start_time]) # self.evaluator.eval_gflops has value in cache
+                break
+            else:
+                action = best_actions[0]
+                agent_copy.apply_action(action)
+                search_table.append([action, self.evaluator.eval_gflops(agent, 'loop_nest'), time.time() - start_time]) # self.evaluator.eval_gflops has
 
         if debug:
             print(nx.nx_pydot.to_pydot(graph))
 
-        return agent_copy.actions, new_reward
+        print(agent_copy.actions)
+        print(agent_copy)
+        print(new_reward)
+        print(f'GreedySearch_______________END________________________________{lookahead}')
+
+        # return agent_copy.actions, new_reward
+        return search_table
 
 
 class BeamSearcher:

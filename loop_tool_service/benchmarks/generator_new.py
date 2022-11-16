@@ -7,11 +7,15 @@ Example:
 
 python generator.py --kind=mm --size=128 --out=path-to-dir [--permute]
 python generator_new.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16  --out=path-to-dir [--permute]
+python generator_new.py --kind=conv --dimA="1|32|64, 64|256|512, 56|112|570, 56|112|570" \
+                                    --dimB="64|256|512, 64|256|512, 3, 3"  --out=path-to-dir [--permute]
+
 '''
 
 import argparse
 import loop_tool as lt
 import numpy as np
+import time
 
 from itertools import combinations, permutations
 import os
@@ -19,6 +23,7 @@ import shutil
 from pathlib import Path
 
 from loop_tool_service.paths import LOOP_TOOL_ROOT
+from loop_tool_service.service_py.utils import timed_fn
 
 
 parser = argparse.ArgumentParser(description='Generate dataset of permutation for the constructed looptree.')
@@ -63,6 +68,15 @@ def gen_mm(dimA, dimB):
     return C
 # ********************************** conv.txt **********************************
 def gen_conv(dimA, dimB):
+    '''
+        n - batch size [1, 32, 64]
+        c - channels [64, 256, 512] F
+        h - hight [570, 112, 56]
+        w - width [570, 112, 56]
+        m - output channels F' [64, 256, 512]
+        kh - 3
+        kw - 3
+    '''
     n, c, h, w = lt.symbols('n c h w')
     X = lt.Tensor(*dimA).to(n, c, h, w) # 64, 8, 24, 24
 
@@ -75,8 +89,6 @@ def gen_conv(dimA, dimB):
     _, ho, wo, _ = Y.symbolic_shape
     Y = Y.transpose(n, m, ho, wo)
 
-    print(Y.shape)
-    print(Y.loop_tree)
     return Y
 
 
@@ -121,35 +133,39 @@ def generate_permutations(loop_tree):
 
 def parse_dim(dims_str:str):
     '''
-    Input: "64:256:5,64"
-\   Outputs: [[64,69,..254], [64]]
+    Input: "64:256:5,64", "64|128|256,64"
+\   Outputs: [[64,69,..254], [64]], [[64,128,256],[64]]
     '''
     dims = []
 
     for range_str in dims_str.split(','):
-        range_list = [ int(x) for x in range_str.split(':') ]
-
-        if len(range_list) == 1:
-            dims.append(range_list)
-        elif len(range_list) in [2,3]:
-            range_list[1] += 1
-            dims.append([*range(*range_list)]) # range (start, end, step)
+        if ":" in range_str:
+            range_list = [ int(x) for x in range_str.split(':') ]
+            if len(range_list) == 1:
+                dims.append(range_list)
+            elif len(range_list) in [2,3]:
+                range_list[1] += 1
+                dims.append([*range(*range_list)]) # range (start, end, step)
+            else:
+                print('Bad format')
+                exit()
+        elif "|" in range_str:
+            dims.append([ int(x) for x in range_str.split('|') ])
         else:
-            print('Bad format')
-            exit()
-        
+            dims.append([int(range_str)])
+
     return dims
 
 
-def gen_mm_range(dimAranges, dimBranges):
-    assert (len(dimAranges) == 2)
-    assert (len(dimBranges) == 2)
+def gen_mm_range(dimA, dimB):
+    assert (len(dimA) == 2)
+    assert (len(dimB) == 2)
     tensors = []
     names = []
 
-    for dimA0 in dimAranges[0]:
-        for dimA1 in dimAranges[1]:
-            for dimB1 in dimBranges[1]:
+    for dimA0 in dimA[0]:
+        for dimA1 in dimA[1]:
+            for dimB1 in dimB[1]:
                 C = gen_mm(dimA=[dimA0, dimA1], dimB=[dimA1, dimB1])
                 tensors.append(C)
                 names.append(f'mm{dimA0}_{dimA1}_{dimB1}')
@@ -157,6 +173,41 @@ def gen_mm_range(dimAranges, dimBranges):
 
     return tensors, names
 
+def gen_conv_range(dimA, dimB):
+    assert (len(dimA) == 4)
+    assert (len(dimB) == 4)
+    tensors = []
+    names = []
+    i = 0
+
+    assert(dimA[1] == dimB[1]), 'Assert(dimA[1] == dimB[1])! Different number of channels'
+    assert(dimA[2] == dimA[3]), 'Assert(dimA[2] == dimA[3])! Image must be square'
+    assert(dimB[2] == dimB[3]), 'Assert(dimB[2] == dimB[3])! Kernel must be square'
+
+    for dimA0 in dimA[0]:
+        for dimA1, dimB1 in zip(dimA[1], dimB[1]):
+            for dimA2, dimA3 in zip(dimA[2], dimA[3]):
+                for dimB0 in dimB[0]:
+                    for dimB2, dimB3 in zip(dimB[2], dimB[3]):
+                        try:
+                            t0 = time.time()
+                            C = gen_conv(dimA=[dimA0, dimA1, dimA2, dimA3], dimB=[dimB0, dimB1, dimB2, dimB3])
+
+                            def eval(C):
+                                with lt.Backend("loop_nest"): return C.loop_tree.FLOPS()
+                            t1 = time.time()
+                            flops = timed_fn(fn=eval, args=[C], seconds=600)
+                            t2 = time.time()
+                            print(f'{i}. Generate in {t1 - t0}s, Eval in {t2 - t1}s  -> GFLOPS = {flops / 1e9}')
+                            i += 1
+                        except:
+                            continue
+
+                        tensors.append(C)
+                        names.append(f'conv{dimA0}_{dimA1}_{dimA2}_{dimA3}__{dimB0}_{dimB1}_{dimB2}_{dimB3}')
+                        print(C.loop_tree)
+
+    return tensors, names
 
 def save_loops(loops, paths):
     for final_loop, path in zip(loops, paths):
@@ -167,22 +218,21 @@ def save_loops(loops, paths):
                 f.write(final_loop.ir.serialize())
         except:
             print('Failed ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
-            breakpoint()
+            # breakpoint()
 
 
 def main():
 
     args = parser.parse_args()
 
-    dimAranges = parse_dim(args.dimA)
-    dimBranges = parse_dim(args.dimB)
+    dimA = parse_dim(args.dimA)
+    dimB = parse_dim(args.dimB)
 
 
     if args.kind == "mm":
-        tensors, loop_names = gen_mm_range(dimAranges, dimBranges)
+        tensors, loop_names = gen_mm_range(dimA, dimB)
     elif args.kind == "conv":
-        print('Not implemented')
-        exit()
+        tensors, loop_names = gen_conv_range(dimA, dimB)
     else:
         breakpoint()
         exit()

@@ -62,6 +62,15 @@ def gen_mm(dimA, dimB):
     return C
 # ********************************** conv.txt **********************************
 def gen_conv(dimA, dimB):
+    '''
+        n - batch size [1 32, 64]
+        c - channels [64, 256, 512, 1024] F
+        h - hight [1024, 570, 112, 50]
+        w - width [1024, 570, 112, 50]
+        m - output channels F' [64, 256, 512, 1024]
+        kh - 3
+        kw - 3
+    '''
     n, c, h, w = lt.symbols('n c h w')
     X = lt.Tensor(*dimA).to(n, c, h, w) # 64, 8, 24, 24
 

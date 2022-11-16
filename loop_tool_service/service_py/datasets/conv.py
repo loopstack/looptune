@@ -29,12 +29,12 @@ class Dataset(Dataset):
         benchmark_config = BenchmarkDynamicConfig(
                     build_cmd=Command(
                         argument=["$CC", "$IN"],
-                        timeout_seconds=60000,
+                        timeout_seconds=60,
                         outfile=["a.out"],
                     ),
                     run_cmd=Command(
                         argument=["./a.out"],
-                        timeout_seconds=30000,
+                        timeout_seconds=3000,
                         infile=["a.out"],
                     )
                 )

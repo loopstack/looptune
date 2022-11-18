@@ -277,7 +277,7 @@ for i in 256 : L0
 ['split_4', 'swap_down', 'swap_down', 'down', 'split_16', 'swap_up', 'swap_up']
 78.51 GFLOPS
 1. for i in 28:
-2.  for j in 8:
+2.  for j in 8: <<<<<< agent
 3.   for k in 192:
 4.    for i in 4:
 5.     for j in 16:
@@ -288,6 +288,14 @@ for i in 256 : L0
 10.   C[i, j] <- write(T1)
   
   ```
+
+## Evaluating the search
+
+```
+python rllib_agent.py --iter=0 --dataset=mm64_256_16_range  --wandb_url=dejang/loop_tool_agent_split/3be38_00000 --trainer=dqn.ApexTrainer --eval_size=50 --eval_time=60
+```
+
+
 
 digraph G {
  node [fontname = "courier", fontsize=12];

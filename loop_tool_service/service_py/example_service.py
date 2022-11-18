@@ -377,19 +377,21 @@ class LoopToolCompilationSession(CompilationSession):
             )
             return json.dumps(best_actions_reward)
 
-        elif key == "beam_search": 
+        elif key == "beam_search_dfs": 
             parser = argparse.ArgumentParser()
             parser.add_argument('--steps', type=int, help='Number of actions.', required=True)
             parser.add_argument('--width',     type=int, help='Width of beam', required=True)
             parser.add_argument('--eval', type=str, choices=['loop_nest', 'cost', 'policy'], help='Eval mode', required=True)
+            parser.add_argument("--ranking", default=True, action="store_true", help="Rank actions before you choose.")
             parser.add_argument('--timeout', type=int, help='Timeout in seconds.', required=True)
             parser.add_argument("--debug", default=False, action="store_true", help="Print graph.")
             args = parser.parse_args(value.split())
-            best_actions_reward = self.env.beam_searcher.search(
+            best_actions_reward = self.env.beam_searcher_dfs.search(
                 agent=self.env.agent,
                 num_steps=args.steps,
                 search_width=args.width,
                 eval_mode=args.eval,
+                ranking=args.ranking,
                 timeout=args.timeout,
                 debug=args.debug,
             )
@@ -400,6 +402,7 @@ class LoopToolCompilationSession(CompilationSession):
             parser.add_argument('--steps', type=int, help='Number of actions.', required=True)
             parser.add_argument('--width',     type=int, help='Width of beam', required=True)
             parser.add_argument('--eval', type=str, choices=['loop_nest', 'cost', 'policy'], help='Eval mode', required=True)
+            parser.add_argument("--ranking", default=True, action="store_true", help="Rank actions before you choose.")
             parser.add_argument('--timeout', type=int, help='Timeout in seconds.', required=True)
             parser.add_argument("--debug", default=False, action="store_true", help="Print graph.")
             args = parser.parse_args(value.split())
@@ -407,6 +410,24 @@ class LoopToolCompilationSession(CompilationSession):
                 agent=self.env.agent,
                 num_steps=args.steps,
                 search_width=args.width,
+                eval_mode=args.eval,
+                ranking=args.ranking,
+                timeout=args.timeout,
+                debug=args.debug,
+            )
+            return json.dumps(best_actions_reward)
+
+
+        elif key == "random_search":
+            parser = argparse.ArgumentParser()
+            parser.add_argument('--steps', type=int, help='Number of actions.', required=True)
+            parser.add_argument('--eval', type=str, choices=['loop_nest', 'cost', 'policy'], help='Eval mode', required=True)
+            parser.add_argument('--timeout', type=int, help='Timeout in seconds.', required=True)
+            parser.add_argument("--debug", default=False, action="store_true", help="Print graph.")
+            args = parser.parse_args(value.split())
+            best_actions_reward = self.env.random_searcher.search(
+                agent=self.env.agent,
+                num_steps=args.steps,
                 eval_mode=args.eval,
                 timeout=args.timeout,
                 debug=args.debug,

@@ -37,7 +37,7 @@ experiment_path = LOOP_TOOL_ROOT/"loop_tool_service/experiments/demo"
 
 # Training settings
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
-parser.add_argument("--searches", type=str, default='greedy1_ln', help="Searches to try. Format csv. Ex. bruteforce_ln,greedy1_ln,greedy2_ln")
+parser.add_argument("--searches", type=str, default='greedy1_ln', help="Searches to try. Format csv. Ex. random_ln,greedy1_ln,greedy2_ln")
 parser.add_argument("--policy", type=str, nargs='?', const=f"{weights_path}/policy.pt", default='', help="Path to the RLlib optimized network.")
 parser.add_argument("--cost", type=str, nargs='?', const=f"{weights_path}/cost.pt", default='', help="Path to the cost model network.")
 parser.add_argument("--benchmark", type=str, nargs='?', const='benchmark://mm64_256_16_range-v0/mm256_256_256', default='benchmark://mm64_256_16_range-v0', help="Benchmark to run the search")

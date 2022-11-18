@@ -25,16 +25,5 @@ def get_config(sweep=False):
         "train_batch_size": 790, # train_batch_size == num_workers * rollout_fragment_length
         "explore": True,
         "gamma": ray.tune.uniform(0.9, 0.99) if sweep else 0.95,
-        "lr": ray.tune.uniform(1e-6, 1e-8) if sweep else 1e-6,
-        # DQN specific parameters
-        # "replay_buffer_config": {
-        #     "type": "MultiAgentPrioritizedReplayBuffer",
-        #     "capacity": 50000,
-        # },
-        # "num_steps_sampled_before_learning_starts": 10000,
-        # "exploration_config": {
-        #     "epsilon_timesteps": 200000,
-        #     "final_epsilon": 0.01
-        # }
-        
+        "lr": ray.tune.uniform(1e-6, 1e-8) if sweep else 1e-6,        
     }

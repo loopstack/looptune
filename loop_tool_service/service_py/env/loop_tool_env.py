@@ -91,9 +91,10 @@ class Environment:
         self.cache = {}
 
         self.evaluator = Evaluator(self)
-        self.beam_searcher = BeamSearcher(self.evaluator)
+        self.beam_searcher_dfs = BeamSearcherDFS(self.evaluator)
         self.beam_searcher_bfs = BeamSearcherBFS(self.evaluator)
         self.greedy_searcher = GreedySearcher(self.evaluator)
+        self.random_searcher = RandomSearcher(self.evaluator)
 
 
     def reset_agent(self):

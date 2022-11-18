@@ -307,7 +307,7 @@ class RLlibAgent:
             return
 
 
-        searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'beambfs2_ln', 'beambfs4_ln', 'bruteforce_ln', 'policy']} 
+        searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'beam2dfs_ln', 'beam4dfs_ln','beam2bfs_ln', 'beam4bfs_ln', 'random_ln', 'policy']} 
         # searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'policy']} 
         
         for trial_id, config, checkpoint_path_str in config_checkpoint_pairs:

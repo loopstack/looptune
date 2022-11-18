@@ -22,24 +22,25 @@ def getColor(gflops): #fade (linear interpolate) from color c1 (at mix=0) to c2 
 
 
 
-class BeamSearcherCore:
+class SearchGraph:
     def __init__(self, evaluator):
         self.evaluator = evaluator
         self.graph = nx.MultiDiGraph()
         self.best_key = None
+        self.action_max_time = {} # Time of last action added for each member of sequence
 
-    def search(self, agent, num_steps, search_width, eval_mode, start_time, timeout=10000000): # pair(actions, reward)
-        assert (num_steps >= 0), "BeamSearcher num steps must be >= 0"
+    def expand(self, agent, num_steps, search_width, eval_mode, start_time, ranking=True, timeout=10000000): # pair(actions, reward)
+        assert (num_steps >= 0), "BeamSearcherDFS num steps must be >= 0"
         agent_copy = agent.copy()
-        # agent_copy.clear_actions()
         agent_key = hash(agent_copy.dump())
 
-        self.beam_search_core(
+        self.expand_core(
             agent=agent_copy, 
             search_depth=num_steps, 
             search_width=search_width,
             eval_mode=eval_mode,
             start_time=start_time,
+            ranking=ranking,
             timeout=timeout,
         )
 
@@ -50,10 +51,12 @@ class BeamSearcherCore:
         
 
 
-    def beam_search_core(self, agent, search_depth, search_width, eval_mode, start_time, timeout):
+    def expand_core(self, agent, search_depth, search_width, eval_mode, start_time, ranking, timeout):
         node_time = time.time() - start_time
         node_key = hash(agent.dump())
         real_flops = self.evaluator.eval_gflops(agent, 'loop_nest')
+
+        self.action_max_time[len(agent.actions)] = node_time
 
         if node_key not in self.graph or self.graph.nodes[node_key] == {} or len(agent.actions) < len(self.graph.nodes[node_key]['actions']):
             self.graph.add_node(
@@ -75,22 +78,30 @@ class BeamSearcherCore:
             return
 
 
-        for action, _ in self.evaluator.get_actions_q_sorted(agent, eval_mode=eval_mode)[:search_width]:
+        if ranking:
+            chosen_actions = [ x[0] for x in self.evaluator.get_actions_q_sorted(agent, eval_mode=eval_mode)[:search_width] ]
+        else:
+            chosen_actions = agent.get_available_actions()
+            random.shuffle(chosen_actions)
+            chosen_actions = chosen_actions[:search_width]
+
+        for action in chosen_actions:
             agent_copy = agent.copy()
             agent_copy.apply_action(action)
             self.graph.add_edge(hash(agent.dump()), hash(agent_copy.dump()), key=action, label=action, color='black')
-            self.beam_search_core(agent_copy, search_depth - 1, search_width, eval_mode, start_time, timeout)
+            self.expand_core(agent_copy, search_depth - 1, search_width, eval_mode, start_time, ranking, timeout)
 
 
 
     def get_best_path_data(self):
         #nx.shortest_path(graph, agent_key, self.best_key)
         cur_node = self.best_key
-        search_table = []
-        
+        actions, rewards= [], []
+
         for action in reversed(self.graph.nodes[self.best_key]['actions']):
             parent_node = {data['label']: k for k, v, data in self.graph.in_edges(cur_node, data=True)}[action]
-            search_table.insert(0, [action, self.graph.nodes[cur_node]['gflops'], self.graph.nodes[cur_node]['time']])
+            actions.insert(0, action)
+            rewards.insert(0, self.graph.nodes[cur_node]['gflops'])
             self.graph.nodes[cur_node]['color'] = 'red'
             self.graph.nodes[cur_node]['penwidth'] = 5
             self.graph[parent_node][cur_node][action]['color'] = 'red'
@@ -99,9 +110,15 @@ class BeamSearcherCore:
 
         self.graph.nodes[cur_node]['color'] = 'red'
         self.graph.nodes[cur_node]['penwidth'] = 5
-        search_table.insert(0, ['', self.graph.nodes[cur_node]['gflops'], self.graph.nodes[cur_node]['time']])
 
-        return search_table
+        actions.insert(0, '')
+        rewards.insert(0, self.graph.nodes[cur_node]['gflops'])
+        
+        action_max_time_final = [self.action_max_time[0]]
+        for i in range(1, len(self.action_max_time)):
+            action_max_time_final.append(max(action_max_time_final[-1], self.action_max_time[i]))
+
+        return [actions, rewards, action_max_time_final]
 
 
 
@@ -109,64 +126,69 @@ class BeamSearcherCore:
 class GreedySearcher:
     def __init__(self, evaluator):
         self.evaluator = evaluator
-        self.beam_search = BeamSearcherCore(evaluator=evaluator)
 
     def search(self, agent, num_steps, lookahead, search_width, eval_mode, timeout, debug=False): # actions, reward
-        print(f'GreedySearch_________________START______________________________{lookahead}')
-        print(agent)
+        search_graph = SearchGraph(evaluator=self.evaluator)
         agent_copy = agent.copy()
         agent_copy.clear_actions()
         start_time = time.time()
 
         for i in range(num_steps):
-            best_actions = self.beam_search.search(agent=agent_copy, num_steps=lookahead, search_width=search_width, eval_mode=eval_mode, start_time=start_time, timeout=timeout/num_steps)
-            
+            best_actions = search_graph.expand(
+                agent=agent_copy, 
+                num_steps=lookahead, 
+                search_width=search_width, 
+                eval_mode=eval_mode, 
+                start_time=start_time, 
+                ranking=False, 
+                timeout=timeout/num_steps,
+            )
+
             if len(best_actions) == 0 or time.time() - start_time > timeout: 
                 break
-            elif i + len(best_actions) >= num_steps: # if we noticed that we are lookahead steps before end, just apply actions you have
+            elif i + len(best_actions) >= num_steps:
                 for action in best_actions[:num_steps - i]:
                     agent_copy.apply_action(action)                    
                 break
             else:
                 action = best_actions[0]
                 agent_copy.apply_action(action)
-
-
-
-        print(agent_copy.actions)
-        print(agent_copy)
-        print(f'GreedySearch_______________END________________________________{lookahead}')
         
-        search_table = self.beam_search.get_best_path_data()
-
+        search_table = search_graph.get_best_path_data()
 
         if debug:
-            print(nx.nx_pydot.to_pydot(self.beam_search.graph))
-
+            print(nx.nx_pydot.to_pydot(search_graph.graph))
 
         return search_table
 
 
-class BeamSearcher:
+class BeamSearcherDFS:
     """ Uses policy beam search first to find n best candidates. For each candidate apply another beam search.
     """
     def __init__(self, evaluator):
         self.evaluator = evaluator
-        self.beam_search = BeamSearcherCore(evaluator=evaluator)
 
-    def search(self, agent, num_steps, search_width, eval_mode, timeout, debug=False):
+    def search(self, agent, num_steps, search_width, eval_mode, ranking, timeout, debug=False):
+        search_graph = SearchGraph(evaluator=self.evaluator)
         agent_copy = agent.copy()
         agent_copy.clear_actions()
 
         start_time = time.time()
+        search_graph.expand(
+            agent=agent, 
+            num_steps=num_steps, 
+            search_width=search_width, 
+            eval_mode=eval_mode, 
+            start_time=start_time, 
+            ranking=ranking, 
+            timeout=timeout
+        )
 
-        self.beam_search.search(agent=agent, num_steps=num_steps, search_width=search_width, eval_mode=eval_mode, start_time=start_time, timeout=timeout)
-
-        search_table = self.beam_search.get_best_path_data()
+        search_table = search_graph.get_best_path_data()
 
         if debug:        
-            print(nx.nx_pydot.to_pydot(self.beam_search.graph))
-        
+            print(nx.nx_pydot.to_pydot(search_graph.graph))
+
         return search_table
 
 
@@ -176,40 +198,73 @@ class BeamSearcherBFS:
     """
     def __init__(self, evaluator):
         self.evaluator = evaluator
-        self.beam_search = BeamSearcherCore(evaluator=evaluator)
 
-    def search(self, agent, num_steps, search_width, eval_mode, timeout, debug=False):
+    def search(self, agent, num_steps, search_width, eval_mode, ranking, timeout, debug=False):
+        search_graph = SearchGraph(evaluator=self.evaluator)
         agent_copy = agent.copy()
         agent_copy.clear_actions()
-
+        frontier_agents = [agent_copy]
         start_time = time.time()
 
-        frontier_agents = [agent_copy]
-
-        for i in range(num_steps):
+        for _ in range(num_steps):
             for agent_frontier in frontier_agents:
-                self.beam_search.search(agent=agent_frontier, num_steps=1, search_width=search_width, eval_mode=eval_mode, start_time=start_time, timeout=timeout/num_steps)
+                search_graph.expand(
+                    agent=agent_frontier, 
+                    num_steps=1, 
+                    search_width=search_width, 
+                    eval_mode=eval_mode, 
+                    start_time=start_time, 
+                    ranking=ranking, 
+                    timeout=timeout/num_steps
+                )
             
-            frontier_nodes = [node for node in self.beam_search.graph.nodes if self.beam_search.graph.out_degree(node) == 0]
+            frontier_nodes = [node for node in search_graph.graph.nodes if search_graph.graph.out_degree(node) == 0]
             for x in frontier_nodes: 
                 agent_copy = agent.copy()
-                for action in self.beam_search.graph.nodes[x]['actions']:
+                for action in search_graph.graph.nodes[x]['actions']:
                     agent_copy.apply_action(action)
                 
                 frontier_agents.append(agent_copy)
                 
-    
-
-
-        print(agent_copy.actions)
-        print(agent_copy)
-        print(f'BeamSearchBFS_______________END________________________________')
-                
-        search_table = self.beam_search.get_best_path_data()
+                    
+        search_table = search_graph.get_best_path_data()
 
 
         if debug:
-            print(nx.nx_pydot.to_pydot(self.beam_search.graph))
-
+            print(nx.nx_pydot.to_pydot(search_graph.graph))
 
         return search_table
+
+
+
+class RandomSearcher:
+    """ 
+        Explore random sequences from the space.
+    """
+    def __init__(self, evaluator):
+        self.evaluator = evaluator
+
+    def search(self, agent, num_steps, eval_mode, timeout, debug=False):
+        search_graph = SearchGraph(evaluator=self.evaluator)
+        agent_copy = agent.copy()
+        agent_copy.clear_actions()
+        start_time = time.time()
+    
+        while time.time() - start_time < timeout:
+            search_graph.expand(
+                agent=agent, 
+                num_steps=num_steps, 
+                search_width=1, 
+                eval_mode=eval_mode, 
+                start_time=start_time, 
+                ranking=False, 
+                timeout=timeout
+            )
+
+        search_table = search_graph.get_best_path_data()
+
+        if debug:        
+            print(nx.nx_pydot.to_pydot(search_graph.graph))
+
+        return search_table
+

@@ -32,15 +32,18 @@ class Evaluator:
         self.debug = "--debug" if debug else ""
         self.searches = {
             'greedy1_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
-            'greedy1_cost': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
             'greedy2_ln': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
+            'beam2dfs_ln': f'beam_search_dfs --steps={self.steps} --width=2 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',           
+            'beam4dfs_ln': f'beam_search_dfs --steps={self.steps} --width=4 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',     
+            'beam2bfs_ln': f'beam_search_bfs --steps={self.steps} --width=2 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
+            'beam4bfs_ln': f'beam_search_bfs --steps={self.steps} --width=4 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
+            'bruteforce_ln': f'beam_search_dfs --steps={self.steps} --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
+            'random_ln': f'random_search --steps={self.steps} --eval=loop_nest --timeout={self.timeout} {self.debug}',           
+
+            'greedy1_cost': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
             'greedy2_cost': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
-            'bruteforce_ln': f'beam_search --steps={self.steps} --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
-            'bruteforce_cost': f'beam_search --steps={self.steps} --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
-            'beam2_ln': f'beam_search --steps={self.steps} --width=2 --eval=loop_nest --timeout={self.timeout} {self.debug}',           
-            'beam4_ln': f'beam_search --steps={self.steps} --width=4 --eval=loop_nest --timeout={self.timeout} {self.debug}',     
-            'beambfs2_ln': f'beam_search_bfs --steps={self.steps} --width=2 --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
-            'beambfs4_ln': f'beam_search_bfs --steps={self.steps} --width=4 --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
+            'bruteforce_cost': f'beam_search_dfs --steps={self.steps} --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
+
             'policy': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=policy --timeout={self.timeout} {self.debug}',
         }
         self.my_artifacts = Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
@@ -104,10 +107,10 @@ class Evaluator:
 
         for search_name, search_cmd in tqdm(searches.items()):
             if search_name == 'policy' and self.agent != None:
-                results_actions[search_name], results_gflops[search_name], results_time[search_name] = self.rllib_search(env, results_gflops['base'])
+                results_actions[search_name], results_gflops[search_name], results_time[search_name] = self.rllib_search(env, results_gflops['base'][0])
             else:    
                 results_actions[search_name], results_gflops[search_name], results_time[search_name],  = self.search_performance(env, search_cmd, results_gflops['base'])
-            
+        
         return results_gflops, results_time, results_actions
 
 
@@ -124,10 +127,10 @@ class Evaluator:
         df_all = pd.concat( [self.df_gflops, self.df_time, self.df_actions], axis=1)
         df_all.to_csv(f'{path}.csv')
 
-        # print(df_all.to_string())
-        for _, row in df_all.iterrows():
-            print(f"\n_______________________________________________________________")
-            for x in row: print(x)
+    
+        # for _, row in df_all.iterrows():
+        #     print(f"\n_______________________________________________________________")
+        #     for x in row: print(x)
 
        
 
@@ -196,33 +199,29 @@ class Evaluator:
             fig, axs = plt.subplots(2, 1)
             
             for i, search in enumerate(search_columns): 
-                actions_len = len(gflops_row[search])   
-                x_data = np.arange(0, actions_len, 1) + 0.1 * i  # to show overlaping points
-
-                axs[0].plot(x_data, gflops_row[search], marker = 'o', label = search)
-                axs[0].set_xlabel('steps')
-                axs[0].set_ylabel('GFLOPS')
-                axs[0].grid(which='both', axis='y')
-
-                axs[1].plot(x_data, time_row[search], marker = 'o', label = search)
-                axs[1].set_xlabel('steps')
-                axs[1].set_ylabel('seconds')
-                axs[1].grid(which='both', axis='y')
+                x_data = np.arange(0, self.steps + 1, 1) + 0.05 * i  # to show overlaping points
+                axs[0].plot(x_data[:len(gflops_row[search])], gflops_row[search], marker = '.', label = search)                
+                axs[1].plot(x_data[:len(time_row[search])], time_row[search], marker = '.', label = search)
 
 
-            axs[0].legend(title='Searches',loc='center left', bbox_to_anchor=(1, 0.5))
             fig.suptitle(f'Gain per action', fontsize=16)
-            # plt.setp(axs, xticks=range(self.steps + 1))
+            axs[0].legend(title='Searches',loc='center left', bbox_to_anchor=(1, 0.5))
             axs[0].set_xticks(range(self.steps + 1))
+            axs[0].set_ylabel('GFLOPS')
+            axs[0].grid(b=True, which='major', axis='y')
+
+            axs[1].set_xlabel('steps')
             axs[1].set_xticks(range(self.steps + 1))
-            axs[0].tick_params(labelrotation=0)
-            axs[1].tick_params(labelrotation=0)
-
-
-            fig.autofmt_xdate()
+            axs[1].set_ylabel('seconds')
+            axs[1].set_yscale('log')
+            axs[1].grid(b=True, which='major', axis='y', linestyle='-')
+            axs[1].grid(b=True, which='minor', axis='y', linestyle='--')
+            
+            plt.gca().yaxis.set_major_locator(plt.LogLocator(base=10, numticks=10))
+            plt.gca().yaxis.set_minor_locator(plt.LogLocator(base=10, subs='all', numticks=100))
 
             fig.savefig(f'{path}_{gflops_row[bench_column]}_actions.png', bbox_inches = 'tight')
-            print(f'{path}_{gflops_row[bench_column]}_actions.png')
+            print(f'\n{path}_{gflops_row[bench_column]}_actions.png\n')
         
 
     def send_to_wandb(self, wandb_run_id, wandb_dict=None, path=None):
@@ -273,10 +272,9 @@ class Evaluator:
         start = time.time()
         res = env.send_param(search_cmd, search_args)
         search_time = time.time() - start
-
         if res != None:
             search_table = json.loads(res)
-            actions, action_gflops, action_times = list(zip(*search_table)) # unzip search table
+            actions, action_gflops, action_times = search_table #list(zip(*search_table)) # unzip search table
             # gflops = self.move_and_eval(env, actions_str=actions)
         else:
             actions, action_gflops, action_times = ["failed"], base_gflops, [search_time]
@@ -285,21 +283,21 @@ class Evaluator:
 
 
     def rllib_search(self, env, base_gflops):
-        search_table = [['', base_gflops[0], 0]] # [[action, cur_gflops, cur_search_time],..]
-
+        actions, action_gflops, action_times = [''], [base_gflops], [0]
         start_time = time.time()
         feature_vector = env.observation["loops_tensor"]
 
-        for _ in range(self.steps):
+        for i in range(self.steps):
             feature_vector = torch.Tensor(feature_vector).unsqueeze(0)
             a_id = self.agent.compute_action(feature_vector)
             action = env.action_space.to_string(a_id)
-            search_table.append([action, float(env.observation[self.reward]), time.time() - start_time]) # self.evaluator.eval_gflops has
+            actions.append(action)
+            action_gflops.append(float(env.observation[self.reward]))
+            action_times.append(time.time() - start_time)
             env.step(a_id)
             feature_vector = env.observation["loops_tensor"]
 
-
-        return list(zip(*search_table))
+        return actions, action_gflops, action_times
 
 
     def move_and_eval(self, env, actions_str):

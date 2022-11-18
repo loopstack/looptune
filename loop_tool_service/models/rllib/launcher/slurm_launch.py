@@ -65,7 +65,12 @@ parser.add_argument(
 parser.add_argument(
     "--size", type=int, nargs='?', default=1000000, help="Size of benchmarks to evaluate."
 )
-
+parser.add_argument(
+    "--eval_size", type=int, default=100, help="Size of benchmarks to evaluate."
+)
+parser.add_argument(
+    "--eval_time", type=int, default=10, help="Time to evaluate single benchmark."
+)
 parser.add_argument(
     "--steps", type=int, default=10, help="Number of actions to find."
 )
@@ -160,7 +165,7 @@ def submit_job():
     log_dir = repo_dir / Path("results") / "runs"
 
     log_dir.mkdir(parents=True, exist_ok=True)
-    command = f"python -u {args.app} --slurm --iter={args.iter} --stop_reward={args.stop_reward} --wandb_url={args.wandb_url} --trainer={args.trainer} --dataset={args.dataset} --size={args.size} --network={args.network} --steps={args.steps} --sweep={args.sweep}" 
+    command = f"python -u {args.app} --slurm --iter={args.iter} --stop_reward={args.stop_reward} --wandb_url={args.wandb_url} --trainer={args.trainer} --dataset={args.dataset} --size={args.size} --eval_size={args.eval_size} --eval_time={args.eval_time} --network={args.network} --steps={args.steps} --sweep={args.sweep}" 
 
     exp_name = f"run_{datetime.now():%m_%d_%H_%M}"
     job_name = f"job_{exp_name}"

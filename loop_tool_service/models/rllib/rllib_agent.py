@@ -113,10 +113,6 @@ parser.add_argument(
     "--eval_time", type=int, default=10, help="Time to evaluate single benchmark."
 )
 
-# parser.add_argument(
-#     "--stop-timesteps", type=int, default=100, help="Number of timesteps to train."
-# )
-
 parser.add_argument(
     "--stop_reward", type=float, default=1, help="Reward at which we stop training."
 )
@@ -162,7 +158,7 @@ class MyCallback(Callback):
 
 
 class RLlibAgent:
-    def __init__(self, trainer, dataset, size, network, sweep_count, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+    def __init__(self, trainer, dataset, size, network, sweep_count, eval_time, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
         self.wandb_dict = {}
 
         global datasets_global, max_episode_steps
@@ -186,10 +182,10 @@ class RLlibAgent:
         self.checkpoint_path = None
         self.policy_model = None
         self.train_benchmarks = []
-        self.validation_benchmarks = []
+        self.test_benchmarks = []
         self.checkpoint_start = None
         self.analysis = None
-        self.evaluator = Evaluator(steps=max_episode_steps, reward=self.reward)
+        self.evaluator = Evaluator(steps=max_episode_steps, reward=self.reward, timeout=eval_time)
         self.init()
     
     def init(self):
@@ -199,7 +195,7 @@ class RLlibAgent:
             "my_model", self.network #my_net_rl.TorchBatchNormModel #if False else my_net_rl.TorchCustomModel
         )
         dataset =  self.env.datasets[f'benchmark://{self.dataset}-v0']
-        benchmarks = list(dataset.benchmarks())
+        benchmarks = [str(b) for b in dataset.benchmarks()]
         random.shuffle(benchmarks)
         benchmarks = benchmarks[:self.size]
         self.wandb_dict['dataset'] = dataset.name
@@ -209,9 +205,12 @@ class RLlibAgent:
         train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
         
         self.train_benchmarks = benchmarks[:train_size]
-        self.validation_benchmarks = benchmarks[train_size:]
+        self.test_benchmarks = benchmarks[train_size:]
+        self.wandb_dict['train_benchmarks'] = self.train_benchmarks
+        self.wandb_dict['test_benchmarks'] = self.test_benchmarks
+
         self.wandb_dict['train_size'] = len(self.train_benchmarks)
-        self.wandb_dict['test_size'] = len(self.validation_benchmarks)
+        self.wandb_dict['test_size'] = len(self.test_benchmarks)
         self.wandb_dict['reward'] = self.reward
 
         self.wandb_dict['max_loops'] = lt.LoopTreeAgent.max_loops()
@@ -220,7 +219,7 @@ class RLlibAgent:
         self.wandb_dict['actions'] = ",".join(self.env.action_space.names)
 
         print("Number of benchmarks for training:", len(self.train_benchmarks))
-        print("Number of benchmarks for validation:", len(self.validation_benchmarks))
+        print("Number of benchmarks for test:", len(self.test_benchmarks))
                     
 
         def make_training_env(*args): 
@@ -240,10 +239,15 @@ class RLlibAgent:
             self.checkpoint_start = wandb_run.summary
             self.checkpoint_path = f"{self.my_artifacts_start}/{self.checkpoint_start['checkpoint']}"
             self.config['model']['fcnet_hiddens'] = [self.checkpoint_start['layers_width']] * self.checkpoint_start['layers_num']
-            
+
             for f in wandb_run.files(): 
                 if f.name.startswith('checkpoint'):
                     f.download(root=self.my_artifacts_start, replace=True)
+
+            self.train_benchmarks = self.checkpoint_start['train_benchmarks']
+            self.test_benchmarks = self.checkpoint_start['test_benchmarks']
+            
+
         except:
             print('Policy not found')
             return
@@ -303,8 +307,8 @@ class RLlibAgent:
             return
 
 
-        # searches = { k:v for k, v in self.evaluator.searches.items() if 'cost' not in k and 'bruteforce' not in k}
-        searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'policy']} 
+        searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'beambfs2_ln', 'beambfs4_ln', 'bruteforce_ln', 'policy']} 
+        # searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'policy']} 
         
         for trial_id, config, checkpoint_path_str in config_checkpoint_pairs:
             if checkpoint_path_str == None:
@@ -319,7 +323,6 @@ class RLlibAgent:
             )
 
             agent.restore(str(checkpoint_path))
-            policy_model = agent.get_policy().model
 
             if 'fcnet_hiddens' in config['model']:
                 self.wandb_dict['layers_num'] = len(config['model']['fcnet_hiddens'])
@@ -343,16 +346,15 @@ class RLlibAgent:
             # else:
             self.evaluator.set_policy_agent(agent)
 
-            df_train = self.evaluator.evaluate(self.env, self.train_benchmarks[:eval_size], searches, timeout_s=eval_time)
+            df_train = self.evaluator.evaluate(self.env, self.train_benchmarks[:eval_size], searches)
             self.evaluator.save(path=self.my_artifacts_end/trial_id/"train")
-            df_val = self.evaluator.evaluate(self.env, self.validation_benchmarks[:eval_size], searches, timeout_s=eval_time)
-            self.evaluator.save(path=self.my_artifacts_end/trial_id/"validation")
+            df_val = self.evaluator.evaluate(self.env, self.test_benchmarks[:eval_size], searches)
+            self.evaluator.save(path=self.my_artifacts_end/trial_id/"test")
         
             self.wandb_update_df(df_train, prefix='train_')
             self.wandb_update_df(df_val, prefix='test_')
             self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
             print(f'Saved at: {self.my_artifacts_end}')
-            breakpoint()
 
 
     def wandb_update_df(self, res_dict, prefix):
@@ -388,7 +390,7 @@ if __name__ == '__main__':
         ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
 
-    agent = RLlibAgent(trainer=args.trainer, dataset=args.dataset, size=args.size, network=args.network, sweep_count=args.sweep)
+    agent = RLlibAgent(trainer=args.trainer, dataset=args.dataset, size=args.size, network=args.network, sweep_count=args.sweep, eval_time=args.eval_time)
 
     if args.wandb_url:
         agent.load_model(args.wandb_url)
@@ -398,7 +400,7 @@ if __name__ == '__main__':
         stop_reward=args.stop_reward,
         sweep_count=args.sweep,
     )
-    agent.evaluate(args.eval_size, args.eval_time)
+    agent.evaluate(args.eval_size)
 
     ray.shutdown()
     print("Return from train!")

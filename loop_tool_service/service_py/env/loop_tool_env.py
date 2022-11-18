@@ -92,13 +92,13 @@ class Environment:
 
         self.evaluator = Evaluator(self)
         self.beam_searcher = BeamSearcher(self.evaluator)
+        self.beam_searcher_bfs = BeamSearcherBFS(self.evaluator)
         self.greedy_searcher = GreedySearcher(self.evaluator)
-        self.beambeam_searcher = BeamBeamSearcher(self.evaluator)
 
 
     def reset_agent(self):
         self.agent = self.agent_start.copy()
-        self.cache = {}
+        # self.cache = {} # this make rewards unstable
     ##############################################################
     # Apply action
     ##############################################################

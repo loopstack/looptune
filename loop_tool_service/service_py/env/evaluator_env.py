@@ -52,7 +52,6 @@ class Evaluator:
             agent_copy.apply_action(action)
             actions_q[action] = self.eval_gflops(agent_copy, eval_mode=eval_mode)
         
-        # breakpoint()
         return sorted(actions_q.items(), key=lambda x: x[0], reverse=True)
 
 
@@ -108,7 +107,7 @@ class Evaluator:
         return sorted(actions_q.items(), key=lambda x: x[0], reverse=True)
 
 
-    def get_actions_q(self, agent, eval_mode):  # mode in ['gflops', 'cost', 'policy'] 
+    def get_actions_q_sorted(self, agent, eval_mode):  # mode in ['gflops', 'cost', 'policy'] 
         if eval_mode == 'loop_nest':
             return self.get_actions_q_cost(agent=agent, eval_mode=eval_mode)
         elif eval_mode == 'cost': 
@@ -118,4 +117,4 @@ class Evaluator:
             assert(self.policy_model != None), 'Policy model not loaded'
             return self.get_actions_q_policy(agent=agent)
         else:
-            assert(0), f"get_actions_q: Not supported mode = {eval_mode}"
+            assert(0), f"get_actions_q_sorted: Not supported mode = {eval_mode}"

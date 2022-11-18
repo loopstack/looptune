@@ -22,28 +22,26 @@ class Evaluator:
     #############################################################
     # Public
     #############################################################
-    def __init__(self, steps=10, cost_path='', policy_path='', agent=None, reward="flops_loop_nest_cached", debug=False):
+    def __init__(self, steps=10, cost_path='', policy_path='', agent=None, reward="flops_loop_nest_cached", timeout=10, debug=False):
         self.set_cost_path(cost_path)
         self.set_policy_path(policy_path)
         self.agent = agent
         self.steps = steps
         self.reward = reward
+        self.timeout = timeout
         self.debug = "--debug" if debug else ""
         self.searches = {
-            'greedy1_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=loop_nest {self.debug}',
-            'greedy1_cost': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=cost {self.debug}',
-            'greedy2_ln': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=loop_nest {self.debug}',
-            'greedy2_cost': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=cost {self.debug}',
-            # 'greedy2_policy': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=policy {self.debug}', 
-            'bruteforce_ln': f'beam_search --steps={self.steps} --width=1000 --eval=loop_nest {self.debug}',
-            'bruteforce_cost': f'beam_search --steps={self.steps} --width=1000 --eval=cost {self.debug}',
-            'bruteforce_po?licy': f'beam_search --steps={self.steps} --width=1000 --eval=policy {self.debug}',
-            # 'policy_ln': f'beambeam_search --steps1={self.steps//2} --width1=2 --eval1=policy --steps2={self.steps - self.steps//2} --width2=2 --eval2=loop_nest {self.debug}',
-            # 'policy_cost': f'beambeam_search --steps1={self.steps//2} --width1=2 --eval1=policy --steps2={self.steps - self.steps//2} --width2=2 --eval2=cost {self.debug}',
-            'beam2_ln': f'beam_search --steps={self.steps} --width=2 --eval=loop_nest {self.debug}',           
-            'beam4_ln': f'beam_search --steps={self.steps} --width=4 --eval=loop_nest {self.debug}',           
-            'beam4beam4_ln': f'beambeam_search --steps1={self.steps//2} --width1=4 --eval1=loop_nest --steps2={self.steps - self.steps//2} --width2=4 --eval2=loop_nest {self.debug}',
-            'policy': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=policy {self.debug}',
+            'greedy1_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
+            'greedy1_cost': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
+            'greedy2_ln': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
+            'greedy2_cost': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
+            'bruteforce_ln': f'beam_search --steps={self.steps} --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
+            'bruteforce_cost': f'beam_search --steps={self.steps} --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
+            'beam2_ln': f'beam_search --steps={self.steps} --width=2 --eval=loop_nest --timeout={self.timeout} {self.debug}',           
+            'beam4_ln': f'beam_search --steps={self.steps} --width=4 --eval=loop_nest --timeout={self.timeout} {self.debug}',     
+            'beambfs2_ln': f'beam_search_bfs --steps={self.steps} --width=2 --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
+            'beambfs4_ln': f'beam_search_bfs --steps={self.steps} --width=4 --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
+            'policy': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=policy --timeout={self.timeout} {self.debug}',
         }
         self.my_artifacts = Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
 
@@ -59,7 +57,7 @@ class Evaluator:
     def set_policy_agent(self, agent):
         self.agent = agent
 
-    def evaluate(self, env, benchmarks: list, searches: dict, timeout_s: int = 60):
+    def evaluate(self, env, benchmarks: list, searches: dict):
         """ Run run and plot searches on benchmarks
 
         Args:
@@ -70,7 +68,7 @@ class Evaluator:
         self.df_gflops, self.df_time, self.df_actions = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
         for benchmark in tqdm(sorted(benchmarks)):
-            results_gflops, results_time, results_actions = self.evaluate_single_benchmark(env, benchmark, searches, timeout_s)
+            results_gflops, results_time, results_actions = self.evaluate_single_benchmark(env, benchmark, searches)
             self.df_gflops = pd.concat([self.df_gflops, pd.DataFrame([results_gflops])], axis=0)
             self.df_time = pd.concat([self.df_time, pd.DataFrame([results_time])], axis=0)
             self.df_actions = pd.concat([self.df_actions, pd.DataFrame([results_actions])], axis=0)
@@ -78,7 +76,7 @@ class Evaluator:
         return { 'gflops': self.df_gflops, 'time': self.df_time, 'actions': self.df_actions }
         
 
-    def evaluate_single_benchmark(self, env, benchmark, searches, timeout_s):
+    def evaluate_single_benchmark(self, env, benchmark, searches):
         """ Run set of searches on single benchmark
 
         Args:
@@ -104,11 +102,11 @@ class Evaluator:
         env.send_param("print_looptree", "")
         print(f"Base performance = {results_gflops['base']}")
 
-        for search_name, search_cmd in searches.items():
+        for search_name, search_cmd in tqdm(searches.items()):
             if search_name == 'policy' and self.agent != None:
                 results_actions[search_name], results_gflops[search_name], results_time[search_name] = self.rllib_search(env, results_gflops['base'])
             else:    
-                results_actions[search_name], results_gflops[search_name], results_time[search_name],  = self.search_performance(env, search_cmd, timeout_s, results_gflops['base'])
+                results_actions[search_name], results_gflops[search_name], results_time[search_name],  = self.search_performance(env, search_cmd, results_gflops['base'])
             
         return results_gflops, results_time, results_actions
 
@@ -269,11 +267,11 @@ class Evaluator:
         return [], [gflops], [time.time() - start]
 
 
-    def search_performance(self, env, search, timeout_s, base_gflops):
+    def search_performance(self, env, search, base_gflops):
         search_cmd, search_args = search.split(" ", 1)
         env.send_param("reset_agent", '')
         start = time.time()
-        res = timed_fn(fn=env.send_param, args=[search_cmd, search_args], seconds=timeout_s)
+        res = env.send_param(search_cmd, search_args)
         search_time = time.time() - start
 
         if res != None:

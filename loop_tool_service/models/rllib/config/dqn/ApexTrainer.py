@@ -11,7 +11,7 @@ def get_config(sweep=False):
         "framework": 'torch',
         "model": {
             "vf_share_layers": True,
-            "fcnet_hiddens": ray.tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]) if sweep else [1000] * 10,
+            "fcnet_hiddens": ray.tune.choice([ [w] * l for w in hiddens_width for l in hiddens_layers ]) if sweep else [1000] * 8,
             # "post_fcnet_hiddens":
             # "fcnet_activation": 
             # "post_fcnet_activation":

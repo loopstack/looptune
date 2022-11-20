@@ -7,7 +7,8 @@ __pycache__
 loop_tool_service/benchmarks/loop_tool_dataset/big
 loop_tool_service/models/rllib/my_artifacts
 *.pkl
-results
+results/*/checkpoint_*
+loop_tool_service/models/rllib/results
 tmp.png
 weights
 *submitit_logs*

@@ -52,7 +52,7 @@ from loop_tool_service.models.evaluator import Evaluator
 
 import torch
 import importlib
-import inspect
+import time
 
 from ray.tune.integration.wandb import WandbLoggerCallback
 from loop_tool_service.paths import LOOP_TOOL_ROOT
@@ -158,7 +158,7 @@ class MyCallback(Callback):
 
 
 class RLlibAgent:
-    def __init__(self, trainer, dataset, size, network, sweep_count, eval_time, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+    def __init__(self, trainer, dataset, size, eval_size, network, sweep_count, eval_time, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
         self.wandb_dict = {}
 
         global datasets_global, max_episode_steps
@@ -170,11 +170,12 @@ class RLlibAgent:
         self.config = importlib.import_module(f"loop_tool_service.models.rllib.config.{self.algorithm}.{trainer}").get_config(sweep_count)
         self.dataset = dataset
         self.size = size
+        self.eval_size = eval_size
         self.network = getattr(importlib.import_module(f"loop_tool_service.models.rllib.my_net_rl"), network)
         self.wandb_dict['network'] = network
         self.env = make_env()
         self.reward = list(self.env.reward.spaces.keys())[0]
-        my_artifacts = Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
+        my_artifacts = Path(f'/private/home/dejang/tools/loop_tool_env/results/{time.strftime("%Y%m%d-%H%M%S")}') #Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
         self.my_artifacts_start = my_artifacts/'start'
         self.my_artifacts_end = my_artifacts/'end'
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -189,8 +190,11 @@ class RLlibAgent:
         self.init()
     
     def init(self):
-        os.mkdir(self.my_artifacts_start)
-        os.mkdir(self.my_artifacts_end)
+        # os.mkdir(self.my_artifacts_start)
+        # os.mkdir(self.my_artifacts_end)
+        self.my_artifacts_start.mkdir(parents=True)
+        self.my_artifacts_end.mkdir(parents=True)
+        
         ModelCatalog.register_custom_model(
             "my_model", self.network #my_net_rl.TorchBatchNormModel #if False else my_net_rl.TorchCustomModel
         )
@@ -208,6 +212,8 @@ class RLlibAgent:
         self.test_benchmarks = benchmarks[train_size:]
         self.wandb_dict['train_benchmarks'] = self.train_benchmarks
         self.wandb_dict['test_benchmarks'] = self.test_benchmarks
+        self.wandb_dict['eval_train_benchmarks'] = self.train_benchmarks[:self.eval_size]
+        self.wandb_dict['eval_test_benchmarks'] = self.test_benchmarks[:self.eval_size]
 
         self.wandb_dict['train_size'] = len(self.train_benchmarks)
         self.wandb_dict['test_size'] = len(self.test_benchmarks)
@@ -246,10 +252,12 @@ class RLlibAgent:
 
             self.train_benchmarks = self.checkpoint_start['train_benchmarks']
             self.test_benchmarks = self.checkpoint_start['test_benchmarks']
-            
+            self.wandb_dict['eval_train_benchmarks'] = self.checkpoint_start['eval_train_benchmarks'][:self.eval_size] if len(self.eval_size) < self.checkpoint_start['eval_train_benchmarks'] else self.checkpoint_start['train_benchmarks'][:self.eval_size]
+            self.wandb_dict['eval_test_benchmarks'] = self.checkpoint_start['eval_test_benchmarks'][:self.eval_size] if len(self.eval_size) < self.checkpoint_start['eval_test_benchmarks'] else self.checkpoint_start['eval_test_benchmarks'][:self.eval_size]
+
 
         except:
-            print('Policy not found')
+            print('Wandb had problem with loading the model!')
             return
 
             
@@ -297,19 +305,18 @@ class RLlibAgent:
             print("hhh2______________________")
 
 
-    def evaluate(self, eval_size=100, eval_time=10):
+    def evaluate(self):
         if self.analysis:
             config_checkpoint_pairs = [ [trial.trial_id, trial.config, str(trial.checkpoint.value)] for trial in self.analysis.trials ]
         elif self.checkpoint_path != None:
-            config_checkpoint_pairs = [['dummy', self.config, self.checkpoint_path]]
+            config_checkpoint_pairs = [[ self.wandb_dict['wandb_start'].split('/')[-1], self.config, self.checkpoint_path]]
         else:
             print('RLlibAgent: No analysis found. Run train method first.')
             return
 
 
         searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'beam2dfs_ln', 'beam4dfs_ln','beam2bfs_ln', 'beam4bfs_ln', 'random_ln', 'policy']} 
-        # searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'policy']} 
-        
+
         for trial_id, config, checkpoint_path_str in config_checkpoint_pairs:
             if checkpoint_path_str == None:
                 continue
@@ -339,16 +346,11 @@ class RLlibAgent:
 
             self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
 
-            # # Evaluate trial
-            # if self.algorithm in ['ppo']:
-            #     torch.save(policy_model,  policy_path)
-            #     self.evaluator.set_policy_path(policy_path)
-            # else:
             self.evaluator.set_policy_agent(agent)
 
-            df_train = self.evaluator.evaluate(self.env, self.train_benchmarks[:eval_size], searches)
+            df_train = self.evaluator.evaluate(self.env, self.wandb_dict['eval_train_benchmarks'], searches)
             self.evaluator.save(path=self.my_artifacts_end/trial_id/"train")
-            df_val = self.evaluator.evaluate(self.env, self.test_benchmarks[:eval_size], searches)
+            df_val = self.evaluator.evaluate(self.env, self.wandb_dict['eval_test_benchmarks'], searches)
             self.evaluator.save(path=self.my_artifacts_end/trial_id/"test")
         
             self.wandb_update_df(df_train, prefix='train_')
@@ -390,7 +392,15 @@ if __name__ == '__main__':
         ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
 
-    agent = RLlibAgent(trainer=args.trainer, dataset=args.dataset, size=args.size, network=args.network, sweep_count=args.sweep, eval_time=args.eval_time)
+    agent = RLlibAgent(
+        trainer=args.trainer, 
+        dataset=args.dataset, 
+        size=args.size, 
+        eval_size=args.eval_size,
+        network=args.network, 
+        sweep_count=args.sweep, 
+        eval_time=args.eval_time
+    )
 
     if args.wandb_url:
         agent.load_model(args.wandb_url)
@@ -400,7 +410,7 @@ if __name__ == '__main__':
         stop_reward=args.stop_reward,
         sweep_count=args.sweep,
     )
-    agent.evaluate(args.eval_size)
+    agent.evaluate()
 
     ray.shutdown()
     print("Return from train!")

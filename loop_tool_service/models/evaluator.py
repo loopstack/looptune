@@ -153,6 +153,11 @@ class Evaluator:
         axs[1].set_ylabel('seconds')
         axs[1].set_yscale('log')
         
+
+        plt.gca().yaxis.set_major_locator(plt.LogLocator(base=10, numticks=10))
+        plt.gca().yaxis.set_minor_locator(plt.LogLocator(base=10, subs='all', numticks=100))
+
+
         fig.suptitle(f'Benchmarks evaluation', fontsize=16)
         fig.autofmt_xdate()
 
@@ -199,8 +204,8 @@ class Evaluator:
             fig, axs = plt.subplots(2, 1)
             
             for i, search in enumerate(search_columns): 
-                x_data = np.arange(0, self.steps + 1, 1) + 0.05 * i  # to show overlaping points
-                axs[0].plot(x_data[:len(gflops_row[search])], gflops_row[search], marker = '.', label = search)                
+                x_data = np.arange(0, 2 * self.steps, 1) + 0.05 * i  # to show overlaping points
+                axs[0].plot(x_data[:len(gflops_row[search])], gflops_row[search], marker = '.', label = search)      
                 axs[1].plot(x_data[:len(time_row[search])], time_row[search], marker = '.', label = search)
 
 
@@ -241,13 +246,19 @@ class Evaluator:
                 wandb_run.summary[key] = value
             wandb_run.summary.update()
 
+
+        # Delete previous files 
+        for file in wandb_run.files():
+            if file.name.endswith('.csv') or file.name.endswith('.png'): 
+                file.delete()
+
         if path: # Upload wandb plots
             cwd = os.getcwd()
             os.chdir(path)
             for root, dirs, files in os.walk(path):
                 for file in files:
                     print(f"{root}/{file}")
-                    wandb_run.upload_file(f"{root}/{file}")        
+                    wandb_run.upload_file(f"{root}/{file}")       
             os.chdir(cwd)
         
         print(f'\nWandb page = https://wandb.ai/{wandb_url}')
@@ -283,7 +294,7 @@ class Evaluator:
 
 
     def rllib_search(self, env, base_gflops):
-        actions, action_gflops, action_times = [''], [base_gflops], [0]
+        actions, action_gflops, action_times = [''], [base_gflops], [float('nan')]
         start_time = time.time()
         feature_vector = env.observation["loops_tensor"]
 

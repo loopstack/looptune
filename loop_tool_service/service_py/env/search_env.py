@@ -54,11 +54,11 @@ class SearchGraph:
     def expand_core(self, agent, search_depth, search_width, eval_mode, start_time, ranking, timeout):
         node_time = time.time() - start_time
         node_key = hash(agent.dump())
-        real_flops = self.evaluator.eval_gflops(agent, 'loop_nest')
 
         self.action_max_time[len(agent.actions)] = node_time
 
         if node_key not in self.graph or self.graph.nodes[node_key] == {} or len(agent.actions) < len(self.graph.nodes[node_key]['actions']):
+            real_flops = self.evaluator.eval_gflops(agent, 'loop_nest')
             self.graph.add_node(
                 node_key,
                 label=f'GFLOPS = {real_flops:9.4f}\n T = {node_time:9.4f} s\n{agent.actions}', #+ agent.dump().replace(':', ';'),
@@ -117,6 +117,8 @@ class SearchGraph:
         action_max_time_final = [self.action_max_time[0]]
         for i in range(1, len(self.action_max_time)):
             action_max_time_final.append(max(action_max_time_final[-1], self.action_max_time[i]))
+
+        action_max_time_final[0] = float("nan")
 
         return [actions, rewards, action_max_time_final]
 
@@ -206,8 +208,9 @@ class BeamSearcherBFS:
         frontier_agents = [agent_copy]
         start_time = time.time()
 
-        for _ in range(num_steps):
-            for agent_frontier in frontier_agents:
+        for i in range(num_steps):
+            while len(frontier_agents):
+                agent_frontier = frontier_agents.pop()
                 search_graph.expand(
                     agent=agent_frontier, 
                     num_steps=1, 
@@ -215,17 +218,17 @@ class BeamSearcherBFS:
                     eval_mode=eval_mode, 
                     start_time=start_time, 
                     ranking=ranking, 
-                    timeout=timeout/num_steps
+                    timeout=timeout
                 )
             
             frontier_nodes = [node for node in search_graph.graph.nodes if search_graph.graph.out_degree(node) == 0]
             for x in frontier_nodes: 
-                agent_copy = agent.copy()
+                agent_frontier = agent_copy.copy()
                 for action in search_graph.graph.nodes[x]['actions']:
-                    agent_copy.apply_action(action)
+                    agent_frontier.apply_action(action)
                 
-                frontier_agents.append(agent_copy)
-                
+                frontier_agents.append(agent_frontier)
+
                     
         search_table = search_graph.get_best_path_data()
 

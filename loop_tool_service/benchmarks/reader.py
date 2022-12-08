@@ -1,3 +1,7 @@
+'''
+python reader.py --bench=mm64_256_16_range/mm112_208_256 --actions="['split_4', 'down', 'swap_down', 'down', 'split_16', 'swap_up', 'swap_up', 'swap_up', 'split_8', 'swap_down']"
+'''
+
 import argparse
 import loop_tool as lt
 
@@ -43,16 +47,22 @@ else:
     C = gen_mm()
 
     agent = lt.LoopTreeAgent(lt.LoopTree(ir)).merge_all()
+    with lt.Backend("loop_nest"):
+        print(agent.eval("FLOPS") / 1e9)
+        print(agent)
+
     for action in json.loads(args.actions.replace("'", '"')):
         if action in agent.get_available_actions():
             agent.apply_action(action)
-            print(agent)
+            with lt.Backend("loop_nest"):
+                print(agent.eval("FLOPS") / 1e9)
+                print(agent)
 
     C = C.set(agent.lt.ir)
 
-    breakpoint()
 
     with lt.Backend("loop_nest"):
+        breakpoint()
         C = lt.ui(C, "/tmp/woo.c")
 
     breakpoint()

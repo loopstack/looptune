@@ -107,13 +107,13 @@ class Evaluator:
         return sorted(actions_q.items(), key=lambda x: x[0], reverse=True)
 
 
-    def get_actions_q_sorted(self, agent, eval_mode):  # mode in ['gflops', 'cost', 'policy'] 
+    def get_actions_q_sorted(self, agent, eval_mode):  # mode in ['gflops', 'cost', 'loop_tune_ln'] 
         if eval_mode == 'loop_nest':
             return self.get_actions_q_cost(agent=agent, eval_mode=eval_mode)
         elif eval_mode == 'cost': 
             assert(self.cost_model != None), 'Cost model not loaded'
             return self.get_actions_q_cost(agent=agent, eval_mode=eval_mode)
-        elif eval_mode == 'policy': 
+        elif eval_mode == 'loop_tune_ln': 
             assert(self.policy_model != None), 'Policy model not loaded'
             return self.get_actions_q_policy(agent=agent)
         else:

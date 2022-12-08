@@ -44,7 +44,16 @@ class Evaluator:
             'greedy2_cost': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
             'bruteforce_cost': f'beam_search_dfs --steps={self.steps} --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
 
-            'policy': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=policy --timeout={self.timeout} {self.debug}',
+            'loop_tune_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=policy --timeout={self.timeout} {self.debug}',
+
+            # 'tvm_numpy': f'tvm_numpy',
+            # 'tvm_base': f'tvm_base',
+            # 'tvm_blocking': f'tvm_blocking',
+            # 'tvm_permutation': f'tvm_permutation',
+            # 'tvm_packing': f'tvm_packing',
+            # 'tvm_cache_blocking': f'tvm_cache_blocking',
+            # 'tvm_vectorization': f'tvm_vectorization',
+            # 'tvm_all': 'tvm_blocking,tvm_permutation,tvm_packing,tvm_cache_blocking,tvm_vectorization'
         }
         self.my_artifacts = Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
 
@@ -60,14 +69,15 @@ class Evaluator:
     def set_policy_agent(self, agent):
         self.agent = agent
 
-    def evaluate(self, env, benchmarks: list, searches: dict):
+    def evaluate(self, env, benchmarks: list, searches: list):
         """ Run run and plot searches on benchmarks
 
         Args:
             env (CompilerGymEnv): made environment
             benchmarks (list): list of string names of benchmarks to evaluate
-            searches (dict): dict {search_name: search_cmd}. Check handle_session_parameter for format
+            searches (list): liset [search_name]. Check handle_session_parameter for format
         """
+        
         self.df_gflops, self.df_time, self.df_actions = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
         for benchmark in tqdm(sorted(benchmarks)):
@@ -85,11 +95,13 @@ class Evaluator:
         Args:
             env (CompilerGymEnv): environment.
             benchmark (str): benchmark to run.
-            searches (dict): {search_name: search_cmd}. Check handle_session_parameter for format
+            searches (list): [search_name]. Check handle_session_parameter for format
 
         Returns:
             dict, dict, dict: gflops, time, actions dict for each search
         """
+        searches_cmd = { k:v for k, v in self.searches.items() if k in searches} 
+
         benchmark_name = str(benchmark).split('/')[-1]
         results_gflops = {'benchmark': benchmark_name}
         results_time = {'benchmark': benchmark_name}
@@ -105,11 +117,11 @@ class Evaluator:
         env.send_param("print_looptree", "")
         print(f"Base performance = {results_gflops['base']}")
 
-        for search_name, search_cmd in tqdm(searches.items()):
-            if search_name == 'policy' and self.agent != None:
+        for search_name, search_cmd in tqdm(searches_cmd.items()):
+            if search_name == 'loop_tune_ln' and self.agent != None:
                 results_actions[search_name], results_gflops[search_name], results_time[search_name] = self.rllib_search(env, results_gflops['base'][0])
             else:    
-                results_actions[search_name], results_gflops[search_name], results_time[search_name],  = self.search_performance(env, search_cmd, results_gflops['base'])
+                results_actions[search_name], results_gflops[search_name], results_time[search_name]  = self.search_performance(env, search_cmd, results_gflops['base'])
         
         return results_gflops, results_time, results_actions
 
@@ -123,7 +135,7 @@ class Evaluator:
 
         self.plot_bars(df_gflops_final, df_time_final, path)
         self.plot_violin(df_gflops_final, path)
-        self.plot_actions(df_gflops_final, path)
+        self.plot_actions(path)
         df_all = pd.concat( [self.df_gflops, self.df_time, self.df_actions], axis=1)
         df_all.to_csv(f'{path}.csv')
 
@@ -135,6 +147,8 @@ class Evaluator:
        
 
     def plot_bars(self, df_gflops_final, df_time_final, path):
+        if type(df_gflops_final) == None and type(df_time_final) == None:
+            return
         fig, axs = plt.subplots(2, 1)
         num_bench = min(len(df_gflops_final), 100)
         figsize = ((num_bench + 1) // 2, 5)
@@ -146,28 +160,30 @@ class Evaluator:
         axs[0].minorticks_on()
         axs[0].grid(which='both', axis='y')
         axs[0].set_ylabel('GFLOPS')
-        
-        axs[1] = df_time_final.iloc[indexes].plot(x=bench_column, y=search_columns, kind='bar', figsize=figsize, width=0.8, align='edge', ax=axs[1])
-        axs[1].minorticks_on()
-        axs[1].grid(which='both', axis='y')
-        axs[1].set_ylabel('seconds')
-        axs[1].set_yscale('log')
-        
+        axs[0].legend(title='Searches',loc='center left', bbox_to_anchor=(1, 0.5))
+
+        if type(df_time_final) != None:
+            axs[1] = df_time_final.iloc[indexes].plot(x=bench_column, y=search_columns, kind='bar', figsize=figsize, width=0.8, align='edge', ax=axs[1])
+            # axs[1].minorticks_on()
+            axs[1].grid(which='major', axis='y')
+            axs[1].set_ylabel('seconds')
+            axs[1].set_yscale('log')
+            axs[1].get_legend().remove()
+
 
         plt.gca().yaxis.set_major_locator(plt.LogLocator(base=10, numticks=10))
-        plt.gca().yaxis.set_minor_locator(plt.LogLocator(base=10, subs='all', numticks=100))
+        # plt.gca().yaxis.set_minor_locator(plt.LogLocator(base=10, subs='all', numticks=100))
 
 
         fig.suptitle(f'Benchmarks evaluation', fontsize=16)
         fig.autofmt_xdate()
-
-        axs[0].legend(title='Searches',loc='center left', bbox_to_anchor=(1, 0.5))
-        axs[1].get_legend().remove()
-
         fig.savefig(f'{path}_bars.png', bbox_inches = 'tight')
 
 
     def plot_violin(self, df_gflops_final, path):
+        if type(df_gflops_final) == None: 
+            return
+
         # Analyse results
         fig, axs = plt.subplots()
         labels = df_gflops_final.columns[2:]
@@ -193,7 +209,10 @@ class Evaluator:
         axs.tick_params(labelrotation=0)
 
 
-    def plot_actions(self, df_gflops_final, path):
+    def plot_actions(self, path):
+        if type(self.df_gflops) == None: 
+            return
+
         bench_column, search_columns = self.df_gflops.columns[0], self.df_gflops.columns[1:]
 
         # for best_idx in range(len(df_gflops_final)): #df_gflops_final[search_columns].idxmax():
@@ -240,12 +259,10 @@ class Evaluator:
         api = wandb.Api()
         wandb_run = api.run(wandb_url)
 
-        
         if wandb_dict: # Upload wandb dict
             for key, value in wandb_dict.items(): 
                 wandb_run.summary[key] = value
             wandb_run.summary.update()
-
 
         # Delete previous files 
         for file in wandb_run.files():

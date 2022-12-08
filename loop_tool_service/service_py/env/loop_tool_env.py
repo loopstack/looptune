@@ -125,7 +125,8 @@ class Environment:
     # Get observations
     ##############################################################
     def get_runtime(self) -> Event:
-        mean_runtime = self.agent.eval("seconds")
+        with lt.Backend("loop_nest"):
+            mean_runtime = self.agent.eval("seconds")
         return Event(float_value=mean_runtime)
 
     def get_flops(self) -> Event:

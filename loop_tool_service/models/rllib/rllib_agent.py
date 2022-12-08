@@ -12,6 +12,9 @@ Run example with defaults:
 $ python custom_env.py
 For CLI options:
 $ python custom_env.py --help
+
+Reproduce results from wandb:
+$ python rllib_agent.py --iter=0 --dataset=mm64_256_16_range  --wandb_url=dejang/loop_tool_agent_split/61e41_00000 --trainer=dqn.ApexTrainer  --eval_size=25 --eval_time=60
 """
 import argparse
 import ast
@@ -77,6 +80,9 @@ parser.add_argument(
     "--wandb_url",  type=str, nargs='?', default='', help="Wandb uri to load policy network."
 )
 parser.add_argument(
+    "--wandb_overwrite", default=False, action="store_true", help="Overwrite wandb results."
+)
+parser.add_argument(
     "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps."
 )
 parser.add_argument(
@@ -125,6 +131,11 @@ parser.add_argument(
 )
 
 
+datasets_global = ['mm64_256_16_range']
+max_episode_steps = 10
+
+
+
 torch, nn = try_import_torch()
 import ray.rllib.agents.trainer_template
 
@@ -162,7 +173,7 @@ class RLlibAgent:
         self.wandb_dict = {}
 
         global datasets_global, max_episode_steps
-        datasets_global = [ dataset ]
+        # datasets_global = [ dataset ]
         self.max_episode_steps = max_episode_steps
         self.trainer_name = trainer
         self.algorithm, trainer = trainer.split('.') # expected: algorithm.trainer
@@ -252,8 +263,8 @@ class RLlibAgent:
 
             self.train_benchmarks = self.checkpoint_start['train_benchmarks']
             self.test_benchmarks = self.checkpoint_start['test_benchmarks']
-            self.wandb_dict['eval_train_benchmarks'] = self.checkpoint_start['eval_train_benchmarks'][:self.eval_size] if len(self.eval_size) < self.checkpoint_start['eval_train_benchmarks'] else self.checkpoint_start['train_benchmarks'][:self.eval_size]
-            self.wandb_dict['eval_test_benchmarks'] = self.checkpoint_start['eval_test_benchmarks'][:self.eval_size] if len(self.eval_size) < self.checkpoint_start['eval_test_benchmarks'] else self.checkpoint_start['eval_test_benchmarks'][:self.eval_size]
+            self.wandb_dict['eval_train_benchmarks'] = self.checkpoint_start['eval_train_benchmarks'][:self.eval_size] if self.eval_size < len(self.checkpoint_start['eval_train_benchmarks']) else self.checkpoint_start['train_benchmarks'][:self.eval_size]
+            self.wandb_dict['eval_test_benchmarks'] = self.checkpoint_start['eval_test_benchmarks'][:self.eval_size] if self.eval_size < len(self.checkpoint_start['eval_test_benchmarks']) else self.checkpoint_start['eval_test_benchmarks'][:self.eval_size]
 
 
         except:
@@ -305,7 +316,7 @@ class RLlibAgent:
             print("hhh2______________________")
 
 
-    def evaluate(self):
+    def evaluate(self, searches, wandb_overwrite=False):
         if self.analysis:
             config_checkpoint_pairs = [ [trial.trial_id, trial.config, str(trial.checkpoint.value)] for trial in self.analysis.trials ]
         elif self.checkpoint_path != None:
@@ -315,7 +326,7 @@ class RLlibAgent:
             return
 
 
-        searches = { k:v for k, v in self.evaluator.searches.items() if k in ['greedy1_ln', 'greedy2_ln', 'beam2dfs_ln', 'beam4dfs_ln','beam2bfs_ln', 'beam4bfs_ln', 'random_ln', 'policy']} 
+        searches_cmd = { k:v for k, v in self.evaluator.searches.items() if k in searches} 
 
         for trial_id, config, checkpoint_path_str in config_checkpoint_pairs:
             if checkpoint_path_str == None:
@@ -344,27 +355,29 @@ class RLlibAgent:
             shutil.copytree(checkpoint_path.parent, my_artifacts_checkpoint_dir)
             with open(my_artifacts_checkpoint_dir/'config.json', "w") as f: json.dump(config, f)
 
-            self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
+            if wandb_overwrite:
+                self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id, overwrite=wandb_overwrite)
 
             self.evaluator.set_policy_agent(agent)
 
-            df_train = self.evaluator.evaluate(self.env, self.wandb_dict['eval_train_benchmarks'], searches)
+            df_train = self.evaluator.evaluate(self.env, self.wandb_dict['eval_train_benchmarks'], searches_cmd)
             self.evaluator.save(path=self.my_artifacts_end/trial_id/"train")
-            df_val = self.evaluator.evaluate(self.env, self.wandb_dict['eval_test_benchmarks'], searches)
+            df_val = self.evaluator.evaluate(self.env, self.wandb_dict['eval_test_benchmarks'], searches_cmd)
             self.evaluator.save(path=self.my_artifacts_end/trial_id/"test")
         
             self.wandb_update_df(df_train, prefix='train_')
             self.wandb_update_df(df_val, prefix='test_')
-            self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
+            if wandb_overwrite:
+                self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id, overwrite=wandb_overwrite)
             print(f'Saved at: {self.my_artifacts_end}')
 
 
     def wandb_update_df(self, res_dict, prefix):
-        self.wandb_dict[f'{prefix}final_performance'] = float(np.mean(res_dict['gflops']['policy'].str[-1] / res_dict['gflops']['greedy1_ln'].str[-1]))
+        self.wandb_dict[f'{prefix}final_performance'] = float(np.mean(res_dict['gflops']['loop_tune_ln'].str[-1] / res_dict['gflops']['greedy1_ln'].str[-1]))
         self.wandb_dict[f'{prefix}avg_search_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1_ln'].str[-1] / res_dict['gflops']['base'].str[-1]))
-        self.wandb_dict[f'{prefix}avg_network_base_speedup'] = float(np.mean(res_dict['gflops']['policy'].str[-1] / res_dict['gflops']['base'].str[-1]))
+        self.wandb_dict[f'{prefix}avg_network_base_speedup'] = float(np.mean(res_dict['gflops']['loop_tune_ln'].str[-1] / res_dict['gflops']['base'].str[-1]))
         self.wandb_dict[f'{prefix}search_actions_num'] = float(np.mean(res_dict['actions']['greedy1_ln'].str.len()))
-        self.wandb_dict[f'{prefix}network_actions_num'] = float(np.mean(res_dict['actions']['policy'].str.len()))
+        self.wandb_dict[f'{prefix}network_actions_num'] = float(np.mean(res_dict['actions']['loop_tune_ln'].str.len()))
 
 #################################################################################
 
@@ -374,8 +387,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(f"Running with following CLI options: {args}")
     
-    global max_episode_steps
-    max_episode_steps = args.steps
+    # global max_episode_steps
+    # max_episode_steps = args.steps
 
 
     # init_logging(level=logging.DEBUG)
@@ -395,6 +408,7 @@ if __name__ == '__main__':
     agent = RLlibAgent(
         trainer=args.trainer, 
         dataset=args.dataset, 
+        # steps=args.steps,
         size=args.size, 
         eval_size=args.eval_size,
         network=args.network, 
@@ -410,7 +424,10 @@ if __name__ == '__main__':
         stop_reward=args.stop_reward,
         sweep_count=args.sweep,
     )
-    agent.evaluate()
+    agent.evaluate(
+        searches=['greedy1_ln', 'greedy2_ln', 'beam2dfs_ln', 'beam4dfs_ln','beam2bfs_ln', 'beam4bfs_ln', 'random_ln', 'loop_tune_ln'],    
+        wandb_overwrite=args.wandb_overwrite,
+    )
 
     ray.shutdown()
     print("Return from train!")

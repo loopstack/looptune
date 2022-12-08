@@ -1,3 +1,14 @@
+*
+
+# Push
+!*.py
+!*.png
+!*.csv
+!*.md
+!*.txt
+!*.sh
+
+# Don't push
 build
 dist
 *.egg-info

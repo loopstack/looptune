@@ -9,7 +9,7 @@ On the graph:
     - blue nodes are terminal nodes
     - red circle node is start node
 
-    python search.py --benchmark=benchmark://mm64_256_16_range-v0/mm208_112_80
+    python search.py --trainer=dqn.ApexTrainer --wandb_url=dejang/loop_tool_agent_split/61e41_00000
 '''
 
 import argparse
@@ -21,24 +21,29 @@ import loop_tool_service
 from loop_tool_service.models.evaluator import Evaluator
 from loop_tool_service.paths import LOOP_TOOL_ROOT
 import shutil
+import ray
 
+from loop_tool_service.models.rllib.rllib_agent import RLlibAgent
 from loop_tool_service.paths import LOOP_TOOL_ROOT
 
 from os.path import exists
 import wandb
 
 
-'''
-To download network from wandb say: dejang/loop_stack_cost_model/k4ztid39
-'''
 weights_path = LOOP_TOOL_ROOT/"loop_tool_service/models/weights"
-experiment_path = LOOP_TOOL_ROOT/"loop_tool_service/experiments/demo"
+experiment_path = LOOP_TOOL_ROOT/"loop_tool_service/experiments/compare_searches/result"
 
 
 # Training settings
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
-parser.add_argument("--searches", type=str, default='greedy1_ln', help="Searches to try. Format csv. Ex. random_ln,greedy1_ln,greedy2_ln")
+parser.add_argument("--searches", type=str, default='greedy1_ln,greedy2_ln,beam2dfs_ln,beam4dfs_ln,beam2bfs_ln,beam4bfs_ln,random_ln,loop_tune_ln', help="Searches to try. Format csv. Ex. bruteforce_ln,greedy1_ln,greedy2_ln")
 parser.add_argument("--policy", type=str, nargs='?', const=f"{weights_path}/policy.pt", default='', help="Path to the RLlib optimized network.")
+parser.add_argument(
+    '--trainer', type=str, default='', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
+)
+parser.add_argument(
+    "--wandb_url",  type=str, nargs='?', default='', help="Wandb uri to load policy network."
+)
 parser.add_argument("--cost", type=str, nargs='?', const=f"{weights_path}/cost.pt", default='', help="Path to the cost model network.")
 parser.add_argument("--benchmark", type=str, nargs='?', const='benchmark://mm64_256_16_range-v0/mm256_256_256', default='benchmark://mm64_256_16_range-v0', help="Benchmark to run the search")
 parser.add_argument("--size", type=int, nargs='?', default=10, help="Size of benchmarks to evaluate")
@@ -90,6 +95,34 @@ def resolve_cost(cost_path):
     return weights_path/'cost.pt'
 
 
+def init_looptune(wandb_url, trainer='dqn.ApexTrainer'):
+    agent = RLlibAgent(
+        trainer=trainer, 
+        dataset='mm64_256_16_range', 
+        size=10000000, 
+        eval_size=2,
+        network='TorchCustomModel', 
+        sweep_count=0, 
+        eval_time=10
+    )
+
+    agent.load_model(wandb_url)
+    
+    agent.config["explore"] = False
+    policy_model = agent.trainer(
+        env="compiler_gym",
+        config=agent.config
+    )
+
+    policy_model.restore(str(agent.checkpoint_path))
+    return policy_model
+
+def get_benchmarks(wandb_url):
+    api = wandb.Api()
+    wandb_run = api.run(wandb_url)
+    return wandb_run.summary['test_benchmarks']
+
+    
 if __name__ == '__main__':
     print(args)
     policy_path = resolve_policy(args.policy)
@@ -109,5 +142,17 @@ if __name__ == '__main__':
         
         searches = { k:v for k, v in evaluator.searches.items() if k in args.searches.split(',')}
 
+        if 'loop_tune_ln' in searches.keys():
+            assert(args.trainer != '' and args.wandb_url != '')
+            ray.init(local_mode=False, ignore_reinit_error=True)
+
+            agent = init_looptune(args.wandb_url, args.trainer)
+            evaluator.set_policy_agent(agent)
+            benchmarks = get_benchmarks(args.wandb_url)[:args.size]
+
         res = evaluator.evaluate(env, benchmarks, searches)
         evaluator.save(path=experiment_path)
+
+    if ray.is_initialized():
+        ray.shutdown()
+    print("Return from train!")

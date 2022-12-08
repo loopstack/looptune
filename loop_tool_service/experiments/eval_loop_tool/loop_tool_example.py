@@ -5,7 +5,7 @@
 """This script demonstrates how the Python example service without needing
 to use the bazel build system. Usage:
 
-    $ python example_compiler_gym_service/demo_without_bazel.py
+    $ python base_example.py
 
 It is equivalent in behavior to the demo.py script in this directory.
 """

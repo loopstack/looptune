@@ -46,14 +46,6 @@ class Evaluator:
 
             'loop_tune_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=policy --timeout={self.timeout} {self.debug}',
 
-            # 'tvm_numpy': f'tvm_numpy',
-            # 'tvm_base': f'tvm_base',
-            # 'tvm_blocking': f'tvm_blocking',
-            # 'tvm_permutation': f'tvm_permutation',
-            # 'tvm_packing': f'tvm_packing',
-            # 'tvm_cache_blocking': f'tvm_cache_blocking',
-            # 'tvm_vectorization': f'tvm_vectorization',
-            # 'tvm_all': 'tvm_blocking,tvm_permutation,tvm_packing,tvm_cache_blocking,tvm_vectorization'
         }
         self.my_artifacts = Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
 

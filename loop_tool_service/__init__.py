@@ -212,8 +212,7 @@ from compiler_gym.envs.llvm.datasets import (
 from compiler_gym.util.runfiles_path import site_data_path
 
 import loop_tool_service
-from loop_tool_service.service_py.datasets import mm32_8_16_8_4_16, mm128_128_128, mm8_16_128_128, mm8_16_8_16_128, mm8_16_8_16_8_16
-from loop_tool_service.service_py.rewards import flops_loop_nest_reward, flops_reward
+from loop_tool_service.service_py.rewards import flops_loop_nest_reward
 import importlib
 
 

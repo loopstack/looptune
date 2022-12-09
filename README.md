@@ -57,7 +57,8 @@ Create Weight and Biases account and put your wandb key in $LOOP_TOOL_ROOT/wandb
 
 ## 1. Generate dateset:
 ```
-python loop_tool_service/benchmarks/generator.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16  --out=$LOOP_TOOL_ROOT/loop_tool_service/benchmarks/mm64_256_16_range
+python loop_tool_service/benchmarks/generator.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16 --out=$LOOP_TOOL_ROOT/loop_tool_service/benchmarks/mm64_256_16_range
+
 
 # Register dataset
 python setup.py install

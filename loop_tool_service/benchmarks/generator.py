@@ -258,7 +258,7 @@ def main():
             
 
     # Register benchmark for CompilerGym
-    base_dataset_py = LOOP_TOOL_ROOT/'loop_tool_service/service_py/datasets/mm128_128_128.py'
+    base_dataset_py = LOOP_TOOL_ROOT/'loop_tool_service/service_py/datasets/template.py'
     shutil.copyfile(base_dataset_py, base_dataset_py.parent/f'{Path(args.out).name}.py')
 
 if __name__ == '__main__':

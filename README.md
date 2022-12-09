@@ -50,10 +50,19 @@ export LOOP_TOOL_ROOT=$path_to_this_dir
 export WANDB_CONSOLE=off
 export MAX_GFLOPS=$peak_gflops_measurement
 export RLLIB_NUM_GPUS=$num_gpus_available
+
 ```
+
+Uncomment and export GFLOPS from setup.py printed at the end:
+```
+print(f"export MAX_GFLOPS={os.popen('/private/home/dejang/tools/loop_tool/extern/loop_nest/build/apps/gflops.avx2.fp32').read()}")
+```
+
 ### Enable Wandb logging
 Create Weight and Biases account and put your wandb key in $LOOP_TOOL_ROOT/wandb_key.txt
-
+```
+export WANDB_PROJECT=$user_name/$project_name
+```
 
 ## 1. Generate dateset:
 ```

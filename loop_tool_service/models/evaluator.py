@@ -244,12 +244,13 @@ class Evaluator:
         if wandb_run_id == 'dummy': 
             return
 
-        wandb_dict['group_id'] = wandb_run_id.split('_')[0]
-        wandb_dict['run_id'] = wandb_run_id
+        trial_id = wandb_run_id.split('/')[2] # format username/project_name/trial_id
 
-        wandb_url = f'dejang/loop_tool_agent_split/{wandb_run_id}'
+        wandb_dict['group_id'] = trial_id.split('_')[0]
+        wandb_dict['run_id'] = trial_id
+
         api = wandb.Api()
-        wandb_run = api.run(wandb_url)
+        wandb_run = api.run(trial_id)
 
         if wandb_dict: # Upload wandb dict
             for key, value in wandb_dict.items(): 
@@ -270,7 +271,7 @@ class Evaluator:
                     wandb_run.upload_file(f"{root}/{file}")       
             os.chdir(cwd)
         
-        print(f'\nWandb page = https://wandb.ai/{wandb_url}')
+        print(f'\nWandb page = https://wandb.ai/{wandb_run_id}')
 
     #############################################################
     # Private

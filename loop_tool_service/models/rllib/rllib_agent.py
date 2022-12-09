@@ -165,7 +165,7 @@ class MyCallback(Callback):
             self.agent.wandb_dict['layers_num'] = len(trial.config['model']['fcnet_hiddens'])
             self.agent.wandb_dict['layers_width'] = trial.config['model']['fcnet_hiddens'][0]
 
-        self.agent.evaluator.send_to_wandb(wandb_run_id=trial.trial_id, wandb_dict=self.agent.wandb_dict)
+        self.agent.evaluator.send_to_wandb(wandb_run_id=f'{self.wandb_project_url}/{trial.trial_id}', wandb_dict=self.agent.wandb_dict)
 
 
 class RLlibAgent:
@@ -184,9 +184,11 @@ class RLlibAgent:
         self.eval_size = eval_size
         self.network = getattr(importlib.import_module(f"loop_tool_service.models.rllib.my_net_rl"), network)
         self.wandb_dict['network'] = network
+        self.wandb_project_url = str(os.environ['WANDB_PROJECT']) # format username/project_name
+        self.wandb_project_name = self.wandb_project_url.split('/')[1]
         self.env = make_env()
         self.reward = list(self.env.reward.spaces.keys())[0]
-        my_artifacts = Path(f'/private/home/dejang/tools/loop_tool_env/results/{time.strftime("%Y%m%d-%H%M%S")}') #Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
+        my_artifacts = Path(f'{LOOP_TOOL_ROOT}/results/{time.strftime("%Y%m%d-%H%M%S")}') #Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
         self.my_artifacts_start = my_artifacts/'start'
         self.my_artifacts_end = my_artifacts/'end'
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -307,7 +309,7 @@ class RLlibAgent:
                 callbacks=[
                     MyCallback(self),
                     WandbLoggerCallback(
-                        project="loop_tool_agent_split",
+                        project=self.wandb_project_name,
                         api_key_file=self.wandb_key_path,
                         log_config=False,
                     )
@@ -356,7 +358,7 @@ class RLlibAgent:
             with open(my_artifacts_checkpoint_dir/'config.json', "w") as f: json.dump(config, f)
 
             if wandb_overwrite:
-                self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
+                self.evaluator.send_to_wandb(wandb_run_id=f'{self.wandb_project_url}/{trial_id}', wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
 
             self.evaluator.set_policy_agent(agent)
 
@@ -368,7 +370,7 @@ class RLlibAgent:
             self.wandb_update_df(df_train, prefix='train_')
             self.wandb_update_df(df_val, prefix='test_')
             if wandb_overwrite:
-                self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
+                self.evaluator.send_to_wandb(wandb_run_id=f'{self.wandb_project_url}/{trial_id}', wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
             print(f'Saved at: {self.my_artifacts_end}')
 
 

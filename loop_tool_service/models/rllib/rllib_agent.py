@@ -356,7 +356,7 @@ class RLlibAgent:
             with open(my_artifacts_checkpoint_dir/'config.json', "w") as f: json.dump(config, f)
 
             if wandb_overwrite:
-                self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id, overwrite=wandb_overwrite)
+                self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
 
             self.evaluator.set_policy_agent(agent)
 
@@ -368,7 +368,7 @@ class RLlibAgent:
             self.wandb_update_df(df_train, prefix='train_')
             self.wandb_update_df(df_val, prefix='test_')
             if wandb_overwrite:
-                self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id, overwrite=wandb_overwrite)
+                self.evaluator.send_to_wandb(wandb_run_id=trial_id, wandb_dict=self.wandb_dict, path=self.my_artifacts_end/trial_id)
             print(f'Saved at: {self.my_artifacts_end}')
 
 
@@ -426,7 +426,7 @@ if __name__ == '__main__':
     )
     agent.evaluate(
         searches=['greedy1_ln', 'greedy2_ln', 'beam2dfs_ln', 'beam4dfs_ln','beam2bfs_ln', 'beam4bfs_ln', 'random_ln', 'loop_tune_ln'],    
-        wandb_overwrite=args.wandb_overwrite,
+        wandb_overwrite=True if args.iter > 0 else args.wandb_overwrite,
     )
 
     ray.shutdown()

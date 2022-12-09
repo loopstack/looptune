@@ -57,7 +57,7 @@ Create Weight and Biases account and put your wandb key in $LOOP_TOOL_ROOT/wandb
 
 ## 1. Generate dateset:
 ```
-python loop_tool_service/benchmarks/generator.py --kind=mm --dimA=64:128:16,64:128:16 --dimB=64:128:16,64:128:16  --out=$LOOP_TOOL_ROOT/loop_tool_service/benchmarks/mm64_128_16_range
+python loop_tool_service/benchmarks/generator.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16  --out=$LOOP_TOOL_ROOT/loop_tool_service/benchmarks/mm64_256_16_range
 
 # Register dataset
 python setup.py install
@@ -74,14 +74,14 @@ python loop_tool_service/benchmarks/reader.py --bench=path-to-txt-benchmark --ac
 On SLURM:
 
 ```
-python loop_tool_service/models/rllib/launcher/slurm_launch.py --app=rllib_agent.py --time=1:00:00 -nc=80 -ng=2 --iter=1  --dataset=mm64_128_16_range  --trainer=dqn.ApexTrainer --steps=10  --eval_size=5 --eval_time=10
+python loop_tool_service/models/rllib/launcher/slurm_launch.py --app=rllib_agent.py --time=30:00:00 -nc=80 -ng=2 --iter=1000  --dataset=mm64_256_16_range  --trainer=dqn.ApexTrainer --steps=10  --eval_size=25 --eval_time=60
 
 ```
 
 On local node:
 
 ```
-python loop_tool_service/models/rllib/rllib_agent.py --iter=1 --dataset=mm64_256_16_range  --trainer=dqn.ApexTrainer  --eval_size=2 --eval_time=4
+python loop_tool_service/models/rllib/rllib_agent.py --iter=10 --dataset=mm64_256_16_range  --trainer=dqn.ApexTrainer  --eval_size=5 --eval_time=10
 ```
 
 At the end of the training we print path to the evaluation of the LoopTune policy network.

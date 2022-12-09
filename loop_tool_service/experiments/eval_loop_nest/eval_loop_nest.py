@@ -28,7 +28,7 @@ def main():
 
     repeat = 10
     flops = {}
-    with loop_tool_service.make_env("loop_tool_env-v0", datasets=[dataset]) as env:
+    with loop_tool_service.make_env("loop_tool_env-v0", reward_space='flops_loop_nest_tensor_cached', datasets=[dataset]) as env:
         for i, bench in enumerate(env.datasets[f"benchmark://{dataset}-v0"]):
             if i == 20: break
             print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{bench}")

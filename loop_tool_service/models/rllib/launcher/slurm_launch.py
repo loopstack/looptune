@@ -232,3 +232,4 @@ if __name__ == "__main__":
     for i in range(args.jobs):
         submit_job()
 
+# python rllib_agent.py --iter=0 --dataset=mm64_256_16_range  --wandb_url=dejang/loop_tool_agent_split/61e41_00000 --trainer=dqn.ApexTrainer --steps=10  --eval_size=25 --eval_time=60

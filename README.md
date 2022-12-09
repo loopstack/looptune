@@ -82,12 +82,6 @@ ___
 python loop_tool_service/models/datasets/gen.py
 ```
 
-### 2. Train cost model:
-```
-python loop_tool_service/models/cost_model/cost/cost.py
-```
-This saves trained model to 
-/home/dejang/loop_tool_env/loop_tool_service/models/weights/cost.pt
 
 
 ### 3. Train policy model:

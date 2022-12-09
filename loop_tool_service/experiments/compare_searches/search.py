@@ -30,21 +30,18 @@ from os.path import exists
 import wandb
 
 
-weights_path = LOOP_TOOL_ROOT/"loop_tool_service/models/weights"
 experiment_path = LOOP_TOOL_ROOT/"loop_tool_service/experiments/compare_searches/result"
 
 
 # Training settings
 parser = argparse.ArgumentParser(description="LoopTool Optimizer")
 parser.add_argument("--searches", type=str, default='greedy1_ln,greedy2_ln,beam2dfs_ln,beam4dfs_ln,beam2bfs_ln,beam4bfs_ln,random_ln,loop_tune_ln', help="Searches to try. Format csv. Ex. bruteforce_ln,greedy1_ln,greedy2_ln")
-parser.add_argument("--policy", type=str, nargs='?', const=f"{weights_path}/policy.pt", default='', help="Path to the RLlib optimized network.")
 parser.add_argument(
     '--trainer', type=str, default='', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
 )
 parser.add_argument(
     "--wandb_url",  type=str, nargs='?', default='', help="Wandb uri to load policy network."
 )
-parser.add_argument("--cost", type=str, nargs='?', const=f"{weights_path}/cost.pt", default='', help="Path to the cost model network.")
 parser.add_argument("--benchmark", type=str, nargs='?', const='benchmark://mm64_256_16_range-v0/mm256_256_256', default='benchmark://mm64_256_16_range-v0', help="Benchmark to run the search")
 parser.add_argument("--size", type=int, nargs='?', default=10, help="Size of benchmarks to evaluate")
 parser.add_argument("--steps", type=int, default=10, help="Length of sequence of actions to evaluate")
@@ -67,32 +64,6 @@ def make_env(datasets) -> compiler_gym.envs.CompilerEnv:
     env = TimeLimit(env, max_episode_steps=10)
     return env
     
-
-def resolve_policy(policy_path):
-    if policy_path == '' or exists(policy_path):
-        return policy_path
-    try:
-        wandb.restore('policy_model.pt', run_path=policy_path)
-    except:
-        print('Policy not found')
-        exit(1)
-        
-    shutil.move("policy_model.pt", weights_path/'policy.pt')
-    return weights_path/'policy.pt'
-
-
-
-def resolve_cost(cost_path):
-    if cost_path == '' or exists(cost_path):
-        return cost_path
-    try:
-        wandb.restore('cost_model.pt', run_path=cost_path)
-    except:
-        print('Cost path not found')
-        exit(1)
-        
-    shutil.move("cost_model.pt", weights_path/'cost.pt')
-    return weights_path/'cost.pt'
 
 
 def init_looptune(wandb_url, trainer='dqn.ApexTrainer'):
@@ -125,10 +96,8 @@ def get_benchmarks(wandb_url):
     
 if __name__ == '__main__':
     print(args)
-    policy_path = resolve_policy(args.policy)
-    cost_path = resolve_cost(args.cost)
-    
-    evaluator = Evaluator(steps=args.steps, cost_path=cost_path, policy_path=policy_path, timeout=args.timeout, debug=args.debug)
+
+    evaluator = Evaluator(steps=args.steps, timeout=args.timeout, debug=args.debug)
 
     with make_env(datasets=['mm64_256_16_range']) as env:
         benchmark = str(args.benchmark)

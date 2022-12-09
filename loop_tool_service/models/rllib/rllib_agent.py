@@ -173,7 +173,7 @@ class RLlibAgent:
         self.wandb_dict = {}
 
         global datasets_global, max_episode_steps
-        # datasets_global = [ dataset ]
+        datasets_global = [ dataset ]
         self.max_episode_steps = max_episode_steps
         self.trainer_name = trainer
         self.algorithm, trainer = trainer.split('.') # expected: algorithm.trainer
@@ -207,7 +207,7 @@ class RLlibAgent:
         self.my_artifacts_end.mkdir(parents=True)
         
         ModelCatalog.register_custom_model(
-            "my_model", self.network #my_net_rl.TorchBatchNormModel #if False else my_net_rl.TorchCustomModel
+            "my_model", self.network
         )
         dataset =  self.env.datasets[f'benchmark://{self.dataset}-v0']
         benchmarks = [str(b) for b in dataset.benchmarks()]

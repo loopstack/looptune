@@ -37,10 +37,9 @@ For convenience action space is given here:
 * down
 * swap_up
 * swap_down
-* split_N (N = 2^k, k \<10) 
-* merge
-* unroll
-* vectorize
+* split_4
+* split_8
+* split_16
 
 
 We defined several observation spaces including:
@@ -56,51 +55,80 @@ We defined several observation spaces including:
 
 
 ___
-## Traditional temporal difference learning
-
-Temporal difference learning is online model free approach of reinforcement learning that can learn from raw experience like Monte Carlo methods, and update estimates of q values without waiting for the final outcome similar to dynamic programing.
-
-
-
-___
-## Cost and comparison models
-
-
-___
-## Policy model
-
-
-___
-## Search algorithm
-
-
-___
 ## How to run
+
+### 0. Setup environment variables:
+```
+export LOOP_TOOL_ROOT=$path_to_this_dir
+export WANDB_CONSOLE=off
+export MAX_GFLOPS=$peak_gflops_measurement
+export RLLIB_NUM_GPUS=$num_gpus_available
+```
 
 ### 1. Generate dateset:
 ```
-python loop_tool_service/models/datasets/gen.py
+python loop_tool_service/benchmarks/generator.py --kind=mm --dimA=64:128:16,64:128:16 --dimB=64:128:16,64:128:16  --out=/private/home/dejang/tools/loop_tool_env/loop_tool_service/benchmarks/mm64_128_16_range
+# Register dataset
+python setup.py install
 ```
 
+### 2. Enable Wandb logging
+Create Weight and Biases account and put your wandb key in $LOOP_TOOL_ROOT/wandb_key.txt
 
 
 ### 3. Train policy model:
-```
-python loop_tool_service/models/rllib/rllib_torch.py
-```
-This trains policy network analyse benchmark and save policy.pt to weights directory.
 
 
-### 4. Search:
-This combines cost and policy models and compares them to greedy and handtune.
+On SLURM:
+
 ```
-python loop_tool_service/demos/search/search.py --cost --policy --benchmark
+python loop_tool_service/models/rllib/launcher/slurm_launch.py --app=rllib_agent.py --time=1:00:00 -nc=80 -ng=2 --iter=1  --dataset=mm64_128_16_range  --trainer=dqn.ApexTrainer --steps=10  --eval_size=5 --eval_time=10
+
+```
+
+On local node:
+
+```
+python loop_tool_service/models/rllib/rllib_agent.py --iter=1 --dataset=mm64_256_16_range  --trainer=dqn.ApexTrainer  --eval_size=2 --eval_time=4
+```
+
+At the end of the training we print path to the evaluation of the LoopTune policy network.
+```
+...
+Saved at:  $path-to-evaluation-directory
+Return from train!
+```
+
+To see more login to Wandb and check out training curves and evaluation.
+
+Additionally, you can start training from finished training logged on wandb with:
+
+On SLURM:
+```
+python loop_tool_service/models/rllib/launcher/slurm_launch.py --app=rllib_agent.py --time=1:00:00 -nc=80 -ng=2 --iter=1  --dataset=mm64_128_16_range --trainer=dqn.ApexTrainer --steps=10  --eval_size=5 --eval_time=10 --wandb_url=$wandb_run_path
+```
+or locally:
+```
+python loop_tool_service/models/rllib/rllib_agent.py --iter=1 --dataset=mm64_256_16_range  --trainer=dqn.ApexTrainer  --eval_size=2 --eval_time=4 --wandb_url=$wandb_run_path
+
+```
+
+
+### 4. Evaluation:
+Once the training is done you can reproduce evaluation with:
+```
+python loop_tool_service/experiments/compare_searches/search.py --trainer=dqn.ApexTrainer --wandb_url=$wandb_run_path
 ```
 If you copy graph to online graphviz you can see visualization of 
-searches :)
+searches.
 
 
+## Comparison to Numpy and TVM
 
+```
+cd loop_tool_service/experiments/compare_tvm
+python compare_tvm.py --size=25 --wandb_url=$wandb_run_path
+```
 
 # Datasets
 Datasets are important part of training RL agent. It is important that they are organized from easy to hard. To generate dataset go to loop_tool_service/benchmarks directory and run generator.py. This will create an example or all permutations of matrix multiplication or convolution. With reader.py you can visualise each of these benchmarks.
@@ -174,7 +202,7 @@ python rllib_agent.py --iter=10 --dataset=mm128_16_8_128
 Additionally, you can retrain the model by calling
 ```
 cd loop_tool_service/models/rllib
-python rllib_agent.py --iter=10 --dataset=mm128_16_8_128 --wandb_url=wandb_run_path
+python rllib_agent.py --iter=10 --dataset=mm128_16_8_128 --wandb_url=$wandb_run_path
 ```
 
 To run this on SLURM use:
@@ -187,9 +215,9 @@ $LOOP_TOOL_ROOT/loop_tool_service/models/rllib/my_artifacts
 For SLURM output check:
 $LOOP_TOOL_ROOT/loop_tool_service/models/rllib/results 
 
-
-
 ```python
+
+
 
 
 1. for i in 256: <<<<<<<<< agent
@@ -289,6 +317,10 @@ for i in 256 : L0
 python rllib_agent.py --iter=0 --dataset=mm64_256_16_range  --wandb_url=dejang/loop_tool_agent_split/3be38_00000 --trainer=dqn.ApexTrainer --eval_size=50 --eval_time=60
 ```
 
+
+```
+
+```
 
 
 digraph G {

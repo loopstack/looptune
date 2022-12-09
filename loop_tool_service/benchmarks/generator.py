@@ -5,9 +5,8 @@ it under args.out directory
 
 Example:
 
-python generator.py --kind=mm --size=128 --out=path-to-dir [--permute]
-python generator_new.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16  --out=path-to-dir [--permute]
-python generator_new.py --kind=conv --dimA="1|32|64, 64|256|512, 56|112|570, 56|112|570" \
+python generator.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16  --out=path-to-dir [--permute]
+python generator.py --kind=conv --dimA="1|32|64, 64|256|512, 56|112|570, 56|112|570" \
                                     --dimB="64|256|512, 64|256|512, 3, 3"  --out=path-to-dir [--permute]
 
 '''

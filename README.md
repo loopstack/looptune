@@ -1,4 +1,4 @@
-# LoopToolEnv project
+# LoopTune project
 
 To optimize ML workloads for custom architecture, generally there are tree options: 
 * Hire an expert

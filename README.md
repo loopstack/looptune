@@ -7,7 +7,7 @@ ___
 
 To map our problem to reinforcement learning lets see example of the problem we are trying to solve. 
 
-<img src="docs/imgs/loop_tree.png" width="500">
+<img src="docs/imgs/optimizing.png" width="700">
 
 In the figure above agent(cursor) starts on line 0 of loop nest and all actions are done on current loop. The agent moves from L0 to L6 with actions "up" and "down". Beside this agent can use "swap_up"/"swap_down" to swap current with the upper/lower loop. Agent can split the current loop into two loops with split power of 2 factor (from 2 to 1024). Agent can merge a loop so it fuses with the parent loops with the same iterator. Agent can annotate current loop with "unroll" and "vectorize" that low level compiler will use to optimize it.
 

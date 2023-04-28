@@ -6,9 +6,10 @@ it under args.out directory
 Example:
 
 python generator.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16  --out=path-to-dir [--permute]
-python generator.py --kind=conv --dimA="1|32|64, 64|256|512, 56|112|570, 56|112|570" \
-                                    --dimB="64|256|512, 64|256|512, 3, 3"  --out=path-to-dir [--permute]
+python generator.py --kind=conv --dimA="1|32|64, 64|256|512, 56|112|570, 56|112|570" --dimB="64|256|512, 64|256|512, 3, 3"  --out=path-to-dir [--permute]
 
+python generator.py --kind=conv --dimA="64|32|1, 128|64|32, 256|56|112, 256|56|112" --dimB="64|32|1, 128|64|32, 3, 3"  --out=path-to-dir [--permute]
+                                --dimA="batch size, channels, hight, width"         --dimB="output channels, channels, height, width"
 '''
 
 import argparse
@@ -188,6 +189,7 @@ def gen_conv_range(dimA, dimB):
             for dimA2, dimA3 in zip(dimA[2], dimA[3]):
                 for dimB0 in dimB[0]:
                     for dimB2, dimB3 in zip(dimB[2], dimB[3]):
+                        name = f'conv{dimA0}_{dimA1}_{dimA2}_{dimA3}__{dimB0}_{dimB1}_{dimB2}_{dimB3}'
                         try:
                             t0 = time.time()
                             C = gen_conv(dimA=[dimA0, dimA1, dimA2, dimA3], dimB=[dimB0, dimB1, dimB2, dimB3])
@@ -197,13 +199,13 @@ def gen_conv_range(dimA, dimB):
                             t1 = time.time()
                             flops = timed_fn(fn=eval, args=[C], seconds=600)
                             t2 = time.time()
-                            print(f'{i}. Generate in {t1 - t0}s, Eval in {t2 - t1}s  -> GFLOPS = {flops / 1e9}')
+                            print(f'{i}. Benchmark: {name} in {t1 - t0}s, Eval in {t2 - t1}s  -> GFLOPS = {flops / 1e9}')
                             i += 1
                         except:
                             continue
 
                         tensors.append(C)
-                        names.append(f'conv{dimA0}_{dimA1}_{dimA2}_{dimA3}__{dimB0}_{dimB1}_{dimB2}_{dimB3}')
+                        names.append(name)
                         print(C.loop_tree)
 
     return tensors, names
@@ -212,7 +214,7 @@ def save_loops(loops, paths):
     for final_loop, path in zip(loops, paths):
         print(final_loop)
         try:
-            final_loop.FLOPS()
+            # final_loop.FLOPS()
             with open(path, "w") as f:
                 f.write(final_loop.ir.serialize())
         except:

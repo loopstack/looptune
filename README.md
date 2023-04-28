@@ -44,13 +44,33 @@ https://github.com/facebookresearch/CompilerGym/blob/development/INSTALL.md
 https://github.com/facebookresearch/loop_tool.git
 Branch: loop_tune
 
-
 ```
 export LOOP_TOOL_ROOT=$path_to_this_dir
 export WANDB_CONSOLE=off
 export MAX_GFLOPS=$peak_gflops_measurement
 export RLLIB_NUM_GPUS=$num_gpus_available
 
+```
+
+#### Build from source
+```
+git clone https://github.com/facebookresearch/loop_tool.git && cd loop_tool
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release 
+```
+
+If cuda fails: 
+Add to /home/dx4/tools/loop_tool/CMakeLists.txt:
+set(CUDAToolkit_FOUND FALSE)
+before first CUDAToolkit_FOUND occurance.
+
+If boost is not found install it with spack install boost
+```
+make -j$(nproc)
+cd ..
+python setup.py install
+# Check if there is LoopNest is installed as backend:
+python -c 'import loop_tool as lt; print(lt.backends())'
 ```
 
 Uncomment and export GFLOPS from setup.py printed at the end:

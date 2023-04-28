@@ -8,7 +8,7 @@ class RewardScalar(Reward):
 
     def __init__(self):
         super().__init__(
-            id="flops_loop_nest",
+            name="flops_loop_nest",
             observation_spaces=["flops_loop_nest"],
             default_value=0,
             default_negates_returns=True,
@@ -40,7 +40,7 @@ class RewardTensor(Reward):
 
     def __init__(self):
         super().__init__(
-            id="flops_loop_nest_tensor",
+            name="flops_loop_nest_tensor",
             observation_spaces=["flops_loop_nest_tensor"],
             default_value=0,
             default_negates_returns=True,
@@ -72,7 +72,7 @@ class AbsoluteRewardTensor(Reward):
 
     def __init__(self):
         super().__init__(
-            id="flops_loop_nest_tensor",
+            name="flops_loop_nest_tensor",
             observation_spaces=["flops_loop_nest_tensor"],
             default_value=0,
             default_negates_returns=True,
@@ -102,7 +102,7 @@ class NormRewardTensor(Reward):
     def __init__(self, obs='flops_loop_nest_tensor'):
         self.obs = obs
         super().__init__(
-            id=obs,
+            name=obs,
             observation_spaces=[obs],
             default_value=0,
             default_negates_returns=True,

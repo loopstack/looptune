@@ -10,20 +10,90 @@ from loop_tool_service.models.rllib.rllib_agent import RLlibAgent
 import tvm
 import tvm.testing
 from tvm import te
+from tvm import autotvm
+
 import numpy
 import timeit
 import pandas as pd
 from matplotlib import pyplot as plt
 import wandb
-
+import numpy as np
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--wandb_url",  type=str, nargs='?', default='dejang/loop_tool_agent_split/61e41_00000', help="Wandb uri to load policy network."
 )
 parser.add_argument(
-    "--size",  type=int, nargs='?', default=100000, help="Number of benchmarks to evaluate."
+    "--size",  type=int, nargs='?', default=20, help="Number of benchmarks to evaluate."
 )
+
+
+@autotvm.template("tutorial/matmul")
+def matmul(N, L, M, dtype):
+    A = te.placeholder((N, L), name="A", dtype=dtype)
+    B = te.placeholder((L, M), name="B", dtype=dtype)
+
+    k = te.reduce_axis((0, L), name="k")
+    C = te.compute((N, M), lambda i, j: te.sum(A[i, k] * B[k, j], axis=k), name="C")
+    s = te.create_schedule(C.op)
+
+    # schedule
+    y, x = s[C].op.axis
+    k = s[C].op.reduce_axis[0]
+
+    ##### define space begin #####
+    cfg = autotvm.get_config()
+    cfg.define_split("tile_y", y, num_outputs=2)
+    cfg.define_split("tile_x", x, num_outputs=2)
+    ##### define space end #####
+
+    # schedule according to config
+    yo, yi = cfg["tile_y"].apply(s, C, y)
+    xo, xi = cfg["tile_x"].apply(s, C, x)
+
+    s[C].reorder(yo, xo, k, yi, xi)
+
+    return s, [A, B, C]
+
+
+def mm_autotvm(M, K, N):
+    task = autotvm.task.create("tutorial/matmul", args=(M, K, N, "float32"), target="llvm")
+    print(task.config_space)
+    measure_option = autotvm.measure_option(builder="local", runner=autotvm.LocalRunner(number=5))
+    # tuner = autotvm.tuner.RandomTuner(task)
+    tuner = autotvm.tuner.XGBTuner(task)
+    # :any:tvm.autotvm.tuner.RandomTuner: Enumerate the space in a random order
+    # :any:tvm.autotvm.tuner.GridSearchTuner: Enumerate the space in a grid search order
+    # :any:tvm.autotvm.tuner.GATuner: Using genetic algorithm to search through the space
+    # :any:tvm.autotvm.tuner.XGBTuner
+    tuner.tune(
+        n_trial=10,
+        measure_option=measure_option,
+        callbacks=[autotvm.callback.log_to_file("matmul.log")],
+    )
+
+    # apply history best from log file
+    with autotvm.apply_history_best("matmul.log"):
+        with tvm.target.Target("llvm"):
+            s, arg_bufs = matmul(M, K, N, "float32")
+            func = tvm.build(s, arg_bufs)
+
+    
+    target = 'llvm -mcpu=core-avx2'
+    dev = tvm.device(target, 0)
+    dtype = "float32"
+    a = tvm.nd.array(numpy.random.rand(M, K).astype(dtype), dev)
+    b = tvm.nd.array(numpy.random.rand(K, N).astype(dtype), dev)
+    c = tvm.nd.array(numpy.zeros((M, N), dtype=dtype), dev)
+
+    func(a, b, c)
+
+    evaluator = func.time_evaluator(func.entry_name, dev, number=1)
+    tvm_base = evaluator(a, b, c).mean
+    return {'auto_tvm': tvm_base} 
+
+
 
 
 def mm_tvm(M, K, N, columns, debug=False):
@@ -45,6 +115,7 @@ def mm_tvm(M, K, N, columns, debug=False):
     # Random generated tensor for testing
     a = tvm.nd.array(numpy.random.rand(M, K).astype(dtype), dev)
     b = tvm.nd.array(numpy.random.rand(K, N).astype(dtype), dev)
+    c = tvm.nd.array(numpy.zeros((M, N), dtype=dtype), dev)
 
     if 'numpy' in columns:
         np_repeat = 100
@@ -75,7 +146,6 @@ def mm_tvm(M, K, N, columns, debug=False):
     func = tvm.build(s, [A, B, C], target=target, name="mmult")
     assert func
 
-    c = tvm.nd.array(numpy.zeros((M, N), dtype=dtype), dev)
     func(a, b, c)
     tvm.testing.assert_allclose(c.numpy(), answer, rtol=1e-5)
 
@@ -385,6 +455,7 @@ def main():
     for benchmark_url, m, k, v in matrix_sizes_list:
         results = {'benchmark': benchmark_url.split('/')[-1]}
         results.update(mm_tvm(m, k, v, columns))
+        results.update(mm_autotvm(m, k, v))
         results.update(eval_looptune(agent, benchmark_url))
         df = df.append(results, ignore_index=True)
 

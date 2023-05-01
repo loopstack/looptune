@@ -35,7 +35,7 @@ from compiler_gym.service.connection import ServiceError
 
 
 import loop_tool_service
-from loop_tool_service.service_py.datasets import mm128_128_128
+from loop_tool_service.service_py.datasets import mm64_256_16_range
 from loop_tool_service.service_py.rewards import  flops_loop_nest_reward
 
 
@@ -50,7 +50,7 @@ def register_env():
                 flops_loop_nest_reward.RewardTensor(),
                 ],
             "datasets": [
-                mm128_128_128.Dataset(),
+                mm64_256_16_range.Dataset(),
             ],
         },
     )
@@ -62,9 +62,8 @@ def main():
     init_logging(level=logging.CRITICAL)
     register_env()
 
-    
     with loop_tool_service.make_env("loop_tool_env-v0") as env:
-        for bench in env.datasets["benchmark://mm128_128_128-v0"]:
+        for bench in env.datasets["benchmark://mm64_256_16_range-v0"]:
             print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{bench}")
             try:
                 env.reset(benchmark=bench)

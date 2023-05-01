@@ -5,7 +5,7 @@ def get_config(sweep=False):
     hiddens_layers = [10, 15]
     hiddens_width = [500, 1000]
     return {
-        "log_level": "ERROR",
+        "log_level": "CRITICAL",
         "env": "compiler_gym", 
         "observation_space": "loops_tensor",
         "framework": 'torch',
@@ -20,9 +20,9 @@ def get_config(sweep=False):
         },
         # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
         "num_gpus": 1, #torch.cuda.device_count(),
-        'num_workers': int(ray.cluster_resources()['CPU'] / 2  - 1),
+        'num_workers': int(ray.cluster_resources()['CPU'] - 10),
         "rollout_fragment_length": 10, 
-        "train_batch_size": 790, # train_batch_size == num_workers * rollout_fragment_length
+        "train_batch_size": 32, # train_batch_size == num_workers * rollout_fragment_length
         "explore": True,
         "gamma": ray.tune.uniform(0.9, 0.99) if sweep else 0.95,
         "lr": ray.tune.uniform(1e-6, 1e-8) if sweep else 1e-6,        

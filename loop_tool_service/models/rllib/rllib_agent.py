@@ -72,72 +72,71 @@ import loop_tool as lt
 
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '--trainer', type=str, default='ppo.PPOTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
-)
-parser.add_argument(
-    "--wandb_url",  type=str, nargs='?', default='', help="Wandb uri to load policy network."
-)
-parser.add_argument(
-    "--wandb_overwrite", default=False, action="store_true", help="Overwrite wandb results."
-)
-parser.add_argument(
-    "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps."
-)
-parser.add_argument(
-    "--slurm", 
-    default=False, 
-    action="store_true",
-    help="Run on slurm."
-)
-parser.add_argument(
-    "--iter", type=int, default=2, help="Number of iterations to train."
-)
+# parser = argparse.ArgumentParser()
+# parser.add_argument(
+#     '--trainer', type=str, default='dqn.ApexTrainer', help='The RLlib-registered trainer to use. Store config in rllib/config directory.'
+# )
+# parser.add_argument(
+#     "--wandb_url",  type=str, nargs='?', default='', help="Wandb uri to load policy network."
+# )
+# parser.add_argument(
+#     "--wandb_overwrite", default=False, action="store_true", help="Overwrite wandb results."
+# )
+# parser.add_argument(
+#     "--sweep",  type=int, nargs='?', const=1, default=0, help="Run with wandb sweeps."
+# )
+# parser.add_argument(
+#     "--slurm", 
+#     default=False, 
+#     action="store_true",
+#     help="Run on slurm."
+# )
+# parser.add_argument(
+#     "--iter", type=int, default=2, help="Number of iterations to train."
+# )
 
-parser.add_argument(
-    "--steps", type=int, default=10, help="Number of actions to find."
-)
+# parser.add_argument(
+#     "--steps", type=int, default=10, help="Number of actions to find."
+# )
 
-parser.add_argument(
-    "--dataset",  type=str, nargs='?', help="Dataset [mm128_128_128] to run must be defined in loop_tool_service.service_py.datasets.", required=True
-)
+# parser.add_argument(
+#     "--dataset",  choices=['mm64_256_16_range', 'conv_train'], default=['mm64_256_16_range'], help="Dataset [mm128_128_128] to run must be defined in loop_tool_service.service_py.datasets.", required=True
+# )
 
-parser.add_argument(
-    '--network', choices=['TorchActionMaskModel', 'TorchBatchNormModel', 'TorchCustomModel'], default='TorchCustomModel', help='Deep network model.'
-)
+# parser.add_argument(
+#     '--network', choices=['TorchActionMaskModel', 'TorchBatchNormModel', 'TorchCustomModel'], default='TorchCustomModel', help='Deep network model.'
+# )
 
-parser.add_argument(
-    "--size", type=int, nargs='?', default=1000000, help="Size of benchmarks to train."
-)
+# parser.add_argument(
+#     "--size", type=int, nargs='?', default=1000000, help="Size of benchmarks to train."
+# )
 
-parser.add_argument(
-    "--eval_size", type=int, default=100, help="Size of benchmarks to evaluate."
-)
+# parser.add_argument(
+#     "--eval_size", type=int, default=100, help="Size of benchmarks to evaluate."
+# )
 
-parser.add_argument(
-    "--eval_time", type=int, default=10, help="Time to evaluate single benchmark."
-)
+# parser.add_argument(
+#     "--eval_time", type=int, default=10, help="Time to evaluate single benchmark."
+# )
 
-parser.add_argument(
-    "--stop_reward", type=float, default=1, help="Reward at which we stop training."
-)
+# parser.add_argument(
+#     "--stop_reward", type=float, default=1, help="Reward at which we stop training."
+# )
 
-parser.add_argument(
-    "--local-mode",
-    default=False,
-    action="store_true",
-    help="Init Ray in local mode for easier debugging.",
-)
+# parser.add_argument(
+#     "--local-mode",
+#     default=False,
+#     action="store_true",
+#     help="Init Ray in local mode for easier debugging.",
+# )
 
-
-datasets_global = ['mm64_256_16_range']
-max_episode_steps = 10
+datasets_global = 'conv_train'
+max_episode_steps = 20
 
 
 
 torch, nn = try_import_torch()
-import ray.rllib.agents.trainer_template
+# import ray.rllib.agents.trainer_template
 
 def make_env():
     """Make the reinforcement learning environment for this experiment."""
@@ -145,7 +144,7 @@ def make_env():
 
     env = loop_tool_service.make(
         "loop_tool_env-v0",
-        datasets=datasets_global,
+        datasets=[datasets_global],
         observation_space="loops_tensor",
         reward_space="flops_loop_nest_tensor_cached",# "flops_loop_nest_tensor",
     )
@@ -154,44 +153,41 @@ def make_env():
     return env
 
 
-from ray.tune import Callback
-class MyCallback(Callback):
-    def __init__(self, agent):
-        Callback.__init__(self)
-        self.agent = agent
+# from ray.tune import Callback
+# class MyCallback(Callback):
+#     def __init__(self, agent):
+#         Callback.__init__(self)
+#         self.agent = agent
 
-    def on_trial_result(self, iteration, trials, trial, result, **info):
-        if 'fcnet_hiddens' in trial.config['model']:
-            self.agent.wandb_dict['layers_num'] = len(trial.config['model']['fcnet_hiddens'])
-            self.agent.wandb_dict['layers_width'] = trial.config['model']['fcnet_hiddens'][0]
+#     def on_trial_result(self, iteration, trials, trial, result, **info):
+#         if 'fcnet_hiddens' in trial.config['model']:
+#             self.agent.wandb_dict['layers_num'] = len(trial.config['model']['fcnet_hiddens'])
+#             self.agent.wandb_dict['layers_width'] = trial.config['model']['fcnet_hiddens'][0]
 
-        self.agent.evaluator.send_to_wandb(wandb_run_id=f'{self.wandb_project_url}/{trial.trial_id}', wandb_dict=self.agent.wandb_dict)
+#         self.agent.evaluator.send_to_wandb(wandb_run_id=f'{self.agent.wandb_project_url}/{trial.trial_id}', wandb_dict=self.agent.wandb_dict)
 
 
 class RLlibAgent:
-    def __init__(self, trainer, dataset, size, eval_size, network, sweep_count, eval_time, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+    def __init__(self, trainer, dataset, steps, size, eval_size, network, sweep_count, eval_time, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
         self.wandb_dict = {}
-
-        global datasets_global, max_episode_steps
-        datasets_global = [ dataset ]
-        self.max_episode_steps = max_episode_steps
+        self.max_episode_steps = steps
         self.trainer_name = trainer
         self.algorithm, trainer = trainer.split('.') # expected: algorithm.trainer
-        self.trainer = getattr(importlib.import_module(f'ray.rllib.agents.{self.algorithm}'), trainer)
+        self.trainer = getattr(importlib.import_module(f'ray.rllib.algorithms.{self.algorithm}'), trainer)
         self.config = importlib.import_module(f"loop_tool_service.models.rllib.config.{self.algorithm}.{trainer}").get_config(sweep_count)
         self.dataset = dataset
         self.size = size
         self.eval_size = eval_size
         self.network = getattr(importlib.import_module(f"loop_tool_service.models.rllib.my_net_rl"), network)
         self.wandb_dict['network'] = network
-        self.wandb_project_url = str(os.environ['WANDB_PROJECT']) # format username/project_name
+        self.wandb_project_url = str(os.environ['WANDB_PROJECT_URL']) # format username/project_name
         self.wandb_project_name = self.wandb_project_url.split('/')[1]
         self.env = make_env()
         self.reward = list(self.env.reward.spaces.keys())[0]
         my_artifacts = Path(f'{LOOP_TOOL_ROOT}/results/{time.strftime("%Y%m%d-%H%M%S")}') #Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
         self.my_artifacts_start = my_artifacts/'start'
         self.my_artifacts_end = my_artifacts/'end'
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cpu'
         self.wandb_key_path = wandb_key_path
         self.checkpoint_path = None
         self.policy_model = None
@@ -199,7 +195,7 @@ class RLlibAgent:
         self.test_benchmarks = []
         self.checkpoint_start = None
         self.analysis = None
-        self.evaluator = Evaluator(steps=max_episode_steps, reward=self.reward, timeout=eval_time)
+        self.evaluator = Evaluator(steps=steps, reward=self.reward, timeout=eval_time)
         self.init()
     
     def init(self):
@@ -307,10 +303,9 @@ class RLlibAgent:
                 num_samples=max(1, sweep_count),
                 stop={'training_iteration': train_iter, 'episode_reward_mean': stop_reward},   
                 callbacks=[
-                    MyCallback(self),
+                    # MyCallback(self),
                     WandbLoggerCallback(
                         project=self.wandb_project_name,
-                        api_key_file=self.wandb_key_path,
                         log_config=False,
                     )
                 ],
@@ -320,7 +315,7 @@ class RLlibAgent:
 
     def evaluate(self, searches, wandb_overwrite=False):
         if self.analysis:
-            config_checkpoint_pairs = [ [trial.trial_id, trial.config, str(trial.checkpoint.value)] for trial in self.analysis.trials ]
+            config_checkpoint_pairs = [ [trial.trial_id, trial.config, str(trial.checkpoint.dir_or_data)] for trial in self.analysis.trials ]
         elif self.checkpoint_path != None:
             config_checkpoint_pairs = [[ self.wandb_dict['wandb_start'].split('/')[-1], self.config, self.checkpoint_path]]
         else:
@@ -329,7 +324,7 @@ class RLlibAgent:
 
 
         searches_cmd = { k:v for k, v in self.evaluator.searches.items() if k in searches} 
-
+        breakpoint()
         for trial_id, config, checkpoint_path_str in config_checkpoint_pairs:
             if checkpoint_path_str == None:
                 continue
@@ -388,12 +383,10 @@ class RLlibAgent:
 if __name__ == '__main__':
     args = parser.parse_args()
     print(f"Running with following CLI options: {args}")
-    
-    # global max_episode_steps
-    # max_episode_steps = args.steps
+    breakpoint()
 
 
-    # init_logging(level=logging.DEBUG)
+    init_logging(level=logging.DEBUG)
     if ray.is_initialized(): ray.shutdown()
     global max_num_steps
     
@@ -407,10 +400,14 @@ if __name__ == '__main__':
         ray.init(local_mode=args.local_mode, ignore_reinit_error=True)
 
 
+    os.environ["dataset"] = args.dataset
+    os.environ["steps"] = str(args.steps)
+
+
     agent = RLlibAgent(
         trainer=args.trainer, 
         dataset=args.dataset, 
-        # steps=args.steps,
+        steps=args.steps,
         size=args.size, 
         eval_size=args.eval_size,
         network=args.network, 

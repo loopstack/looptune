@@ -86,7 +86,7 @@ class Environment:
 
         self.cost_model = None
         self.policy_model = None
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cpu'
         self.eval_cost_fn = self.eval_ln_flops
         self.cache = {}
 

@@ -41,6 +41,7 @@ setuptools.setup(
         "loop_tool_service.models.rllib.config.dqn",
         "loop_tool_service.models.rllib.config.impala",
         "loop_tool_service.models.rllib.config.ppo",
+        "loop_tool_service.models.rllib.config.apex_dqn",
     ],
     python_requires=">=3.8",
     platforms=[distutils.util.get_platform()],

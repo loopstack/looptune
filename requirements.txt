@@ -1,5 +1,5 @@
 geneticalgorithm>=1.0.2
-keras==2.6.0
+# keras==2.6.0
 matplotlib>=3.3.4
 # nevergrad>=0.4.3 # PkgResourcesDeprecationWarning: learn-0.9 is an invalid version and will not be supported in a future release
 pandas>=1.1.5

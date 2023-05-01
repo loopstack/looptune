@@ -531,11 +531,11 @@ class LoopToolCompilationSession(CompilationSession):
         elif observation_space.name == "ir":
             observation = self.env.get_ir()
             return observation
-        elif observation_space.name == "ir_tree_networkx":
-            observation = self.env.get_ir_tree_networkx() 
-            return observation
-        elif observation_space.name == "ir_graph_networkx":
-            observation = self.env.get_ir_graph_networkx() 
+        # elif observation_space.name == "ir_tree_networkx":
+        #     observation = self.env.get_ir_tree_networkx() 
+        #     return observation
+        # elif observation_space.name == "ir_graph_networkx":
+        #     observation = self.env.get_ir_graph_networkx() 
             return observation
         elif observation_space.name == "loops_tensor":
             observation = self.env.get_loops_tensor() 

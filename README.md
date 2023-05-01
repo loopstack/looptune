@@ -55,6 +55,8 @@ export RLLIB_NUM_GPUS=$num_gpus_available
 #### Build from source
 ```
 git clone https://github.com/facebookresearch/loop_tool.git && cd loop_tool
+git checkout loop_tune
+
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release 
 ```
@@ -81,7 +83,7 @@ print(f"export MAX_GFLOPS={os.popen('/private/home/dejang/tools/loop_tool/extern
 ### Enable Wandb logging
 Create Weight and Biases account and put your wandb key in $LOOP_TOOL_ROOT/wandb_key.txt
 ```
-export WANDB_PROJECT=$user_name/$project_name
+export WANDB_PROJECT_URL=$user_name/$project_name
 ```
 
 ## 1. Generate dateset:

@@ -219,8 +219,8 @@ import importlib
 def register_env(datasets, obs='flops_loop_nest_tensor'):
     register(
         id="loop_tool_env-v0",
-        entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
-        # entry_point=LoopToolCompilerEnv,
+        # entry_point="compiler_gym.service.client_service_compiler_env:ClientServiceCompilerEnv",
+        entry_point=LoopToolCompilerEnv,
         kwargs={
             "service": loop_tool_service.paths.LOOP_TOOL_SERVICE_PY,
             "rewards": [

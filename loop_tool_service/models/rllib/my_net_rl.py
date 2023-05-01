@@ -10,24 +10,6 @@ tf1, tf, tfv = try_import_tf()
 torch, nn = try_import_torch()
 
 
-class CustomModel(TFModelV2):
-    """Example of a keras custom model that just delegates to an fc-net."""
-
-    def __init__(self, obs_space, action_space, num_outputs, model_config, name):
-        super(CustomModel, self).__init__(
-            obs_space, action_space, num_outputs, model_config, name
-        )
-        self.model = FullyConnectedNetwork(
-            obs_space, action_space, num_outputs, model_config, name
-        )
-
-    def forward(self, input_dict, state, seq_lens):
-        return self.model.forward(input_dict, state, seq_lens)
-
-    def value_function(self):
-        return self.model.value_function()
-
-
 
 class TorchCustomModel(TorchModelV2, nn.Module):
     """Example of a PyTorch custom model that just delegates to a fc-net."""
@@ -36,6 +18,7 @@ class TorchCustomModel(TorchModelV2, nn.Module):
         TorchModelV2.__init__(
             self, obs_space, action_space, num_outputs, model_config, name
         )
+        breakpoint()
         nn.Module.__init__(self)
 
         self.torch_sub_model = TorchFC(
@@ -43,11 +26,15 @@ class TorchCustomModel(TorchModelV2, nn.Module):
         )
 
     def forward(self, input_dict, state, seq_lens):
-        input_dict["obs"] = input_dict["obs"].float()
+        self.device = next(self.parameters()).device
+        print(self.device, '______________________________________________________')
+        input_dict["obs"] = input_dict["obs"].float().to(self.device)
         fc_out, _ = self.torch_sub_model(input_dict, state, seq_lens)
         return fc_out, []
 
     def value_function(self):
+        device = next(self.parameters()).device
+        print(device, '______________________________________________________')
         return torch.reshape(self.torch_sub_model.value_function(), [-1])
 
 
@@ -106,7 +93,7 @@ class TorchActionMaskModel(TorchModelV2, nn.Module):
         if self.no_masking:
             return logits, state
 
-        action_mask = torch.tensor(self.action_mask).to('cuda' if logits.is_cuda else 'cpu')
+        action_mask = torch.tensor(self.action_mask)#.to('cuda' if logits.is_cuda else 'cpu')
         # Convert action_mask into a [0.0 || -inf]-type mask.
         inf_mask = torch.clamp(torch.log(action_mask), min=FLOAT_MIN)
         

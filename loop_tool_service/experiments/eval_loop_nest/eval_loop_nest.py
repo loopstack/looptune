@@ -11,11 +11,8 @@ import time
 import random
 
 from compiler_gym.util.logging import init_logging
-from compiler_gym.util.registration import register
 
 import loop_tool_service
-from loop_tool_service.service_py.datasets import mm128_128_128, mm32_8_16_8_4_16
-from loop_tool_service.service_py.rewards import  flops_loop_nest_reward
 from statistics import mean, stdev
 
 
@@ -23,12 +20,12 @@ from statistics import mean, stdev
         
 def main():
     # Use debug verbosity to print out extra logging information.
-    dataset = 'mm32_8_16_8_4_16'
-    init_logging(level=logging.CRITICAL)
+    dataset = 'mm64_256_16_range'
+    init_logging(level=logging.DEBUG)
 
     repeat = 10
     flops = {}
-    with loop_tool_service.make_env("loop_tool_env-v0", reward_space='flops_loop_nest_tensor_cached', datasets=[dataset]) as env:
+    with loop_tool_service.make("loop_tool_env-v0", reward_space='flops_loop_nest_tensor_cached', datasets=[dataset]) as env:
         for i, bench in enumerate(env.datasets[f"benchmark://{dataset}-v0"]):
             if i == 20: break
             print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{bench}")

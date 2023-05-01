@@ -9,7 +9,7 @@ class Evaluator:
         self.env = env
         self.cost_model = None
         self.policy_model = None
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cpu'
         self.ln_cache = {}
         self.cost_cache = {}
         self.policy_cache = {}

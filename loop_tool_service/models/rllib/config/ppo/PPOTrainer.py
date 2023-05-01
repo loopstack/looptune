@@ -22,7 +22,7 @@ def get_config(sweep=False):
         },
         # Use GPUs iff `RLLIB_NUM_GPUS` env var set to > 0.
         "num_gpus": int(os.environ.get("RLLIB_NUM_GPUS", "0")), #torch.cuda.device_count(),
-        'num_workers': int(ray.cluster_resources()['CPU']) // 2 - 1,
+        'num_workers': int(ray.cluster_resources()['CPU'])  - 10,
         "rollout_fragment_length": 10, 
         "train_batch_size": 790, # train_batch_size == num_workers * rollout_fragment_length
         "num_sgd_iter": 30,

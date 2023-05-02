@@ -216,7 +216,7 @@ class RLlibAgent:
         self.wandb_dict['dataset'] = dataset.name
         self.wandb_dict['max_episode_steps'] = self.max_episode_steps
         
-        train_perc = 0.8
+        train_perc = 0.9
         train_size = int(np.ceil(train_perc * (len(benchmarks)-1) ))
         
         self.train_benchmarks = benchmarks[:train_size]

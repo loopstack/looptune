@@ -420,6 +420,12 @@ def eval_looptune(agent, benchmark):
 
 
 def plot_bars(df):    
+    breakpoint()
+    avg = df.mean(axis=0).to_dict()
+    df_mean = df.apply(['mean'])
+    df_mean['benchmark'] = 'average'
+    df = pd.concat([df, df_mean], ignore_index=True)
+    
     figsize = ((len(df) + 1) // 2, 5)
     fig = plt.figure()
     ax = fig.add_subplot(111)

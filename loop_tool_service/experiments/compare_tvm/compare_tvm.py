@@ -390,8 +390,8 @@ def get_matrix_sizes(benchmarks):
 
 def init_looptune(wandb_url):
     agent = RLlibAgent(
-        trainer='dqn.ApexTrainer', 
-        dataset='mm64_256_16_range', 
+        trainer='apex_dqn.ApexDQN', #'dqn.ApexTrainer', 
+        # dataset='mm64_256_16_range', 
         size=10000000, 
         eval_size=2,
         network='TorchCustomModel', 

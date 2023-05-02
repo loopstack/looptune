@@ -168,14 +168,16 @@ def make_env():
 
 
 class RLlibAgent:
-    def __init__(self, trainer, dataset, steps, size, eval_size, network, sweep_count, eval_time, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+    def __init__(self, trainer, size, eval_size, network, sweep_count, eval_time, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+        global datasets_global, max_episode_steps
+
         self.wandb_dict = {}
-        self.max_episode_steps = steps
+        self.max_episode_steps = max_episode_steps
         self.trainer_name = trainer
         self.algorithm, trainer = trainer.split('.') # expected: algorithm.trainer
         self.trainer = getattr(importlib.import_module(f'ray.rllib.algorithms.{self.algorithm}'), trainer)
         self.config = importlib.import_module(f"loop_tool_service.models.rllib.config.{self.algorithm}.{trainer}").get_config(sweep_count)
-        self.dataset = dataset
+        self.dataset = datasets_global
         self.size = size
         self.eval_size = eval_size
         self.network = getattr(importlib.import_module(f"loop_tool_service.models.rllib.my_net_rl"), network)
@@ -195,7 +197,7 @@ class RLlibAgent:
         self.test_benchmarks = []
         self.checkpoint_start = None
         self.analysis = None
-        self.evaluator = Evaluator(steps=steps, reward=self.reward, timeout=eval_time)
+        self.evaluator = Evaluator(steps=self.max_episode_steps, reward=self.reward, timeout=eval_time)
         self.init()
     
     def init(self):

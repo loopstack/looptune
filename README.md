@@ -45,7 +45,7 @@ https://github.com/facebookresearch/loop_tool.git
 Branch: loop_tune
 
 ```
-export LOOP_TOOL_ROOT=$path_to_this_dir
+export LOOPTUNE_ROOT=$path_to_this_dir
 export WANDB_CONSOLE=off
 export MAX_GFLOPS=$peak_gflops_measurement
 export RLLIB_NUM_GPUS=$num_gpus_available
@@ -81,14 +81,14 @@ print(f"export MAX_GFLOPS={os.popen('/private/home/dejang/tools/loop_tool/extern
 ```
 
 ### Enable Wandb logging
-Create Weight and Biases account and put your wandb key in $LOOP_TOOL_ROOT/wandb_key.txt
+Create Weight and Biases account and put your wandb key in $LOOPTUNE_ROOT/wandb_key.txt
 ```
 export WANDB_PROJECT_URL=$user_name/$project_name
 ```
 
 ## 1. Generate dateset:
 ```
-python loop_tool_service/benchmarks/generator.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16 --out=$LOOP_TOOL_ROOT/loop_tool_service/benchmarks/mm64_256_16_range
+python loop_tool_service/benchmarks/generator.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16 --out=$LOOPTUNE_ROOT/loop_tool_service/benchmarks/mm64_256_16_range
 
 
 # Register dataset

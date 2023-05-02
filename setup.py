@@ -56,5 +56,5 @@ setuptools.setup(
 ###############################################################
 # Set up root directory
 ###############################################################
-print("\nSet root directory: \n\nexport LOOP_TOOL_ROOT=%s"%os.getcwd())
+print("\nSet root directory: \n\nexport LOOPTUNE_ROOT=%s"%os.getcwd())
 # print(f"export MAX_GFLOPS={os.popen('/private/home/dejang/tools/loop_tool/extern/loop_nest/build/apps/gflops.avx2.fp32').read()}")

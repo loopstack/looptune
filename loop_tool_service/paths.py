@@ -10,22 +10,22 @@ from datetime import datetime
 '''
 Purpose:
     In this file we define all paths important for the project.
-    To run the project user needs to set LOOP_TOOL_ROOT to the path of loop_tool_env directory.
+    To run the project user needs to set LOOPTUNE_ROOT to the path of loop_tool_env directory.
     BENCHMARKS_PATH - path to user-defined benchmarks source-code
     LOOP_TOOL_SERVICE_PY - path to loop_tool_env backend service 
 '''
 
-LOOP_TOOL_ROOT = Path(os.environ.get("LOOP_TOOL_ROOT"))
-assert LOOP_TOOL_ROOT, "\n\nInitialize envvar LOOP_TOOL_ROOT to path of the loop_tool_env folder \n"
+LOOPTUNE_ROOT = Path(os.environ.get("LOOPTUNE_ROOT"))
+assert LOOPTUNE_ROOT, "\n\nInitialize envvar LOOPTUNE_ROOT to path of the loop_tool_env folder \n"
 
 
 BENCHMARKS_PATH: Path = Path(
-    LOOP_TOOL_ROOT / "loop_tool_service/benchmarks"
+    LOOPTUNE_ROOT / "loop_tool_service/benchmarks"
 )
 
 
 LOOP_TOOL_SERVICE_PY: Path = Path(
-    LOOP_TOOL_ROOT / "loop_tool_service/service_py/example_service.py"
+    LOOPTUNE_ROOT / "loop_tool_service/service_py/example_service.py"
 )
 
 logging.info(f"What is the path {LOOP_TOOL_SERVICE_PY}")
@@ -35,7 +35,7 @@ assert LOOP_TOOL_SERVICE_PY.is_file(), "Service script not found"
 
 def create_log_dir(experiment_name):
     timestamp = datetime.now().strftime("%Y-%m-%d/%H-%M-%S")
-    log_dir = "/".join([str(LOOP_TOOL_ROOT), "results", experiment_name, timestamp])
+    log_dir = "/".join([str(LOOPTUNE_ROOT), "results", experiment_name, timestamp])
     os.makedirs(log_dir)
 
     return log_dir

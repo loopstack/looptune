@@ -58,7 +58,7 @@ import importlib
 import time
 
 from ray.tune.integration.wandb import WandbLoggerCallback
-from loop_tool_service.paths import LOOP_TOOL_ROOT
+from loop_tool_service.paths import LOOPTUNE_ROOT
 from os.path import exists
 import wandb
 
@@ -168,7 +168,7 @@ def make_env():
 
 
 class RLlibAgent:
-    def __init__(self, trainer, size, eval_size, network, sweep_count, eval_time, wandb_key_path=str(LOOP_TOOL_ROOT) + "/wandb_key.txt") -> None:
+    def __init__(self, trainer, size, eval_size, network, sweep_count, eval_time, wandb_key_path=str(LOOPTUNE_ROOT) + "/wandb_key.txt") -> None:
         global datasets_global, max_episode_steps
 
         self.wandb_dict = {}
@@ -186,7 +186,7 @@ class RLlibAgent:
         self.wandb_project_name = self.wandb_project_url.split('/')[1]
         self.env = make_env()
         self.reward = list(self.env.reward.spaces.keys())[0]
-        my_artifacts = Path(f'{LOOP_TOOL_ROOT}/results/{time.strftime("%Y%m%d-%H%M%S")}') #Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
+        my_artifacts = Path(f'{LOOPTUNE_ROOT}/results/{time.strftime("%Y%m%d-%H%M%S")}') #Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
         self.my_artifacts_start = my_artifacts/'start'
         self.my_artifacts_end = my_artifacts/'end'
         self.device = 'cpu'

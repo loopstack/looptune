@@ -31,20 +31,20 @@ class Evaluator:
         self.timeout = timeout
         self.debug = "--debug" if debug else ""
         self.searches = {
-            'greedy1_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
-            'greedy2_ln': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
-            'beam2dfs_ln': f'beam_search_dfs --steps={self.steps} --width=2 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',           
-            'beam4dfs_ln': f'beam_search_dfs --steps={self.steps} --width=4 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',     
-            'beam2bfs_ln': f'beam_search_bfs --steps={self.steps} --width=2 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
-            'beam4bfs_ln': f'beam_search_bfs --steps={self.steps} --width=4 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
+            'greedy1': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
+            'greedy2': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
+            'beam2dfs': f'beam_search_dfs --steps={self.steps} --width=2 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',           
+            'beam4dfs': f'beam_search_dfs --steps={self.steps} --width=4 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',     
+            'beam2bfs': f'beam_search_bfs --steps={self.steps} --width=2 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
+            'beam4bfs': f'beam_search_bfs --steps={self.steps} --width=4 --ranking --eval=loop_nest --timeout={self.timeout} {self.debug}',                 
             'bruteforce_ln': f'beam_search_dfs --steps={self.steps} --width=1000 --eval=loop_nest --timeout={self.timeout} {self.debug}',
-            'random_ln': f'random_search --steps={self.steps} --eval=loop_nest --timeout={self.timeout} {self.debug}',           
+            'random': f'random_search --steps={self.steps} --eval=loop_nest --timeout={self.timeout} {self.debug}',           
 
             'greedy1_cost': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
             'greedy2_cost': f'greedy_search --steps={self.steps} --lookahead=2 --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
             'bruteforce_cost': f'beam_search_dfs --steps={self.steps} --width=1000 --eval=cost --timeout={self.timeout} {self.debug}',
 
-            'loop_tune_ln': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=policy --timeout={self.timeout} {self.debug}',
+            'looptune': f'greedy_search --steps={self.steps} --lookahead=1 --width=1000 --eval=policy --timeout={self.timeout} {self.debug}',
 
         }
         self.my_artifacts = Path(tempfile.mkdtemp()) # Dir to download and upload files. Has start, end subdirectories
@@ -103,17 +103,17 @@ class Evaluator:
         env.send_param('load_cost_model', self.cost_path)
         env.send_param('load_policy_model', self.policy_path)  
         
-        results_actions['base'], results_gflops['base'], results_time['base'] = self.base_performance(env, eval_mode='loop_nest')
+        results_actions['loopnest'], results_gflops['loopnest'], results_time['loopnest'] = self.base_performance(env, eval_mode='loop_nest')
 
         print(benchmark)
         env.send_param("print_looptree", "")
-        print(f"Base performance = {results_gflops['base']}")
+        print(f"Base performance = {results_gflops['loopnest']}")
 
         for search_name, search_cmd in tqdm(searches_cmd.items()):
-            if search_name == 'loop_tune_ln' and self.agent != None:
-                results_actions[search_name], results_gflops[search_name], results_time[search_name] = self.rllib_search(env, results_gflops['base'][0])
+            if search_name == 'looptune' and self.agent != None:
+                results_actions[search_name], results_gflops[search_name], results_time[search_name] = self.rllib_search(env, results_gflops['loopnest'][0])
             else:    
-                results_actions[search_name], results_gflops[search_name], results_time[search_name]  = self.search_performance(env, search_cmd, results_gflops['base'])
+                results_actions[search_name], results_gflops[search_name], results_time[search_name]  = self.search_performance(env, search_cmd, results_gflops['loopnest'])
         
         return results_gflops, results_time, results_actions
 
@@ -184,7 +184,7 @@ class Evaluator:
         
         axs.violinplot(
             dataset = [ 
-                df_gflops_final[col].astype(float) / df_gflops_final['base'].astype(float) 
+                df_gflops_final[col].astype(float) / df_gflops_final['loopnest'].astype(float) 
                 for col in labels # no benchmark, base columns
             ],
             showmedians=True
@@ -250,7 +250,7 @@ class Evaluator:
         wandb_dict['run_id'] = trial_id
 
         api = wandb.Api()
-        wandb_run = api.run(trial_id)
+        wandb_run = api.run(wandb_run_id)
 
         if wandb_dict: # Upload wandb dict
             for key, value in wandb_dict.items(): 
@@ -310,7 +310,10 @@ class Evaluator:
 
         for i in range(self.steps):
             feature_vector = torch.Tensor(feature_vector).unsqueeze(0)
-            a_id = self.agent.compute_action(feature_vector)
+            try:
+                a_id = self.agent.compute_single_action(feature_vector)
+            except:
+                breakpoint()
             action = env.action_space.to_string(a_id)
             actions.append(action)
             action_gflops.append(float(env.observation[self.reward]))

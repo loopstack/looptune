@@ -414,9 +414,9 @@ def init_looptune(wandb_url):
     return agent
 
 def eval_looptune(agent, benchmark):
-    results_gflops, results_time, results_actions = agent.evaluator.evaluate_single_benchmark(agent.env, benchmark, searches=['loop_tune_ln'])
+    results_gflops, results_time, results_actions = agent.evaluator.evaluate_single_benchmark(agent.env, benchmark, searches=['looptune'])
 
-    return {'loop_tune_ln':results_gflops['loop_tune_ln'][-1]}
+    return {'looptune':results_gflops['looptune'][-1]}
 
 
 def plot_bars(df):    

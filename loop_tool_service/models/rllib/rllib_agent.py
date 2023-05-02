@@ -130,8 +130,8 @@ import loop_tool as lt
 #     help="Init Ray in local mode for easier debugging.",
 # )
 
-datasets_global = 'conv_train'
-max_episode_steps = 20
+datasets_global = 'mm64_256_16_range' # 'conv_train'
+max_episode_steps = 10
 
 
 
@@ -300,7 +300,7 @@ class RLlibAgent:
                 metric="episode_reward_mean", # "final_performance",
                 mode="max",
                 reuse_actors=False,
-                checkpoint_freq=10,
+                checkpoint_freq=1,
                 checkpoint_at_end=True,
                 num_samples=max(1, sweep_count),
                 stop={'training_iteration': train_iter, 'episode_reward_mean': stop_reward},   
@@ -326,7 +326,7 @@ class RLlibAgent:
 
 
         searches_cmd = { k:v for k, v in self.evaluator.searches.items() if k in searches} 
-        breakpoint()
+
         for trial_id, config, checkpoint_path_str in config_checkpoint_pairs:
             if checkpoint_path_str == None:
                 continue
@@ -345,13 +345,13 @@ class RLlibAgent:
                 self.wandb_dict['layers_num'] = len(config['model']['fcnet_hiddens'])
                 self.wandb_dict['layers_width'] = config['model']['fcnet_hiddens'][0]
 
-            self.wandb_dict['checkpoint'] = os.path.relpath(checkpoint_path, checkpoint_path.parent.parent)
+            self.wandb_dict['checkpoint'] = os.path.relpath(checkpoint_path, checkpoint_path.parent)
 
             # Save policy and checkpoint for wandb
             policy_path = self.my_artifacts_end/trial_id/'policy_model.pt'
             os.makedirs(policy_path.parent)
-            my_artifacts_checkpoint_dir = self.my_artifacts_end/trial_id/checkpoint_path.parent.name
-            shutil.copytree(checkpoint_path.parent, my_artifacts_checkpoint_dir)
+            my_artifacts_checkpoint_dir = self.my_artifacts_end/trial_id/checkpoint_path.name
+            shutil.copytree(checkpoint_path, my_artifacts_checkpoint_dir)
             with open(my_artifacts_checkpoint_dir/'config.json', "w") as f: json.dump(config, f)
 
             if wandb_overwrite:
@@ -372,11 +372,11 @@ class RLlibAgent:
 
 
     def wandb_update_df(self, res_dict, prefix):
-        self.wandb_dict[f'{prefix}final_performance'] = float(np.mean(res_dict['gflops']['loop_tune_ln'].str[-1] / res_dict['gflops']['greedy1_ln'].str[-1]))
-        self.wandb_dict[f'{prefix}avg_search_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1_ln'].str[-1] / res_dict['gflops']['base'].str[-1]))
-        self.wandb_dict[f'{prefix}avg_network_base_speedup'] = float(np.mean(res_dict['gflops']['loop_tune_ln'].str[-1] / res_dict['gflops']['base'].str[-1]))
-        self.wandb_dict[f'{prefix}search_actions_num'] = float(np.mean(res_dict['actions']['greedy1_ln'].str.len()))
-        self.wandb_dict[f'{prefix}network_actions_num'] = float(np.mean(res_dict['actions']['loop_tune_ln'].str.len()))
+        self.wandb_dict[f'{prefix}final_performance'] = float(np.mean(res_dict['gflops']['looptune'].str[-1] / res_dict['gflops']['greedy1'].str[-1]))
+        self.wandb_dict[f'{prefix}avg_search_base_speedup'] = float(np.mean(res_dict['gflops']['greedy1'].str[-1] / res_dict['gflops']['loopnest'].str[-1]))
+        self.wandb_dict[f'{prefix}avg_network_base_speedup'] = float(np.mean(res_dict['gflops']['looptune'].str[-1] / res_dict['gflops']['loopnest'].str[-1]))
+        self.wandb_dict[f'{prefix}search_actions_num'] = float(np.mean(res_dict['actions']['greedy1'].str.len()))
+        self.wandb_dict[f'{prefix}network_actions_num'] = float(np.mean(res_dict['actions']['looptune'].str.len()))
 
 #################################################################################
 
@@ -385,8 +385,6 @@ class RLlibAgent:
 if __name__ == '__main__':
     args = parser.parse_args()
     print(f"Running with following CLI options: {args}")
-    breakpoint()
-
 
     init_logging(level=logging.DEBUG)
     if ray.is_initialized(): ray.shutdown()
@@ -426,7 +424,7 @@ if __name__ == '__main__':
         sweep_count=args.sweep,
     )
     agent.evaluate(
-        searches=['greedy1_ln', 'greedy2_ln', 'beam2dfs_ln', 'beam4dfs_ln','beam2bfs_ln', 'beam4bfs_ln', 'random_ln', 'loop_tune_ln'],    
+        searches=['greedy1', 'greedy2', 'beam2dfs', 'beam4dfs','beam2bfs', 'beam4bfs', 'random', 'looptune'],    
         wandb_overwrite=True if args.iter > 0 else args.wandb_overwrite,
     )
 

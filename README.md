@@ -88,7 +88,7 @@ export WANDB_PROJECT_URL=$user_name/$project_name
 
 ## 1. Generate dateset:
 ```
-python loop_tool_service/benchmarks/generator.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16 --out=$LOOPTUNE_ROOT/loop_tool_service/benchmarks/mm64_256_16_range
+python looptune_service/benchmarks/generator.py --kind=mm --dimA=64:256:16,64:256:16 --dimB=64:256:16,64:256:16 --out=$LOOPTUNE_ROOT/looptune_service/benchmarks/mm64_256_16_range
 
 
 # Register dataset
@@ -97,7 +97,7 @@ python setup.py install
 
 To examine any created benchmark just run:
 ```
-python loop_tool_service/benchmarks/reader.py --bench=path-to-txt-benchmark --actions='csv-actions'
+python looptune_service/benchmarks/reader.py --bench=path-to-txt-benchmark --actions='csv-actions'
 ```
 
 
@@ -106,14 +106,14 @@ python loop_tool_service/benchmarks/reader.py --bench=path-to-txt-benchmark --ac
 On SLURM:
 
 ```
-python loop_tool_service/models/rllib/launcher/slurm_launch.py --app=rllib_agent.py --time=30:00:00 -nc=80 -ng=2 --iter=1000  --dataset=mm64_256_16_range  --trainer=dqn.ApexTrainer --steps=10  --eval_size=25 --eval_time=60
+python looptune_service/models/rllib/launcher/slurm_launch.py --app=rllib_agent.py --time=30:00:00 -nc=80 -ng=2 --iter=1000  --dataset=mm64_256_16_range  --trainer=dqn.ApexTrainer --steps=10  --eval_size=25 --eval_time=60
 
 ```
 
 On local node:
 
 ```
-python loop_tool_service/models/rllib/rllib_agent.py --iter=10 --dataset=mm64_256_16_range  --trainer=dqn.ApexTrainer  --eval_size=5 --eval_time=10
+python looptune_service/models/rllib/rllib_agent.py --iter=10 --dataset=mm64_256_16_range  --trainer=dqn.ApexTrainer  --eval_size=5 --eval_time=10
 ```
 
 At the end of the training we print path to the evaluation of the LoopTune policy network.
@@ -138,7 +138,7 @@ to the training commands.
 ### Comparison to traditional searches
 Once the training is done you can reproduce evaluation with:
 ```
-cd loop_tool_service/experiments/compare_searches
+cd looptune_service/experiments/compare_searches
 python search.py --trainer=dqn.ApexTrainer --wandb_url=$wandb_run_path
 ```
 
@@ -149,6 +149,6 @@ searches by adding --debug.
 ## Comparison to Numpy and TVM
 
 ```
-cd loop_tool_service/experiments/compare_tvm
+cd looptune_service/experiments/compare_tvm
 python compare_tvm.py --size=25 --wandb_url=$wandb_run_path
 ```
